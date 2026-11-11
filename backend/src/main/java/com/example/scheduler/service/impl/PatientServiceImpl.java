@@ -1,0 +1,121 @@
+package com.example.scheduler.service.impl;
+
+import com.example.scheduler.dto.patient.PatientRequest;
+import com.example.scheduler.dto.patient.PatientResponse;
+import com.example.scheduler.dto.personal.PersonalResponse;
+import com.example.scheduler.entity.Patient;
+import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.exception.MessageKeys;
+import com.example.scheduler.exception.ResourceNotFoundException;
+import com.example.scheduler.mapper.PatientMapper;
+import com.example.scheduler.mapper.PersonalMapper;
+import com.example.scheduler.repository.PatientRepository;
+import com.example.scheduler.service.AppointmentService;
+import com.example.scheduler.service.PatientService;
+import com.example.scheduler.util.Utils;
+import java.util.List;
+import java.util.Objects;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class PatientServiceImpl implements PatientService {
+    private final PatientRepository patientRepository;
+    private final PatientMapper patientMapper;
+    private final PersonalMapper personalMapper;
+    private final AppointmentService appointmentService;
+
+    @Override
+    public Page<PatientResponse> findAllPatients(String search, Boolean isActive, Pageable pageable) {
+        return patientRepository.search(search == null ? "" : search.strip(), isActive, pageable)
+                .map(patientMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse createPatient(PatientRequest request) {
+        if (patientRepository.existsByCi(request.ci()))
+            throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
+        var email = Utils.normalizeEmail(request.email());
+        if (email != null && patientRepository.existsByEmailIgnoreCase(email))
+            throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
+        var patient = Patient.builder()
+                .ci(request.ci())
+                .name(request.name())
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .build();
+        return patientMapper.toResponse(patientRepository.save(patient));
+    }
+
+    @Override
+    public PatientResponse findPatientById(Long patientId) {
+        return patientMapper.toResponse(getPatientOrThrowById(patientId));
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
+        var patient = getPatientOrThrowById(patientId);
+        if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
+            throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
+        var email = Utils.normalizeEmail(request.email());
+        if (email != null
+                && !email.equalsIgnoreCase(patient.getEmail())
+                && patientRepository.existsByEmailIgnoreCase(email))
+            throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        if (phoneNumber != null
+                && !Objects.equals(patient.getPhoneNumber(), phoneNumber)
+                && patientRepository.existsByPhoneNumber(phoneNumber))
+            throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
+        patient.setCi(request.ci());
+        patient.setName(request.name());
+        patient.setEmail(email);
+        patient.setPhoneNumber(phoneNumber);
+        return patientMapper.toResponse(patientRepository.save(patient));
+    }
+
+    @Override
+    @Transactional
+    public void deactivatePatientById(Long patientId) {
+        var patient = patientRepository
+                .findByIdForUpdate(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
+        patient.setActive(false);
+        patientRepository.save(patient);
+        appointmentService.cancelUpcomingAppointmentsOfDeactivatedPatient(patientId);
+    }
+
+    @Override
+    @Transactional
+    public PatientResponse activatePatientById(Long patientId) {
+        var patient = getPatientOrThrowById(patientId);
+        patient.setActive(true);
+        return patientMapper.toResponse(patientRepository.save(patient));
+    }
+
+    @Override
+    public List<PersonalResponse> getDoctorsOfPatient(Long patientId) {
+        var patient = getPatientDoctorsOrThrowById(patientId);
+        return personalMapper.toResponseList(patient.getDoctors());
+    }
+
+    private Patient getPatientOrThrowById(Long patientId) {
+        return patientRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
+    }
+
+    private Patient getPatientDoctorsOrThrowById(Long patientId) {
+        return patientRepository.findPatientDoctorsById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PATIENT_NOT_FOUND, patientId));
+    }
+}

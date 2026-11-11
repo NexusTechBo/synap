@@ -1,0 +1,29 @@
+<app-dialog-frame title="Tienes citas activas" (closed)="ref.close()">
+  <p class="text-[15px] leading-relaxed text-gray-600">{{ message() }}</p>
+
+  <label class="field-label mt-5" for="doctor-mode-reason"
+    >Mensaje para los pacientes <span class="text-gray-400">(opcional)</span></label
+  >
+  <textarea
+    id="doctor-mode-reason"
+    rows="3"
+    class="field-input resize-none"
+    placeholder="Escribe el motivo de la cancelación…"
+    [maxLength]="maxLength"
+    [value]="reason()"
+    (input)="reason.set($any($event.target).value)"
+  ></textarea>
+  <p
+    class="mt-1 text-right text-xs tabular-nums"
+    [class]="reason().length >= maxLength - 50 ? 'text-tertiary' : 'text-gray-400'"
+  >
+    {{ reason().length }}/{{ maxLength }}
+  </p>
+
+  <ng-container ngProjectAs="[dialogFooter]">
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">Volver</button>
+    <button type="button" class="btn btn-danger" (click)="submit()">
+      Cancelar citas y dejar de atender
+    </button>
+  </ng-container>
+</app-dialog-frame>

@@ -1,0 +1,226 @@
+<app-page-header title="Agendar cita" subtitle="Reserva un horario para un paciente">
+  <a routerLink="/appointments" class="btn btn-secondary">
+    <app-ui-icon name="chevronLeft" class="h-4 w-4" />
+    Volver
+  </a>
+</app-page-header>
+
+<div class="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto lg:flex-row lg:overflow-visible">
+  <div class="space-y-5 lg:min-h-0 lg:flex-2 lg:overflow-y-auto lg:pb-2 lg:pr-1">
+    <section class="glass-panel rounded-3xl p-6">
+      <h2 class="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
+        <span
+          class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+          >1</span
+        >
+        Paciente
+      </h2>
+
+      @if (booking.selectedPatient(); as patient) {
+        <div class="flex items-center justify-between gap-3 rounded-2xl bg-white/70 px-4 py-3">
+          <div class="flex min-w-0 items-center gap-3">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary/15 text-sm font-bold text-secondary"
+              >{{ patient.name | initials }}</span
+            >
+            <div class="min-w-0">
+              <p class="truncate font-bold text-gray-900">{{ patient.name }}</p>
+              <p class="truncate text-sm text-gray-500">
+                {{ patient.email ?? patient.phoneNumber }}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="booking.selectPatient(null)">
+            Cambiar
+          </button>
+        </div>
+      } @else {
+        <div class="mb-3 flex flex-col gap-2 sm:flex-row">
+          <div class="relative flex-1">
+            <app-ui-icon
+              name="search"
+              class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              class="field-input pl-10"
+              placeholder="Buscar por nombre o email"
+              aria-label="Buscar paciente"
+              [ngModel]="booking.patientSearch()"
+              (ngModelChange)="booking.setPatientSearch($event)"
+            />
+          </div>
+          <button type="button" class="btn btn-primary shrink-0" (click)="registerPatient()">
+            <app-ui-icon name="plus" class="h-4 w-4" />
+            Registrar paciente
+          </button>
+        </div>
+        <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
+          @if (booking.patientsLoading()) {
+            <app-skeleton heightClass="h-12" />
+          } @else if (booking.patientsErrorMessage()) {
+            <app-load-error
+              [message]="booking.patientsErrorMessage()!"
+              (retry)="booking.reloadPatients()"
+            />
+          }
+          @for (patient of booking.filteredPatients(); track patient.id) {
+            <button
+              type="button"
+              class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white/70"
+              (click)="booking.selectPatient(patient)"
+            >
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
+                >{{ patient.name | initials }}</span
+              >
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-bold text-gray-900">{{
+                  patient.name
+                }}</span>
+                <span class="block truncate text-xs text-gray-500">{{
+                  patient.email ?? patient.phoneNumber
+                }}</span>
+              </span>
+            </button>
+          } @empty {
+            @if (!booking.patientsLoading() && !booking.patientsErrorMessage()) {
+              <p class="px-3 py-4 text-sm text-gray-500">
+                {{
+                  booking.patientSearch().trim()
+                    ? 'No hay pacientes que coincidan.'
+                    : 'Aún no hay pacientes registrados.'
+                }}
+                Usa «Registrar paciente» para añadir uno nuevo.
+              </p>
+            }
+          }
+        </div>
+      }
+    </section>
+
+    @if (!booking.ownDataOnly) {
+      <section class="glass-panel rounded-3xl p-6">
+        <h2 class="mb-4 flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
+          <span
+            class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+            >2</span
+          >
+          Especialidad y doctor
+        </h2>
+
+        @if (booking.specialtiesErrorMessage(); as error) {
+          <app-load-error class="mb-4" [message]="error" (retry)="booking.reloadSpecialties()" />
+        }
+        <app-specialty-filter
+          class="mb-4"
+          [specialties]="booking.specialties()"
+          [selectedId]="booking.specialtyId()"
+          (select)="booking.selectSpecialty($event)"
+        />
+
+        <app-doctor-picker
+          wide
+          [doctors]="booking.doctors()"
+          [selectedId]="booking.selectedDoctor()?.id"
+          [loading]="booking.doctorsLoading()"
+          [errorMessage]="booking.doctorsErrorMessage()"
+          [emptyMessage]="
+            booking.specialtyId() === null
+              ? 'No hay doctores activos.'
+              : 'No hay doctores activos para esta especialidad.'
+          "
+          (select)="booking.selectDoctor($event)"
+          (retry)="booking.reloadDoctors()"
+        />
+      </section>
+    }
+
+    <section class="glass-panel rounded-3xl p-6">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 class="flex items-center gap-2.5 text-lg font-extrabold text-gray-900">
+          <span
+            class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+            >{{ booking.ownDataOnly ? 2 : 3 }}</span
+          >
+          Fecha y horario
+        </h2>
+        <app-date-picker
+          ariaLabel="Fecha"
+          [min]="booking.today"
+          [ngModel]="booking.selectedDate()"
+          (ngModelChange)="booking.selectDate($event)"
+        />
+      </div>
+
+      <app-date-strip
+        class="mb-5"
+        [selected]="booking.selectedDate()"
+        (select)="booking.selectDate($event)"
+      />
+
+      @if (!booking.selectedDoctor()) {
+        <app-empty-state
+          icon="stethoscope"
+          title="Elige un doctor"
+          message="Te mostraremos sus horarios libres."
+        />
+      } @else {
+        <app-slot-grid
+          [slots]="booking.slots()"
+          [selected]="booking.selectedSlot()"
+          [loading]="booking.slotsLoading()"
+          [errorMessage]="booking.slotsErrorMessage()"
+          emptyMessage="El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha."
+          (select)="booking.selectSlot($event)"
+          (retry)="booking.reloadSlots()"
+        />
+      }
+    </section>
+  </div>
+
+  <aside class="glass-panel flex w-full flex-col rounded-3xl p-6 lg:w-88 lg:shrink-0 lg:self-start">
+    <h2 class="mb-5 text-xl font-extrabold text-gray-900">Resumen</h2>
+
+    <dl class="space-y-4 text-sm">
+      <div>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</dt>
+        <dd class="mt-0.5 font-bold text-gray-900">{{ booking.selectedPatient()?.name ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</dt>
+        <dd class="mt-0.5 font-bold text-gray-900">{{ booking.selectedDoctor()?.name ?? '—' }}</dd>
+        @if (booking.selectedDoctor()?.specialtyName; as specialty) {
+          <dd class="text-gray-500">{{ specialty }}</dd>
+        }
+      </div>
+      <div>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Fecha</dt>
+        <dd class="mt-0.5 font-bold text-gray-900">{{ dateLabel() }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Horario</dt>
+        <dd class="mt-0.5 font-bold text-gray-900">
+          @if (booking.selectedSlot(); as slot) {
+            {{ slot | timeRange }}
+          } @else {
+            —
+          }
+        </dd>
+      </div>
+    </dl>
+
+    <button
+      type="button"
+      class="btn btn-primary mt-6 w-full"
+      [disabled]="!booking.canSubmit()"
+      (click)="booking.book()"
+    >
+      @if (booking.submitting()) {
+        <span
+          class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+        ></span>
+      }
+      Agendar cita
+    </button>
+  </aside>
+</div>

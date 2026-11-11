@@ -1,0 +1,62 @@
+<app-page-header
+  title="Especialidades"
+  subtitle="Catálogo usado al registrar doctores y al agendar citas"
+/>
+
+<div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1fr_22rem]">
+  <section class="glass-panel min-h-0 overflow-y-auto rounded-3xl p-6">
+    @if (specialties.isLoading()) {
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <app-skeleton [rows]="3" heightClass="h-16" />
+      </div>
+    } @else if (specialties.errorMessage()) {
+      <app-load-error [message]="specialties.errorMessage()!" (retry)="specialties.reload()" />
+    } @else {
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        @for (specialty of specialties.specialties(); track specialty.id) {
+          <div class="flex items-center gap-3 rounded-2xl bg-white/50 px-4 py-3.5">
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+            >
+              <app-ui-icon name="tag" class="h-5 w-5" />
+            </span>
+            <p class="truncate text-[15px] font-bold text-gray-900">{{ specialty.name }}</p>
+          </div>
+        } @empty {
+          <app-empty-state
+            class="col-span-full"
+            icon="tag"
+            title="Sin especialidades"
+            message="Crea la primera para poder registrar doctores."
+          />
+        }
+      </div>
+    }
+  </section>
+
+  <section class="glass-panel self-start rounded-3xl p-6">
+    <h2 class="mb-4 text-lg font-extrabold text-gray-900">Nueva especialidad</h2>
+    <form (ngSubmit)="create()" class="space-y-3">
+      <app-form-field label="Nombre" fieldId="specialty-name">
+        <input
+          id="specialty-name"
+          name="name"
+          class="field-input"
+          placeholder="Cardiología"
+          [ngModel]="name()"
+          (ngModelChange)="name.set($event)"
+          maxlength="255"
+          autocomplete="off"
+        />
+      </app-form-field>
+      <button
+        type="submit"
+        class="btn btn-primary w-full"
+        [disabled]="!name().trim() || specialties.saving()"
+      >
+        <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
+        Crear
+      </button>
+    </form>
+  </section>
+</div>

@@ -1,0 +1,300 @@
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
+import { GuestApi } from '../../core/api/guest.api';
+import { GuestSessionService } from '../../core/auth/guest-session.service';
+import {
+  apiErrorMessage,
+  isSlotUnavailableError,
+  resourceError,
+  retryAfterSeconds,
+} from '../../core/http/api-error';
+import {
+  GuestAppointmentResponse,
+  GuestBookingPatient,
+  GuestDoctor,
+  TimeSlot,
+} from '../../core/models/api.models';
+import {
+  addDays,
+  formatTime,
+  parseIso,
+  toIso,
+  toLocalDateTime,
+} from '../../core/utils/calendar.util';
+import { createCooldown } from '../../core/utils/cooldown.util';
+import { LOAD_ERROR } from '../../core/utils/messages.util';
+import { DATE_STRIP_DAYS } from '../../shared/ui/forms/date-strip/date-strip.component';
+import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
+
+@Injectable()
+export class GuestBookingService {
+  private readonly guestApi = inject(GuestApi);
+  private readonly guestSession = inject(GuestSessionService);
+  private readonly cooldown = createCooldown();
+
+  readonly today = toIso(new Date());
+  private readonly lastStripDay = toIso(addDays(parseIso(this.today), DATE_STRIP_DAYS - 1));
+
+  private readonly _step = signal<GuestBookingStep>('doctor');
+  readonly step = this._step.asReadonly();
+  readonly totalSteps = GUEST_BOOKING_STEPS.length - 1;
+
+  private readonly _error = signal<string | null>(null);
+  private readonly _rateLimitMessage = signal<string | null>(null);
+
+  private readonly _specialtyId = signal<number | null>(null);
+  readonly specialtyId = this._specialtyId.asReadonly();
+
+  private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
+  readonly selectedDoctor = this._selectedDoctor.asReadonly();
+  private readonly _selectedDate = signal(this.today);
+  readonly selectedDate = this._selectedDate.asReadonly();
+  private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
+    source: () => [this._selectedDoctor()?.id, this._selectedDate()],
+    computation: () => null,
+  });
+  readonly selectedSlot = this._selectedSlot.asReadonly();
+
+  private readonly _patient = signal<GuestBookingPatient | null>(null);
+  readonly patient = this._patient.asReadonly();
+
+  private readonly _submitting = signal(false);
+  readonly submitting = this._submitting.asReadonly();
+  readonly coolingDown = this.cooldown.active;
+  readonly retryInLabel = this.cooldown.label;
+  readonly cooldownFinished = this.cooldown.finished;
+  private readonly _result = signal<GuestAppointmentResponse | null>(null);
+  readonly result = this._result.asReadonly();
+
+  private readonly active = computed(() => (this.guestSession.ready() ? true : undefined));
+
+  private readonly clinicResource = rxResource({
+    params: () => this.active(),
+    stream: () => this.guestApi.clinic(),
+  });
+  private readonly specialtiesResource = rxResource({
+    params: () => this.active(),
+    stream: () =>
+      this.guestApi
+        .specialties()
+        .pipe(map((list) => list.sort((a, b) => a.name.localeCompare(b.name)))),
+  });
+  private readonly doctorsResource = rxResource({
+    params: () => this.active() && { specialtyId: this._specialtyId() ?? undefined },
+    stream: ({ params }) => this.guestApi.doctors(params.specialtyId),
+  });
+  readonly doctorsLoading = this.doctorsResource.isLoading;
+  private readonly slotsResource = rxResource({
+    params: () => {
+      const doctorId = this._selectedDoctor()?.id;
+      return this.active() && doctorId ? { doctorId, date: this._selectedDate() } : undefined;
+    },
+    stream: ({ params }) => this.loadSlots(params.doctorId, params.date),
+  });
+  readonly slotsLoading = this.slotsResource.isLoading;
+  private readonly unavailableDatesResource = rxResource({
+    params: () => {
+      const doctorId = this._selectedDoctor()?.id;
+      return this.active() && doctorId ? { doctorId } : undefined;
+    },
+    stream: ({ params }) =>
+      this.guestApi.unavailableDates(params.doctorId, this.today, this.lastStripDay).pipe(
+        map((response) => response.unavailableDates),
+        tap((dates) => this.jumpToFirstAvailableDate(dates)),
+      ),
+  });
+  private jumpPending = false;
+
+  readonly clinicName = computed(() =>
+    this.clinicResource.hasValue() ? this.clinicResource.value().name : null,
+  );
+  readonly clinicErrorMessage = resourceError(this.clinicResource, 'No se pudo cargar la clínica');
+  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
+  readonly error = computed(
+    () =>
+      this._error() ??
+      (this.cooldown.active() && this._step() === 'summary' ? this._rateLimitMessage() : null),
+  );
+  readonly specialties = computed(() =>
+    this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
+  );
+  readonly specialtiesErrorMessage = resourceError(
+    this.specialtiesResource,
+    LOAD_ERROR.specialties,
+  );
+  readonly doctors = computed(() =>
+    this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
+  );
+  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
+  readonly slots = computed(() =>
+    this.slotsResource.hasValue() ? this.slotsResource.value() : [],
+  );
+  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
+  private readonly selectedDateHasNoSlots = computed(
+    () =>
+      !this.slotsResource.isLoading() &&
+      this.slotsResource.hasValue() &&
+      this.slotsResource.value().length === 0,
+  );
+  readonly unavailableDates = computed(() => {
+    const dates = this.unavailableDatesResource.hasValue()
+      ? this.unavailableDatesResource.value()
+      : [];
+    const selected = this._selectedDate();
+    return this.selectedDateHasNoSlots() && !dates.includes(selected)
+      ? [...dates, selected]
+      : dates;
+  });
+
+  reloadClinic(): void {
+    this.clinicResource.reload();
+  }
+
+  reloadSpecialties(): void {
+    this.specialtiesResource.reload();
+  }
+
+  reloadDoctors(): void {
+    this.doctorsResource.reload();
+  }
+
+  reloadSlots(): void {
+    this.slotsResource.reload();
+  }
+
+  selectSpecialty(id: number | null): void {
+    this._specialtyId.set(id);
+    const doctor = this._selectedDoctor();
+    if (id !== null && doctor && doctor.specialtyId !== id) this._selectedDoctor.set(null);
+  }
+
+  selectDoctor(doctor: GuestDoctor): void {
+    const sameDoctor = this._selectedDoctor()?.id === doctor.id;
+    this._selectedDoctor.set(doctor);
+    this.jumpPending = true;
+    if (sameDoctor && this.unavailableDatesResource.hasValue()) {
+      this.jumpToFirstAvailableDate(this.unavailableDatesResource.value());
+    }
+    this.goTo('slot');
+  }
+
+  selectDate(iso: string): void {
+    if (iso && iso >= this.today) this._selectedDate.set(iso);
+  }
+
+  selectSlot(slot: TimeSlot): void {
+    this._selectedSlot.set(slot);
+    this.goTo('patient');
+  }
+
+  setPatient(patient: GuestBookingPatient): void {
+    this._patient.set(patient);
+    this.goTo('summary');
+  }
+
+  back(): void {
+    const index = GUEST_BOOKING_STEPS.indexOf(this._step());
+    if (index > 0 && this._step() !== 'done') this.goTo(GUEST_BOOKING_STEPS[index - 1]);
+  }
+
+  bookAnother(): void {
+    this._result.set(null);
+    this._selectedDoctor.set(null);
+    this._selectedDate.set(this.today);
+    this.goTo('doctor');
+  }
+
+  book(): void {
+    const doctor = this._selectedDoctor();
+    const slot = this._selectedSlot();
+    const patient = this._patient();
+    if (this._submitting() || this.cooldown.active() || !doctor || !slot || !patient) return;
+
+    const date = this._selectedDate();
+    this._submitting.set(true);
+    this.cooldown.reset();
+    this._error.set(null);
+    this.guestApi
+      .book({ doctorId: doctor.id, startTime: toLocalDateTime(date, slot.startTime), patient })
+      .pipe(
+        tap((result) => {
+          this._result.set(result);
+          this.goTo('done');
+        }),
+        catchError((error: unknown) => this.handleBookingError(error, doctor.id, date, slot)),
+        finalize(() => this._submitting.set(false)),
+      )
+      .subscribe();
+  }
+
+  private handleBookingError(
+    error: unknown,
+    doctorId: number,
+    date: string,
+    slot: TimeSlot,
+  ): Observable<never> {
+    const message = apiErrorMessage(error, 'No se pudo registrar la reserva');
+    const retryAfter = retryAfterSeconds(error);
+    if (retryAfter) {
+      this._rateLimitMessage.set(message);
+      this.cooldown.start(retryAfter);
+      return EMPTY;
+    }
+    if (!isSlotUnavailableError(error)) {
+      this._error.set(message);
+      return EMPTY;
+    }
+    this.unavailableDatesResource.reload();
+    const stillSelected = () =>
+      this._selectedDoctor()?.id === doctorId && this._selectedDate() === date;
+    return this.loadSlots(doctorId, date).pipe(
+      tap((slots) => {
+        if (!stillSelected()) return;
+        this.slotsResource.set(slots);
+        const stillFree = slots.some((s) => s.startTime === slot.startTime);
+        if (!stillFree) this._selectedSlot.set(null);
+        this.goTo(stillFree ? 'patient' : 'slot', message);
+      }),
+      catchError(() => {
+        if (stillSelected()) {
+          this._selectedSlot.set(null);
+          this.slotsResource.reload();
+          this.goTo('slot', message);
+        }
+        return EMPTY;
+      }),
+      ignoreElements(),
+    );
+  }
+
+  private loadSlots(doctorId: number, date: string): Observable<TimeSlot[]> {
+    return this.guestApi.availableSlots(doctorId, date).pipe(
+      map((response) =>
+        response.availableSlots.map((slot) => ({
+          startTime: formatTime(slot.startTime),
+          endTime: formatTime(slot.endTime),
+        })),
+      ),
+    );
+  }
+
+  private jumpToFirstAvailableDate(unavailableDates: string[]): void {
+    if (!this.jumpPending) return;
+    this.jumpPending = false;
+    const unavailable = new Set(unavailableDates);
+    if (!unavailable.has(this._selectedDate())) return;
+    for (let i = 0; i < DATE_STRIP_DAYS; i++) {
+      const iso = toIso(addDays(parseIso(this.today), i));
+      if (!unavailable.has(iso)) {
+        this._selectedDate.set(iso);
+        return;
+      }
+    }
+  }
+
+  private goTo(step: GuestBookingStep, error: string | null = null): void {
+    this._error.set(error);
+    this._step.set(step);
+  }
+}

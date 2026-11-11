@@ -1,0 +1,55 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { toHttpParams } from '../http/http-params.util';
+import {
+  AvailableSlots,
+  GuestAppointmentRequest,
+  GuestAppointmentResponse,
+  GuestClinic,
+  GuestDoctor,
+  GuestSessionRequest,
+  GuestSessionResponse,
+  Specialty,
+  UnavailableDates,
+} from '../models/api.models';
+
+@Injectable({ providedIn: 'root' })
+export class GuestApi {
+  private readonly http = inject(HttpClient);
+
+  createSession(request: GuestSessionRequest): Observable<GuestSessionResponse> {
+    return this.http.post<GuestSessionResponse>('public/guest/session', request);
+  }
+
+  clinic(): Observable<GuestClinic> {
+    return this.http.get<GuestClinic>('guest/clinic');
+  }
+
+  specialties(): Observable<Specialty[]> {
+    return this.http.get<Specialty[]>('guest/specialties');
+  }
+
+  doctors(specialtyId?: number): Observable<GuestDoctor[]> {
+    return this.http.get<GuestDoctor[]>('guest/doctors', {
+      params: toHttpParams({ specialtyId }),
+    });
+  }
+
+  availableSlots(doctorId: number, date: string): Observable<AvailableSlots> {
+    return this.http.get<AvailableSlots>(`guest/doctors/${doctorId}/availables`, {
+      params: toHttpParams({ date }),
+    });
+  }
+
+  unavailableDates(doctorId: number, from: string, to: string): Observable<UnavailableDates> {
+    return this.http.get<UnavailableDates>(`guest/doctors/${doctorId}/unavailable-dates`, {
+      params: toHttpParams({ from, to }),
+    });
+  }
+
+  book(request: GuestAppointmentRequest): Observable<GuestAppointmentResponse> {
+    const url = request.patient.name ? 'guest/appointments/new-patient' : 'guest/appointments';
+    return this.http.post<GuestAppointmentResponse>(url, request);
+  }
+}

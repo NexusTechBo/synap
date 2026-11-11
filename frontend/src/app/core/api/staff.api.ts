@@ -1,0 +1,66 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { toHttpParams } from '../http/http-params.util';
+import {
+  AssignPatientRequest,
+  DoctorFilters,
+  DoctorModeRequest,
+  LoginResponse,
+  Page,
+  Patient,
+  ProfileUpdateRequest,
+  Staff,
+  StaffFilters,
+  StaffRegisterRequest,
+  StaffUpdateRequest,
+} from '../models/api.models';
+
+@Injectable({ providedIn: 'root' })
+export class StaffApi {
+  private readonly http = inject(HttpClient);
+
+  doctors(query: DoctorFilters = {}): Observable<Page<Staff>> {
+    return this.http.get<Page<Staff>>('personal/doctors', { params: toHttpParams(query) });
+  }
+
+  list(filters: StaffFilters = {}): Observable<Page<Staff>> {
+    return this.http.get<Page<Staff>>('personal', { params: toHttpParams(filters) });
+  }
+
+  create(request: StaffRegisterRequest): Observable<Staff> {
+    return this.http.post<Staff>('personal', request);
+  }
+
+  update(id: number, request: StaffUpdateRequest): Observable<Staff> {
+    return this.http.put<Staff>(`personal/update/${id}`, request);
+  }
+
+  updateSelf(request: ProfileUpdateRequest): Observable<Staff> {
+    return this.http.put<Staff>('personal/update', request);
+  }
+
+  updateDoctorMode(request: DoctorModeRequest): Observable<LoginResponse> {
+    return this.http.put<LoginResponse>('personal/me/doctor-mode', request);
+  }
+
+  deactivate(id: number): Observable<void> {
+    return this.http.delete<void>(`personal/${id}`);
+  }
+
+  activate(id: number): Observable<Staff> {
+    return this.http.patch<Staff>(`personal/${id}/activate`, null);
+  }
+
+  assignPatient(request: AssignPatientRequest): Observable<void> {
+    return this.http.post<void>('personal/patients/assign', request);
+  }
+
+  removePatient(request: AssignPatientRequest): Observable<void> {
+    return this.http.delete<void>('personal/patients/remove', { body: request });
+  }
+
+  patientsOf(doctorId: number): Observable<Patient[]> {
+    return this.http.get<Patient[]>(`personal/${doctorId}/patients`);
+  }
+}

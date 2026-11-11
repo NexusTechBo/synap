@@ -1,0 +1,199 @@
+<app-page-header
+  title="Pacientes"
+  [subtitle]="
+    patients.ownListEnabled && patients.scope() === 'mine'
+      ? 'Pacientes que tienes asignados'
+      : 'Pacientes registrados en la clínica'
+  "
+>
+  <div class="flex flex-wrap items-center gap-3">
+    @if (patients.ownListEnabled) {
+      <app-segmented-tabs
+        [items]="tabs"
+        [selectedId]="patients.scope()"
+        (select)="setScope($event)"
+      />
+    }
+    <button type="button" class="btn btn-primary" (click)="openForm()">
+      <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
+      Nuevo paciente
+    </button>
+  </div>
+</app-page-header>
+
+<div class="glass-panel flex min-h-0 flex-1 flex-col rounded-3xl p-4">
+  <div class="mb-3 flex flex-wrap items-center gap-3 px-1">
+    <div class="relative min-w-64 flex-1">
+      <app-ui-icon
+        name="search"
+        class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+      />
+      <input
+        class="field-input pl-10"
+        placeholder="Buscar por nombre, CI, email o teléfono"
+        aria-label="Buscar pacientes"
+        [ngModel]="patients.search()"
+        (ngModelChange)="patients.setSearch($event)"
+      />
+    </div>
+    <label class="flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-600">
+      <input
+        type="checkbox"
+        class="h-4 w-4 accent-primary"
+        [ngModel]="patients.showInactive()"
+        (ngModelChange)="patients.setShowInactive($event)"
+      />
+      Mostrar inactivos
+    </label>
+  </div>
+
+  <div class="min-h-0 flex-1 overflow-auto">
+    @if (patients.isLoading() && !patients.patients().length) {
+      <div class="flex flex-col gap-2 p-2">
+        <app-skeleton [rows]="4" />
+      </div>
+    } @else if (patients.errorMessage()) {
+      <app-load-error
+        class="p-2"
+        [message]="patients.errorMessage()!"
+        (retry)="patients.reload()"
+      />
+    } @else if (!patients.patients().length) {
+      <app-empty-state
+        icon="patients"
+        [title]="patients.search() ? 'Sin resultados' : 'No hay pacientes'"
+        [message]="
+          patients.search().trim()
+            ? 'No hay pacientes que coincidan con la búsqueda.'
+            : patients.scope() === 'mine'
+              ? 'Asígnate pacientes desde la pestaña Todos o registra uno nuevo.'
+              : 'Registra al primer paciente de la clínica.'
+        "
+      />
+    } @else {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Paciente</th>
+            <th class="hidden md:table-cell">CI</th>
+            <th class="hidden md:table-cell">Teléfono</th>
+            <th class="hidden sm:table-cell">Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of patients.rows(); track row.patient.id) {
+            @let patient = row.patient;
+            <tr>
+              <td class="w-full max-sm:px-2">
+                <div class="flex items-center gap-3">
+                  <span
+                    class="hidden h-9 w-9 shrink-0 items-center sm:flex justify-center rounded-xl bg-secondary/10 text-xs font-bold text-secondary"
+                    >{{ patient.name | initials }}</span
+                  >
+                  <div class="min-w-0">
+                    <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
+                    <p class="text-xs text-gray-500 md:hidden">CI {{ patient.ci }}</p>
+                    @if (patient.email) {
+                      <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
+                    }
+                    @if (!patient.active) {
+                      <p class="text-xs font-bold text-gray-500 sm:hidden">Inactivo</p>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td class="hidden whitespace-nowrap md:table-cell">{{ patient.ci }}</td>
+              <td class="hidden whitespace-nowrap md:table-cell">
+                {{ patient.phoneNumber }}
+              </td>
+              <td class="hidden sm:table-cell">
+                <span
+                  class="chip"
+                  [class]="
+                    patient.active
+                      ? 'bg-secondary/10 text-secondary'
+                      : 'bg-gray-900/6 text-gray-500'
+                  "
+                >
+                  {{ patient.active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="whitespace-nowrap max-sm:px-2">
+                <div class="flex flex-nowrap justify-end gap-1">
+                  @if (patients.ownListEnabled) {
+                    <button
+                      type="button"
+                      class="btn btn-sm min-h-10 btn-ghost"
+                      [id]="'patient-toggle-' + patient.id"
+                      [attr.aria-label]="
+                        (row.mine ? 'Quitar de mi lista: ' : 'Asignarme: ') + patient.name
+                      "
+                      (click)="toggleMine(patient)"
+                    >
+                      {{ row.mine ? 'Quitar de mi lista' : 'Asignarme' }}
+                    </button>
+                  }
+                  @if (patients.canManageDoctors) {
+                    <button
+                      type="button"
+                      class="btn-icon h-10 w-10"
+                      title="Doctores asignados"
+                      [attr.aria-label]="'Doctores asignados de ' + patient.name"
+                      (click)="manageDoctors(patient)"
+                    >
+                      <app-ui-icon name="link" class="h-4 w-4" />
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="btn-icon h-10 w-10"
+                    title="Editar"
+                    [id]="'patient-edit-' + patient.id"
+                    [attr.aria-label]="'Editar a ' + patient.name"
+                    (click)="openForm(patient)"
+                  >
+                    <app-ui-icon name="edit" class="h-4 w-4" />
+                  </button>
+                  @if (patient.active) {
+                    <button
+                      type="button"
+                      class="btn-icon h-10 w-10 hover:text-red-600!"
+                      title="Desactivar"
+                      [id]="'patient-status-' + patient.id"
+                      [attr.aria-label]="'Desactivar a ' + patient.name"
+                      (click)="deactivate(patient)"
+                    >
+                      <app-ui-icon name="block" class="h-4 w-4" />
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-icon h-10 w-10 hover:text-secondary!"
+                      title="Reactivar"
+                      [id]="'patient-status-' + patient.id"
+                      [attr.aria-label]="'Reactivar a ' + patient.name"
+                      (click)="activate(patient)"
+                    >
+                      <app-ui-icon name="refresh" class="h-4 w-4" />
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  @if (patients.pagination(); as info) {
+    <app-pagination
+      class="mt-3 px-2"
+      [page]="info.number"
+      [totalPages]="info.totalPages"
+      [totalElements]="info.totalElements"
+      (pageChange)="patients.setPage($event)"
+    />
+  }
+</div>

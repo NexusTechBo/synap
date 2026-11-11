@@ -1,0 +1,116 @@
+package com.example.scheduler.service.impl;
+
+import com.example.scheduler.dto.appointment.AppointmentRequest;
+import com.example.scheduler.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
+import com.example.scheduler.dto.doctoravailability.DoctorUnavailableDatesResponse;
+import com.example.scheduler.dto.guest.GuestAppointmentRequest;
+import com.example.scheduler.dto.guest.GuestAppointmentResponse;
+import com.example.scheduler.dto.guest.GuestClinicResponse;
+import com.example.scheduler.dto.guest.GuestDoctorResponse;
+import com.example.scheduler.dto.guest.GuestNewPatientRequest;
+import com.example.scheduler.dto.guest.GuestPatientRequest;
+import com.example.scheduler.dto.patient.PatientRequest;
+import com.example.scheduler.exception.ApiException;
+import com.example.scheduler.exception.BusinessException;
+import com.example.scheduler.exception.MessageKeys;
+import com.example.scheduler.exception.ResourceNotFoundException;
+import com.example.scheduler.mapper.GuestMapper;
+import com.example.scheduler.repository.PatientRepository;
+import com.example.scheduler.repository.PersonalRepository;
+import com.example.scheduler.service.AppointmentService;
+import com.example.scheduler.service.DoctorAvailabilityService;
+import com.example.scheduler.service.GuestService;
+import com.example.scheduler.service.PatientService;
+import com.example.scheduler.util.Utils;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.function.Supplier;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class GuestServiceImpl implements GuestService {
+    private final CurrentClinicProvider currentClinicProvider;
+    private final PersonalRepository personalRepository;
+    private final PatientRepository patientRepository;
+    private final PatientService patientService;
+    private final AppointmentService appointmentService;
+    private final DoctorAvailabilityService doctorAvailabilityService;
+    private final GuestMapper guestMapper;
+
+    @Override
+    public GuestClinicResponse findCurrentClinic() {
+        var clinic = currentClinicProvider.getCurrentClinic();
+        return new GuestClinicResponse(clinic.getName(), clinic.getSlug());
+    }
+
+    @Override
+    public List<GuestDoctorResponse> findAllActiveDoctors(Long specialtyId) {
+        return guestMapper.toDoctorResponseList(personalRepository.findAllDoctorsActive(specialtyId));
+    }
+
+    @Override
+    public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
+        getDoctorOrThrowById(doctorId);
+        return doctorAvailabilityService.getDoctorAvailableSlots(doctorId, date);
+    }
+
+    @Override
+    public DoctorUnavailableDatesResponse getDoctorUnavailableDates(Long doctorId, LocalDate from, LocalDate to) {
+        getDoctorOrThrowById(doctorId);
+        return doctorAvailabilityService.getDoctorUnavailableDates(doctorId, from, to);
+    }
+
+    @Override
+    @Transactional
+    public GuestAppointmentResponse bookAppointment(GuestAppointmentRequest<GuestPatientRequest> request) {
+        return book(request, () -> resolvePatientId(request.patient()));
+    }
+
+    @Override
+    @Transactional
+    public GuestAppointmentResponse bookAppointmentForNewPatient(GuestAppointmentRequest<GuestNewPatientRequest> request) {
+        return book(request, () -> resolveNewPatientId(request.patient()));
+    }
+
+    private GuestAppointmentResponse book(GuestAppointmentRequest<?> request, Supplier<Long> patientId) {
+        var appointment = appointmentService.bookGuestAppointment(
+                new AppointmentRequest(request.doctorId(), patientId.get(), request.startTime())
+        );
+        return guestMapper.toAppointmentResponse(appointment);
+    }
+
+    private Long resolvePatientId(GuestPatientRequest patient) {
+        return patientRepository.findActiveIdByCiAndPhoneNumber(patient.ci(), Utils.normalizePhoneNumber(patient.phoneNumber()))
+                .orElseThrow(() -> new BusinessException(MessageKeys.GUEST_CANNOT_BOOK));
+    }
+
+    private Long resolveNewPatientId(GuestNewPatientRequest patient) {
+        var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber());
+        var email = Utils.normalizeEmail(patient.email());
+        var ci = patient.ci();
+        if (patientRepository.existsByCiOrPhoneNumberOrEmailIgnoreCase(ci, phoneNumber, email))
+            throw new BusinessException(MessageKeys.GUEST_CANNOT_BOOK);
+        try {
+            return patientService.createPatient(new PatientRequest(ci, patient.name(), email, phoneNumber)).id();
+        } catch (ApiException | DataIntegrityViolationException e) {
+            log.info(
+                    "Guest patient creation rejected: {}",
+                    e instanceof ApiException api
+                            ? api.getMessageKey()
+                            : e.getClass().getSimpleName());
+            throw new BusinessException(MessageKeys.GUEST_CANNOT_BOOK);
+        }
+    }
+
+    private void getDoctorOrThrowById(Long doctorId) {
+        personalRepository.findActiveDoctorById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
+    }
+}

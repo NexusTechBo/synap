@@ -1,0 +1,7 @@
+package com.example.scheduler.exchange.contract.whatsapp;
+
+public record MessageRequest(
+        String session,
+        String to,
+        String message
+) {}
