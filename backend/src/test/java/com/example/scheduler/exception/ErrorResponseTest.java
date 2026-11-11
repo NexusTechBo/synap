@@ -19,7 +19,12 @@ class ErrorResponseTest {
     @Test
     void shouldSetCodeAndDetailsWhenBuiltFromCode() {
         var response = ErrorResponse.ofCode(
-                HttpStatus.CONFLICT, "appointment.slotTaken", "Ocupado", Map.of("count", 2), "/api/x");
+                HttpStatus.CONFLICT,
+                "appointment.slotTaken",
+                "Ocupado",
+                Map.of("count", 2),
+                "/api/x"
+        );
 
         assertThat(response.status()).isEqualTo(409);
         assertThat(response.error()).isEqualTo("Conflict");
@@ -34,7 +39,11 @@ class ErrorResponseTest {
     @Test
     void shouldLeaveCodeAndDetailsNullWhenBuiltWithoutCode() {
         var response = ErrorResponse.of(
-                HttpStatus.BAD_REQUEST, "Invalido", "/api/x", List.of(new FieldErrorItem("startTime", "requerido")));
+                HttpStatus.BAD_REQUEST,
+                "Invalido",
+                "/api/x",
+                List.of(new FieldErrorItem("startTime", "requerido"))
+        );
 
         assertThat(response.code()).isNull();
         assertThat(response.details()).isNull();

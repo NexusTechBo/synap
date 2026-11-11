@@ -99,7 +99,13 @@ class GuestControllerTest {
 
     private static GuestAppointmentResponse response() {
         return new GuestAppointmentResponse(
-                99L, "Dr House", "Cardiologia", START, START.plusMinutes(30), AppointmentStatus.PENDING);
+                99L,
+                "Dr House",
+                "Cardiologia",
+                START,
+                START.plusMinutes(30),
+                AppointmentStatus.PENDING
+        );
     }
 
     @TestConfiguration
@@ -112,7 +118,11 @@ class GuestControllerTest {
         void shouldReturnUnavailableDatesAsIsoStringsWhenGuestRequestsARange() throws Exception {
             when(guestService.getDoctorUnavailableDates(10L, RANGE_FROM, RANGE_TO))
                     .thenReturn(new DoctorUnavailableDatesResponse(
-                            10L, RANGE_FROM, RANGE_TO, List.of(LocalDate.of(2026, 11, 8), LocalDate.of(2026, 11, 9))));
+                            10L,
+                            RANGE_FROM,
+                            RANGE_TO,
+                            List.of(LocalDate.of(2026, 11, 8), LocalDate.of(2026, 11, 9))
+                    ));
 
             mvc.perform(as(GUEST_TOKEN, get(UNAVAILABLE_DATES_PATH))
                             .param("from", "2026-11-06")
@@ -218,9 +228,9 @@ class GuestControllerTest {
                     .andExpect(jsonPath("$.appointmentId").value(99))
                     .andExpect(jsonPath("$.status").value("PENDING"));
 
-            verify(guestService)
-                    .bookAppointment(
-                            new GuestAppointmentRequest<>(10L, START, new GuestPatientRequest("12345", "70000000")));
+            verify(guestService).bookAppointment(
+                    new GuestAppointmentRequest<>(10L, START, new GuestPatientRequest("12345", "70000000"))
+            );
         }
 
         @Test
@@ -261,11 +271,11 @@ class GuestControllerTest {
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.appointmentId").value(99));
 
-            verify(guestService)
-                    .bookAppointmentForNewPatient(new GuestAppointmentRequest<>(
-                            10L,
-                            START,
-                            new GuestNewPatientRequest("1234567890", "Ana Perez", "70000000", "ana@mail.test")));
+            verify(guestService).bookAppointmentForNewPatient(new GuestAppointmentRequest<>(
+                    10L,
+                    START,
+                    new GuestNewPatientRequest("1234567890", "Ana Perez", "70000000", "ana@mail.test")
+            ));
         }
     }
 }

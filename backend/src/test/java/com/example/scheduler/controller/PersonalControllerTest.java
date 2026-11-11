@@ -88,7 +88,18 @@ class PersonalControllerTest {
 
     private static PersonalResponse response(String ci) {
         return new PersonalResponse(
-                10L, "house", ci, "Dr House", "house@mail.test", "70000000", true, false, "DOCTOR", 1L, "Cardiologia");
+                10L,
+                "house",
+                ci,
+                "Dr House",
+                "house@mail.test",
+                "70000000",
+                true,
+                false,
+                "DOCTOR",
+                1L,
+                "Cardiologia"
+        );
     }
 
     @TestConfiguration
@@ -136,16 +147,16 @@ class PersonalControllerTest {
                     .andExpect(jsonPath("$.id").value(10))
                     .andExpect(jsonPath("$.ci").value("1234567890"));
 
-            verify(personalService)
-                    .createPersonal(new PersonalRequest(
-                            "Dr House",
-                            "house@mail.test",
-                            "70000000",
-                            "1234567890",
-                            "house",
-                            "secret123",
-                            ERole.DOCTOR,
-                            1L));
+            verify(personalService).createPersonal(new PersonalRequest(
+                    "Dr House",
+                    "house@mail.test",
+                    "70000000",
+                    "1234567890",
+                    "house",
+                    "secret123",
+                    ERole.DOCTOR,
+                    1L
+            ));
         }
     }
 
@@ -181,7 +192,10 @@ class PersonalControllerTest {
         @Test
         void shouldReturnConflictWithCodeAndCountDetails() throws Exception {
             doThrow(BusinessException.withDetails(
-                            Map.of("count", 2L), MessageKeys.PERSONAL_DOCTOR_MODE_ACTIVE_APPOINTMENTS_CONFLICT, 2L))
+                    Map.of("count", 2L),
+                    MessageKeys.PERSONAL_DOCTOR_MODE_ACTIVE_APPOINTMENTS_CONFLICT,
+                    2L
+            ))
                     .when(personalService)
                     .updateDoctorMode(anyLong(), any());
 

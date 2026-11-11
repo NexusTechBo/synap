@@ -1,9 +1,7 @@
-package com.example.scheduler.exchange.contract;
+package com.example.scheduler.exchange.contract.brevo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.example.scheduler.exchange.contract.brevo.BrevoContact;
-import com.example.scheduler.exchange.contract.brevo.BrevoEmailRequest;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -17,7 +15,8 @@ class BrevoEmailRequestTest {
                 new BrevoContact("no-reply@clinicflow.test", "ClinicFlow"),
                 List.of(new BrevoContact("patient@example.com", "Juan Lopez")),
                 "Activa tu clínica Norte",
-                HTML);
+                HTML
+        );
 
         var text = request.toString();
 

@@ -8,7 +8,7 @@ import java.time.LocalTime;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
-class DateTimeFormatsTest {
+class DateTimeUtilsTest {
     @Test
     void shouldFormatShortDateAsDayMonthYearWithLeadingZeros() {
         assertThat(LocalDate.of(2026, 1, 5).format(DateTimeUtils.SHORT_DATE)).isEqualTo("05/01/2026");

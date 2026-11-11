@@ -80,7 +80,8 @@ class DoctorAvailabilityServiceImplTest {
                 appointmentRepository,
                 personalRepository,
                 mapper,
-                Clock.fixed(now.toInstant(ZoneOffset.UTC), ZoneOffset.UTC));
+                Clock.fixed(now.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+        );
     }
 
     private void givenActiveDoctor() {
@@ -148,7 +149,8 @@ class DoctorAvailabilityServiceImplTest {
                 DayOfWeek.TUESDAY,
                 DayOfWeek.WEDNESDAY,
                 DayOfWeek.THURSDAY,
-                DayOfWeek.FRIDAY);
+                DayOfWeek.FRIDAY
+        );
     }
 
     private void appointment(LocalDate date, LocalTime start, LocalTime end, AppointmentStatus status) {
@@ -161,7 +163,8 @@ class DoctorAvailabilityServiceImplTest {
 
     private void fullDayBlock(LocalDate date) {
         exceptions.add(
-                ScheduleException.builder().date(date).isFullDayBlock(true).build());
+                ScheduleException.builder().date(date).isFullDayBlock(true).build()
+        );
     }
 
     private void partialBlock(LocalDate date, LocalTime start, LocalTime end) {
@@ -304,14 +307,17 @@ class DoctorAvailabilityServiceImplTest {
 
             verify(personalRepository).findActiveDoctorById(DOCTOR_ID);
             verify(doctorAvailabilityRepository).findByDoctorIdAndActiveTrue(DOCTOR_ID);
-            verify(scheduleExceptionRepository)
-                    .findByDoctorIdAndDateBetween(DOCTOR_ID, WEDNESDAY, WEDNESDAY.plusDays(30));
-            verify(appointmentRepository)
-                    .findByDoctorIdAndStartTimeBetweenAndStatusNot(
-                            DOCTOR_ID,
-                            WEDNESDAY.atStartOfDay(),
-                            WEDNESDAY.plusDays(30).atTime(LocalTime.MAX),
-                            AppointmentStatus.CANCELLED);
+            verify(scheduleExceptionRepository).findByDoctorIdAndDateBetween(
+                    DOCTOR_ID,
+                    WEDNESDAY,
+                    WEDNESDAY.plusDays(30)
+            );
+            verify(appointmentRepository).findByDoctorIdAndStartTimeBetweenAndStatusNot(
+                    DOCTOR_ID,
+                    WEDNESDAY.atStartOfDay(),
+                    WEDNESDAY.plusDays(30).atTime(LocalTime.MAX),
+                    AppointmentStatus.CANCELLED
+            );
             verify(doctorAvailabilityRepository, never()).findByDoctorIdAndDayOfWeekAndActiveTrue(anyLong(), any());
             verify(scheduleExceptionRepository, never()).findByDoctorIdAndDate(anyLong(), any());
         }
@@ -407,7 +413,8 @@ class DoctorAvailabilityServiceImplTest {
             assertThat(response.availableSlots())
                     .containsExactly(
                             new SlotResponse(NINE_THIRTY, TEN),
-                            new SlotResponse(LocalTime.of(10, 30), LocalTime.of(11, 0)));
+                            new SlotResponse(LocalTime.of(10, 30), LocalTime.of(11, 0))
+                    );
         }
 
         @Test

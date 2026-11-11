@@ -38,7 +38,6 @@ import com.example.scheduler.exception.ResourceNotFoundException;
 import com.example.scheduler.mapper.AppointmentMapper;
 import com.example.scheduler.notification.event.AppointmentNotificationEvent;
 import com.example.scheduler.notification.event.AppointmentNotificationType;
-import com.example.scheduler.notification.event.NotificationChannel;
 import com.example.scheduler.repository.AppointmentRepository;
 import com.example.scheduler.repository.DoctorAvailabilityRepository;
 import com.example.scheduler.repository.PatientRepository;
@@ -129,7 +128,8 @@ class AppointmentServiceImplTest {
                 currentClinicProvider,
                 eventPublisher,
                 messageSource,
-                CLOCK);
+                CLOCK
+        );
     }
 
     @AfterEach
@@ -159,8 +159,11 @@ class AppointmentServiceImplTest {
 
     private void givenExistingActive(Appointment existing) {
         when(appointmentRepository.findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
-                anyLong(), anyLong(), any(), any()))
-                .thenReturn(Optional.of(existing));
+                anyLong(),
+                anyLong(),
+                any(),
+                any()
+        )).thenReturn(Optional.of(existing));
     }
 
     private void givenSaveAssignsId() {
@@ -173,7 +176,20 @@ class AppointmentServiceImplTest {
 
     private AppointmentResponse givenMapperResponse() {
         var response = new AppointmentResponse(
-                SAVED_ID, FUTURE_START, null, DOCTOR_ID, null, null, null, PATIENT_ID, null, null, null, null, null);
+                SAVED_ID,
+                FUTURE_START,
+                null,
+                DOCTOR_ID,
+                null,
+                null,
+                null,
+                PATIENT_ID,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
         when(appointmentMapper.toResponse(any(Appointment.class))).thenReturn(response);
         return response;
     }
@@ -214,7 +230,11 @@ class AppointmentServiceImplTest {
     }
 
     private static <T extends ApiException> T assertApiException(
-            ThrowingCallable call, Class<T> type, String messageKey, Object... args) {
+            ThrowingCallable call,
+            Class<T> type,
+            String messageKey,
+            Object... args
+    ) {
         var thrown = catchThrowable(call);
         assertThat(thrown).isInstanceOf(type);
         var ex = type.cast(thrown);
@@ -252,7 +272,12 @@ class AppointmentServiceImplTest {
     }
 
     private static Appointment appointment(
-            Long id, Personal doctor, Patient patient, LocalDateTime start, AppointmentStatus status) {
+            Long id,
+            Personal doctor,
+            Patient patient,
+            LocalDateTime start,
+            AppointmentStatus status
+    ) {
         return Appointment.builder()
                 .id(id)
                 .doctor(doctor)
@@ -305,7 +330,10 @@ class AppointmentServiceImplTest {
             assertThat(saved.getCreatedAt()).isEqualTo(NOW);
             assertThat(publishedEvents())
                     .containsExactly(new AppointmentChangedEvent(
-                            CLINIC_ID, DOCTOR_ID, new BoardEvent(SAVED_ID, AppointmentStatus.PENDING)));
+                            CLINIC_ID,
+                            DOCTOR_ID,
+                            new BoardEvent(SAVED_ID, AppointmentStatus.PENDING)
+                    ));
         }
 
         @Test
@@ -317,13 +345,13 @@ class AppointmentServiceImplTest {
 
             service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false);
 
-            verify(appointmentRepository)
-                    .existsOverlappingAppointment(
-                            DOCTOR_ID,
-                            FUTURE_START,
-                            FUTURE_START.plusMinutes(30),
-                            List.of(AppointmentStatus.CANCELLED),
-                            null);
+            verify(appointmentRepository).existsOverlappingAppointment(
+                    DOCTOR_ID,
+                    FUTURE_START,
+                    FUTURE_START.plusMinutes(30),
+                    List.of(AppointmentStatus.CANCELLED),
+                    null
+            );
         }
 
         @Test
@@ -331,7 +359,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(OTHER_DOCTOR_ID, FUTURE_START), DOCTOR_ID, true),
                     ForbiddenException.class,
-                    MessageKeys.APPOINTMENT_UNAUTHORIZED);
+                    MessageKeys.APPOINTMENT_UNAUTHORIZED
+            );
 
             verifyNoInteractions(personalRepository, appointmentRepository);
         }
@@ -370,7 +399,8 @@ class AppointmentServiceImplTest {
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     ResourceNotFoundException.class,
                     MessageKeys.PERSONAL_DOCTOR_NOT_FOUND,
-                    DOCTOR_ID);
+                    DOCTOR_ID
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -382,7 +412,8 @@ class AppointmentServiceImplTest {
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BadRequestException.class,
                     MessageKeys.PERSONAL_DOCTOR_NOT_FOUND,
-                    DOCTOR_ID);
+                    DOCTOR_ID
+            );
         }
 
         @Test
@@ -393,7 +424,8 @@ class AppointmentServiceImplTest {
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BadRequestException.class,
                     MessageKeys.PERSONAL_DOCTOR_NOT_FOUND,
-                    DOCTOR_ID);
+                    DOCTOR_ID
+            );
         }
 
         @Test
@@ -405,7 +437,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
+                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -416,7 +449,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, NOW.minusMinutes(1)), 1L, false),
                     BadRequestException.class,
-                    MessageKeys.APPOINTMENT_PAST_DATE);
+                    MessageKeys.APPOINTMENT_PAST_DATE
+            );
         }
 
         @Test
@@ -438,7 +472,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -449,7 +484,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START.withMinute(10)), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -460,7 +496,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START.withHour(12)), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -471,7 +508,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START.withHour(7)), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -483,7 +521,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -505,12 +544,14 @@ class AppointmentServiceImplTest {
             givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
             when(scheduleExceptionRepository.findByDoctorIdAndDate(DOCTOR_ID, FUTURE_START.toLocalDate()))
                     .thenReturn(List.of(
-                            ScheduleException.builder().isFullDayBlock(true).build()));
+                            ScheduleException.builder().isFullDayBlock(true).build()
+                    ));
 
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
+                    MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -538,7 +579,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED);
+                    MessageKeys.APPOINTMENT_SCHEDULE_BLOCKED
+            );
         }
 
         @Test
@@ -546,13 +588,18 @@ class AppointmentServiceImplTest {
             givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
             givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
             when(appointmentRepository.existsOverlappingAppointment(
-                    eq(DOCTOR_ID), eq(FUTURE_START), any(), any(), isNull()))
-                    .thenReturn(true);
+                    eq(DOCTOR_ID),
+                    eq(FUTURE_START),
+                    any(),
+                    any(),
+                    isNull()
+            )).thenReturn(true);
 
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_SLOT_TAKEN);
+                    MessageKeys.APPOINTMENT_SLOT_TAKEN
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -566,7 +613,8 @@ class AppointmentServiceImplTest {
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     ResourceNotFoundException.class,
                     MessageKeys.PATIENT_NOT_FOUND,
-                    PATIENT_ID);
+                    PATIENT_ID
+            );
         }
 
         @Test
@@ -578,7 +626,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_PATIENT_INACTIVE);
+                    MessageKeys.APPOINTMENT_PATIENT_INACTIVE
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -591,12 +640,12 @@ class AppointmentServiceImplTest {
 
             service.bookAppointment(request(DOCTOR_ID, FUTURE_START), 1L, false);
 
-            verify(appointmentRepository)
-                    .findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
-                            PATIENT_ID,
-                            DOCTOR_ID,
-                            List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
-                            NOW);
+            verify(appointmentRepository).findFirstByPatientIdAndDoctorIdAndStatusInAndStartTimeAfterOrderByStartTimeAsc(
+                    PATIENT_ID,
+                    DOCTOR_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            );
         }
 
         @Test
@@ -616,13 +665,15 @@ class AppointmentServiceImplTest {
                     MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE,
                     "15/11/2026",
                     "14:30",
-                    0);
+                    0
+            );
 
             assertThat(ex.getDetails())
                     .containsExactly(
                             entry("startTime", existingStart),
                             entry("appointmentId", 555L),
-                            entry("status", AppointmentStatus.PENDING));
+                            entry("status", AppointmentStatus.PENDING)
+                    );
             verify(appointmentRepository, never()).save(any());
             assertThat(publishedEvents()).isEmpty();
         }
@@ -643,7 +694,8 @@ class AppointmentServiceImplTest {
                     MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE,
                     "01/12/2026",
                     "08:05",
-                    1);
+                    1
+            );
 
             assertThat(ex.getStatus().value()).isEqualTo(409);
             assertThat(ex.getDetails()).containsEntry("status", AppointmentStatus.CONFIRMED);
@@ -680,7 +732,8 @@ class AppointmentServiceImplTest {
 
         @Test
         @DisplayName(
-                "should reject with guest key and only the start time when guest already has an active appointment")
+                "should reject with guest key and only the start time when guest already has an active appointment"
+        )
         void shouldThrowGuestConflictWithoutAppointmentStateWhenPatientHasActiveAppointment() {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             givenDoctorLocked(doctor);
@@ -695,7 +748,8 @@ class AppointmentServiceImplTest {
                     BusinessException.class,
                     MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST,
                     "15/11/2026",
-                    "14:30");
+                    "14:30"
+            );
 
             assertThat(ex.getDetails()).containsExactly(entry("startTime", existingStart));
             verify(appointmentRepository, never()).save(any());
@@ -710,7 +764,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.bookGuestAppointment(request(DOCTOR_ID, FUTURE_START)),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
+                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE
+            );
         }
     }
 
@@ -727,7 +782,8 @@ class AppointmentServiceImplTest {
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     ResourceNotFoundException.class,
                     MessageKeys.APPOINTMENT_NOT_FOUND,
-                    APPOINTMENT_ID);
+                    APPOINTMENT_ID
+            );
             verifyNoInteractions(personalRepository);
         }
 
@@ -740,7 +796,8 @@ class AppointmentServiceImplTest {
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     ResourceNotFoundException.class,
                     MessageKeys.PERSONAL_DOCTOR_NOT_FOUND,
-                    DOCTOR_ID);
+                    DOCTOR_ID
+            );
         }
 
         @Test
@@ -764,9 +821,14 @@ class AppointmentServiceImplTest {
 
             assertApiException(
                     () -> service.rescheduleAppointmentById(
-                            APPOINTMENT_ID, reschedule(FUTURE_START), OTHER_DOCTOR_ID, true),
+                            APPOINTMENT_ID,
+                            reschedule(FUTURE_START),
+                            OTHER_DOCTOR_ID,
+                            true
+                    ),
                     ForbiddenException.class,
-                    MessageKeys.APPOINTMENT_UNAUTHORIZED);
+                    MessageKeys.APPOINTMENT_UNAUTHORIZED
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -788,7 +850,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_RESCHEDULE_ONLY_ACTIVE);
+                    MessageKeys.APPOINTMENT_RESCHEDULE_ONLY_ACTIVE
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -797,13 +860,19 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             givenLockedDoctorFor(doctor);
             var started = appointment(
-                    APPOINTMENT_ID, doctor, patient(PATIENT_ID, true), NOW.minusMinutes(1), AppointmentStatus.PENDING);
+                    APPOINTMENT_ID,
+                    doctor,
+                    patient(PATIENT_ID, true),
+                    NOW.minusMinutes(1),
+                    AppointmentStatus.PENDING
+            );
             when(appointmentRepository.findById(APPOINTMENT_ID)).thenReturn(Optional.of(started));
 
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE);
+                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE
+            );
         }
 
         @Test
@@ -813,7 +882,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(CURRENT_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_RESCHEDULE_SAME_TIME);
+                    MessageKeys.APPOINTMENT_RESCHEDULE_SAME_TIME
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -824,7 +894,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(NOW.minusHours(1)), 1L, false),
                     BadRequestException.class,
-                    MessageKeys.APPOINTMENT_PAST_DATE);
+                    MessageKeys.APPOINTMENT_PAST_DATE
+            );
         }
 
         @Test
@@ -836,7 +907,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
+                    MessageKeys.APPOINTMENT_DOCTOR_INACTIVE
+            );
         }
 
         @Test
@@ -848,13 +920,14 @@ class AppointmentServiceImplTest {
                     FUTURE_START,
                     FUTURE_START.plusMinutes(30),
                     List.of(AppointmentStatus.CANCELLED),
-                    APPOINTMENT_ID))
-                    .thenReturn(true);
+                    APPOINTMENT_ID
+            )).thenReturn(true);
 
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_SLOT_TAKEN);
+                    MessageKeys.APPOINTMENT_SLOT_TAKEN
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -865,7 +938,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY);
+                    MessageKeys.APPOINTMENT_OUT_OF_JOURNEY
+            );
         }
 
         @Test
@@ -884,7 +958,10 @@ class AppointmentServiceImplTest {
             assertThat(saved.getStatus()).isEqualTo(AppointmentStatus.PENDING);
             assertThat(publishedEvents())
                     .containsExactly(new AppointmentChangedEvent(
-                            CLINIC_ID, DOCTOR_ID, new BoardEvent(APPOINTMENT_ID, AppointmentStatus.PENDING)));
+                            CLINIC_ID,
+                            DOCTOR_ID,
+                            new BoardEvent(APPOINTMENT_ID, AppointmentStatus.PENDING)
+                    ));
             verifyNoInteractions(currentClinicProvider);
         }
 
@@ -959,7 +1036,10 @@ class AppointmentServiceImplTest {
             assertThat(notification.channels()).isEqualTo(AppointmentNotificationEvent.ALL_CHANNELS);
             assertThat(publishedEvents())
                     .contains(new AppointmentChangedEvent(
-                            CLINIC_ID, DOCTOR_ID, new BoardEvent(APPOINTMENT_ID, AppointmentStatus.CONFIRMED)));
+                            CLINIC_ID,
+                            DOCTOR_ID,
+                            new BoardEvent(APPOINTMENT_ID, AppointmentStatus.CONFIRMED)
+                    ));
         }
 
         @Test
@@ -981,7 +1061,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.confirmAppointmentById(APPOINTMENT_ID, 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_CONFIRM_ONLY_PENDING);
+                    MessageKeys.APPOINTMENT_CONFIRM_ONLY_PENDING
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -992,7 +1073,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.confirmAppointmentById(APPOINTMENT_ID, 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE);
+                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE
+            );
         }
 
         @Test
@@ -1002,7 +1084,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.confirmAppointmentById(APPOINTMENT_ID, OTHER_DOCTOR_ID, true),
                     ForbiddenException.class,
-                    MessageKeys.APPOINTMENT_UNAUTHORIZED);
+                    MessageKeys.APPOINTMENT_UNAUTHORIZED
+            );
         }
 
         @Test
@@ -1013,7 +1096,8 @@ class AppointmentServiceImplTest {
                     () -> service.confirmAppointmentById(APPOINTMENT_ID, 1L, false),
                     ResourceNotFoundException.class,
                     MessageKeys.APPOINTMENT_NOT_FOUND,
-                    APPOINTMENT_ID);
+                    APPOINTMENT_ID
+            );
         }
     }
 
@@ -1045,7 +1129,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.cancelAppointmentById(APPOINTMENT_ID, new CancelAppointmentRequest("x"), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_ALREADY_CANCELLED);
+                    MessageKeys.APPOINTMENT_ALREADY_CANCELLED
+            );
             verify(appointmentRepository, never()).save(any());
         }
 
@@ -1056,7 +1141,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.cancelAppointmentById(APPOINTMENT_ID, new CancelAppointmentRequest("x"), 1L, false),
                     BusinessException.class,
-                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE);
+                    MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE
+            );
         }
 
         @Test
@@ -1076,9 +1162,14 @@ class AppointmentServiceImplTest {
 
             assertApiException(
                     () -> service.cancelAppointmentById(
-                            APPOINTMENT_ID, new CancelAppointmentRequest("x"), OTHER_DOCTOR_ID, true),
+                            APPOINTMENT_ID,
+                            new CancelAppointmentRequest("x"),
+                            OTHER_DOCTOR_ID,
+                            true
+                    ),
                     ForbiddenException.class,
-                    MessageKeys.APPOINTMENT_UNAUTHORIZED);
+                    MessageKeys.APPOINTMENT_UNAUTHORIZED
+            );
         }
     }
 
@@ -1092,10 +1183,18 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var first = appointment(1L, doctor, patient(PATIENT_ID, true), from, AppointmentStatus.PENDING);
             var second = appointment(
-                    2L, doctor, patient(PATIENT_ID, true), from.plusMinutes(30), AppointmentStatus.CONFIRMED);
+                    2L,
+                    doctor,
+                    patient(PATIENT_ID, true),
+                    from.plusMinutes(30),
+                    AppointmentStatus.CONFIRMED
+            );
             when(appointmentRepository.findOverlappingAppointments(
-                    DOCTOR_ID, from, to, List.of(AppointmentStatus.CANCELLED)))
-                    .thenReturn(List.of(first, second));
+                    DOCTOR_ID,
+                    from,
+                    to,
+                    List.of(AppointmentStatus.CANCELLED)
+            )).thenReturn(List.of(first, second));
             givenSaveAssignsId();
             givenClinic();
 
@@ -1113,7 +1212,11 @@ class AppointmentServiceImplTest {
         @Test
         void shouldReturnZeroWithoutLoadingClinicWhenNothingToCancel() {
             var cancelled = service.cancelDoctorAppointmentsInRange(
-                    DOCTOR_ID, FUTURE_START, FUTURE_START.plusHours(1), "Bloqueo");
+                    DOCTOR_ID,
+                    FUTURE_START,
+                    FUTURE_START.plusHours(1),
+                    "Bloqueo"
+            );
 
             assertThat(cancelled).isZero();
             verifyNoInteractions(currentClinicProvider);
@@ -1125,13 +1228,15 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var upcoming = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             when(appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                    DOCTOR_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
-                    .thenReturn(List.of(upcoming));
+                    DOCTOR_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            )).thenReturn(List.of(upcoming));
             when(messageSource.getMessage(
                     eq(MessageKeys.APPOINTMENT_DOCTOR_DEACTIVATED_CANCELLATION_REASON),
                     isNull(),
-                    any(Locale.class)))
-                    .thenReturn("Doctor no disponible");
+                    any(Locale.class)
+            )).thenReturn("Doctor no disponible");
             givenSaveAssignsId();
             givenClinic();
 
@@ -1149,8 +1254,10 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var upcoming = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             when(appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                            DOCTOR_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
-                    .thenReturn(List.of(upcoming));
+                    DOCTOR_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            )).thenReturn(List.of(upcoming));
             givenSaveAssignsId();
             givenClinic();
 
@@ -1171,13 +1278,16 @@ class AppointmentServiceImplTest {
             var first = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             var second = appointment(2L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.CONFIRMED);
             when(appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                            DOCTOR_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
-                    .thenReturn(List.of(first), List.of(second));
+                    DOCTOR_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            )).thenReturn(List.of(first))
+                    .thenReturn(List.of(second));
             when(messageSource.getMessage(
-                            eq(MessageKeys.APPOINTMENT_DOCTOR_MODE_DISABLED_CANCELLATION_REASON),
-                            isNull(),
-                            any(Locale.class)))
-                    .thenReturn("Por defecto");
+                    eq(MessageKeys.APPOINTMENT_DOCTOR_MODE_DISABLED_CANCELLATION_REASON),
+                    isNull(),
+                    any(Locale.class)
+            )).thenReturn("Por defecto");
             givenSaveAssignsId();
             givenClinic();
 
@@ -1203,13 +1313,15 @@ class AppointmentServiceImplTest {
             var upcoming =
                     appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.CONFIRMED);
             when(appointmentRepository.findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                    PATIENT_ID, List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED), NOW))
-                    .thenReturn(List.of(upcoming));
+                    PATIENT_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            )).thenReturn(List.of(upcoming));
             when(messageSource.getMessage(
                     eq(MessageKeys.APPOINTMENT_PATIENT_DEACTIVATED_CANCELLATION_REASON),
                     isNull(),
-                    any(Locale.class)))
-                    .thenReturn("Paciente desactivado");
+                    any(Locale.class)
+            )).thenReturn("Paciente desactivado");
             givenSaveAssignsId();
             givenClinic();
 
@@ -1241,7 +1353,8 @@ class AppointmentServiceImplTest {
             assertApiException(
                     () -> service.findAppointmentById(APPOINTMENT_ID, OTHER_DOCTOR_ID, true),
                     ForbiddenException.class,
-                    MessageKeys.APPOINTMENT_UNAUTHORIZED);
+                    MessageKeys.APPOINTMENT_UNAUTHORIZED
+            );
         }
 
         @Test
@@ -1252,7 +1365,8 @@ class AppointmentServiceImplTest {
                     doctor(DOCTOR_ID, ERole.DOCTOR),
                     patient(PATIENT_ID, true),
                     FUTURE_START,
-                    AppointmentStatus.PENDING);
+                    AppointmentStatus.PENDING
+            );
             when(appointmentRepository.findAllByFilters(null, null, null, pageable))
                     .thenReturn(new PageImpl<>(List.of(appointment), pageable, 1));
             var response = givenMapperResponse();
@@ -1273,8 +1387,8 @@ class AppointmentServiceImplTest {
                     DOCTOR_ID,
                     null,
                     from.atStartOfDay(),
-                    LocalDate.of(2026, 11, 11).atStartOfDay()))
-                    .thenReturn(List.of(pending));
+                    LocalDate.of(2026, 11, 11).atStartOfDay()
+            )).thenReturn(List.of(pending));
 
             var board = service.getBoardByRange(from, to, DOCTOR_ID, null);
 
@@ -1292,7 +1406,8 @@ class AppointmentServiceImplTest {
                             FUTURE_START.plusMinutes(30),
                             AppointmentStatus.PENDING,
                             DOCTOR_ID,
-                            PATIENT_ID));
+                            PATIENT_ID
+                    ));
         }
 
         @Test
@@ -1300,12 +1415,25 @@ class AppointmentServiceImplTest {
             var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
             var first = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
             var second = appointment(
-                    2L, doctor, patient(PATIENT_ID, true), FUTURE_START.plusHours(1), AppointmentStatus.CONFIRMED);
+                    2L,
+                    doctor,
+                    patient(PATIENT_ID, true),
+                    FUTURE_START.plusHours(1),
+                    AppointmentStatus.CONFIRMED
+            );
             var third = appointment(
-                    3L, doctor, patient(PATIENT_ID, true), FUTURE_START.plusDays(1), AppointmentStatus.PENDING);
+                    3L,
+                    doctor,
+                    patient(PATIENT_ID, true),
+                    FUTURE_START.plusDays(1),
+                    AppointmentStatus.PENDING
+            );
             when(appointmentRepository.findByFiltersAndDateRange(
-                    null, PATIENT_ID, LocalDateTime.of(2026, 11, 1, 0, 0), LocalDateTime.of(2026, 12, 1, 0, 0)))
-                    .thenReturn(List.of(first, second, third));
+                    null,
+                    PATIENT_ID,
+                    LocalDateTime.of(2026, 11, 1, 0, 0),
+                    LocalDateTime.of(2026, 12, 1, 0, 0)
+            )).thenReturn(List.of(first, second, third));
 
             var calendar = service.getCalendar(11, 2026, null, PATIENT_ID);
 
@@ -1319,9 +1447,12 @@ class AppointmentServiceImplTest {
         void shouldQueryUntilNextYearWhenCalendarMonthIsDecember() {
             service.getCalendar(12, 2026, DOCTOR_ID, null);
 
-            verify(appointmentRepository)
-                    .findByFiltersAndDateRange(
-                            DOCTOR_ID, null, LocalDateTime.of(2026, 12, 1, 0, 0), LocalDateTime.of(2027, 1, 1, 0, 0));
+            verify(appointmentRepository).findByFiltersAndDateRange(
+                    DOCTOR_ID,
+                    null,
+                    LocalDateTime.of(2026, 12, 1, 0, 0),
+                    LocalDateTime.of(2027, 1, 1, 0, 0)
+            );
         }
     }
 }
