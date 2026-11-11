@@ -89,7 +89,8 @@ class PersonalServiceImplTest {
                 appointmentRepository,
                 doctorAvailabilityRepository,
                 eventPublisher,
-                CLOCK);
+                CLOCK
+        );
     }
 
     private Personal admin(boolean alsoDoctor) {
@@ -105,7 +106,8 @@ class PersonalServiceImplTest {
                                         .id(SPECIALTY_ID)
                                         .name("Cardio")
                                         .build()
-                                : null)
+                                : null
+                )
                 .build();
     }
 
@@ -141,7 +143,8 @@ class PersonalServiceImplTest {
             givenActiveAppointments(3);
 
             var thrown = catchThrowable(
-                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, false, "motivo")));
+                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, false, "motivo"))
+            );
 
             assertThat(thrown).isInstanceOf(BusinessException.class);
             var ex = (BusinessException) thrown;
@@ -158,7 +161,8 @@ class PersonalServiceImplTest {
             givenActiveAppointments(1);
 
             var thrown = catchThrowable(
-                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, null, null)));
+                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, null, null))
+            );
 
             assertThat(thrown).isInstanceOf(BusinessException.class);
             verifyNoInteractions(appointmentService);
@@ -213,7 +217,8 @@ class PersonalServiceImplTest {
             givenPersonal(doctor);
 
             var thrown = catchThrowable(
-                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, true, null)));
+                    () -> service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(false, null, true, null))
+            );
 
             assertThat(thrown).isInstanceOf(ForbiddenException.class);
             verifyNoInteractions(appointmentService, appointmentRepository);
@@ -245,8 +250,10 @@ class PersonalServiceImplTest {
             var doctor = Personal.builder().id(9L).role(ERole.DOCTOR).build();
             when(personalRepository.findByIdForUpdate(9L)).thenReturn(Optional.of(doctor));
             when(appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(
-                            9L, AppointmentStatus.CANCELLED, NOW))
-                    .thenReturn(false);
+                    9L,
+                    AppointmentStatus.CANCELLED,
+                    NOW
+            )).thenReturn(false);
             when(doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(9L)).thenReturn(true);
             var request = new PersonalUpdateRequest("Dr", "dr@mail.test", null, null, ERole.ASSISTANT, null);
 

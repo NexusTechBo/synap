@@ -107,7 +107,8 @@ class BrevoMailTransportTest {
         void shouldRethrowAsMailDeliveryExceptionWithBrevoMessageWhenBodyIsJsonError() {
             var error = clientError(HttpStatus.UNAUTHORIZED, UNAUTHORIZED_BODY);
             error.setBodyConvertFunction(
-                    convertTo(BrevoErrorResponse.class, new BrevoErrorResponse("unauthorized", "Key not found")));
+                    convertTo(BrevoErrorResponse.class, new BrevoErrorResponse("unauthorized", "Key not found"))
+            );
             when(brevoExchange.sendEmail(any())).thenThrow(error);
 
             var thrown = catchThrowableOfType(MailDeliveryException.class, () -> transport.send(EMAIL));
@@ -125,7 +126,8 @@ class BrevoMailTransportTest {
                     "Bad Gateway",
                     new HttpHeaders(),
                     "<html>upstream down</html>".getBytes(StandardCharsets.UTF_8),
-                    StandardCharsets.UTF_8);
+                    StandardCharsets.UTF_8
+            );
             error.setBodyConvertFunction(_ -> {
                 throw new IllegalStateException("not JSON");
             });
@@ -356,7 +358,8 @@ class BrevoMailTransportTest {
                 status.getReasonPhrase(),
                 new HttpHeaders(),
                 body.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8);
+                StandardCharsets.UTF_8
+        );
     }
 
     private static Function<ResolvableType, Object> convertTo(Class<?> type, Object value) {

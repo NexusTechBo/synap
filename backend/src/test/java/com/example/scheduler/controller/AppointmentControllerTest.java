@@ -136,7 +136,8 @@ class AppointmentControllerTest {
                 "ana@mail.test",
                 status,
                 null,
-                LocalDateTime.of(2026, 11, 1, 8, 0));
+                LocalDateTime.of(2026, 11, 1, 8, 0)
+        );
     }
 
     @TestConfiguration
@@ -148,8 +149,11 @@ class AppointmentControllerTest {
         @Test
         void shouldReturnOkWithBodyWhenAdministratorReschedules() throws Exception {
             when(appointmentService.rescheduleAppointmentById(
-                            eq(30L), any(RescheduleAppointmentRequest.class), anyLong(), anyBoolean()))
-                    .thenReturn(response(30L, START, AppointmentStatus.PENDING));
+                    eq(30L),
+                    any(RescheduleAppointmentRequest.class),
+                    anyLong(),
+                    anyBoolean()
+            )).thenReturn(response(30L, START, AppointmentStatus.PENDING));
 
             mvc.perform(as(ADMIN_TOKEN, patch("/api/appointments/30/reschedule"))
                             .contentType(MediaType.APPLICATION_JSON)
@@ -160,8 +164,12 @@ class AppointmentControllerTest {
                     .andExpect(jsonPath("$.status").value("PENDING"))
                     .andExpect(jsonPath("$.doctorId").value(DOCTOR_ID));
 
-            verify(appointmentService)
-                    .rescheduleAppointmentById(30L, new RescheduleAppointmentRequest(START), ADMIN_ID, false);
+            verify(appointmentService).rescheduleAppointmentById(
+                    30L,
+                    new RescheduleAppointmentRequest(START),
+                    ADMIN_ID,
+                    false
+            );
         }
 
         @Test
@@ -171,8 +179,12 @@ class AppointmentControllerTest {
                             .content("{\"startTime\":\"2026-11-10T09:00:00\"}"))
                     .andExpect(status().isOk());
 
-            verify(appointmentService)
-                    .rescheduleAppointmentById(30L, new RescheduleAppointmentRequest(START), DOCTOR_ID, true);
+            verify(appointmentService).rescheduleAppointmentById(
+                    30L,
+                    new RescheduleAppointmentRequest(START),
+                    DOCTOR_ID,
+                    true
+            );
         }
 
         @Test
@@ -182,8 +194,12 @@ class AppointmentControllerTest {
                             .content("{\"startTime\":\"2026-11-10T09:00:00\"}"))
                     .andExpect(status().isOk());
 
-            verify(appointmentService)
-                    .rescheduleAppointmentById(30L, new RescheduleAppointmentRequest(START), ADMIN_DOCTOR_ID, false);
+            verify(appointmentService).rescheduleAppointmentById(
+                    30L,
+                    new RescheduleAppointmentRequest(START),
+                    ADMIN_DOCTOR_ID,
+                    false
+            );
         }
 
         @Test
@@ -193,8 +209,12 @@ class AppointmentControllerTest {
                             .content("{\"startTime\":\"2026-11-10T09:00:00\"}"))
                     .andExpect(status().isOk());
 
-            verify(appointmentService)
-                    .rescheduleAppointmentById(30L, new RescheduleAppointmentRequest(START), ASSISTANT_ID, false);
+            verify(appointmentService).rescheduleAppointmentById(
+                    30L,
+                    new RescheduleAppointmentRequest(START),
+                    ASSISTANT_ID,
+                    false
+            );
         }
 
         @Test
@@ -351,7 +371,8 @@ class AppointmentControllerTest {
 
         @Test
         @DisplayName(
-                "should return 409 with code, Spanish message and details when patient already has an active appointment")
+                "should return 409 with code, Spanish message and details when patient already has an active appointment"
+        )
         void shouldReturnConflictWithDetailsWhenPatientHasActiveAppointment() throws Exception {
             var details = new LinkedHashMap<String, Object>();
             details.put("startTime", LocalDateTime.of(2026, 11, 15, 14, 30));
@@ -359,7 +380,10 @@ class AppointmentControllerTest {
             details.put("status", AppointmentStatus.CONFIRMED);
             when(appointmentService.bookAppointment(any(), anyLong(), anyBoolean()))
                     .thenThrow(BusinessException.withDetails(
-                            details, MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE, "15/11/2026", "14:30", 1));
+                            details,
+                            MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE,
+                            "15/11/2026", "14:30", 1
+                    ));
 
             mvc.perform(as(ADMIN_TOKEN, post("/api/appointments"))
                             .contentType(MediaType.APPLICATION_JSON)
@@ -368,8 +392,8 @@ class AppointmentControllerTest {
                     .andExpect(jsonPath("$.code").value("appointment.patientHasActive"))
                     .andExpect(
                             jsonPath("$.message")
-                                    .value(
-                                            "El paciente ya tiene una cita confirmada con este doctor el 15/11/2026 a las 14:30."))
+                                    .value("El paciente ya tiene una cita confirmada con este doctor el 15/11/2026 a las 14:30.")
+                    )
                     .andExpect(jsonPath("$.details.startTime").value("2026-11-15T14:30:00"))
                     .andExpect(jsonPath("$.details.appointmentId").value(555))
                     .andExpect(jsonPath("$.details.status").value("CONFIRMED"));
@@ -412,8 +436,12 @@ class AppointmentControllerTest {
                             .content("{\"reason\":\"  Viaje  \"}"))
                     .andExpect(status().isOk());
 
-            verify(appointmentService)
-                    .cancelAppointmentById(30L, new CancelAppointmentRequest("Viaje"), ADMIN_ID, false);
+            verify(appointmentService).cancelAppointmentById(
+                    30L,
+                    new CancelAppointmentRequest("Viaje"),
+                    ADMIN_ID,
+                    false
+            );
         }
 
         @Test
@@ -431,7 +459,10 @@ class AppointmentControllerTest {
         void shouldPassFiltersPaginationAndSortingWhenListing() throws Exception {
             when(appointmentService.findAllAppointments(any(), any(), any(), any()))
                     .thenReturn(new PageImpl<>(
-                            List.of(response(1L, START, AppointmentStatus.PENDING)), PageRequest.of(1, 5), 6));
+                            List.of(response(1L, START, AppointmentStatus.PENDING)),
+                            PageRequest.of(1, 5),
+                            6
+                    ));
 
             mvc.perform(as(ADMIN_TOKEN, get("/api/appointments"))
                             .param("doctorId", "10")
@@ -445,8 +476,11 @@ class AppointmentControllerTest {
                     .andExpect(jsonPath("$.page.totalElements").value(6));
 
             var pageable = ArgumentCaptor.forClass(Pageable.class);
-            verify(appointmentService)
-                    .findAllAppointments(eq(10L), eq(20L), eq(AppointmentStatus.CONFIRMED), pageable.capture());
+            verify(appointmentService).findAllAppointments(
+                    eq(10L), eq(20L),
+                    eq(AppointmentStatus.CONFIRMED),
+                    pageable.capture()
+            );
             assertThat(pageable.getValue().getPageNumber()).isEqualTo(1);
             assertThat(pageable.getValue().getPageSize()).isEqualTo(5);
             assertThat(pageable.getValue().getSort()).isEqualTo(Sort.by(Sort.Direction.DESC, "endTime"));
@@ -480,7 +514,8 @@ class AppointmentControllerTest {
             mvc.perform(as(ADMIN_TOKEN, get("/api/appointments")).param("status", "DONE"))
                     .andExpect(status().isBadRequest())
                     .andExpect(
-                            jsonPath("$.message").value("El valor ingresado para el parámetro 'status' no es válido."));
+                            jsonPath("$.message").value("El valor ingresado para el parámetro 'status' no es válido.")
+                    );
         }
 
         @Test
@@ -493,8 +528,12 @@ class AppointmentControllerTest {
                             .param("patientId", "20"))
                     .andExpect(status().isOk());
 
-            verify(appointmentService)
-                    .getBoardByRange(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30), DOCTOR_ID, 20L);
+            verify(appointmentService).getBoardByRange(
+                    LocalDate.of(2026, 11, 1),
+                    LocalDate.of(2026, 11, 30),
+                    DOCTOR_ID,
+                    20L
+            );
         }
 
         @Test

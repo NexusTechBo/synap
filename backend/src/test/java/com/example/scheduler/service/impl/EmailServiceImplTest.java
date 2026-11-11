@@ -86,7 +86,8 @@ class EmailServiceImplTest {
         @Test
         void shouldSendConfirmationToPatientWhenRecipientPresent() {
             emailService.sendAppointmentConfirmed(
-                    appointmentEvent(AppointmentNotificationType.CONFIRMED, PATIENT_EMAIL));
+                    appointmentEvent(AppointmentNotificationType.CONFIRMED, PATIENT_EMAIL)
+            );
 
             var sent = captureSent();
             assertThat(sent.to()).isEqualTo(PATIENT_EMAIL);
@@ -112,7 +113,8 @@ class EmailServiceImplTest {
         @Test
         void shouldSendCancellationWithReasonToPatientWhenRecipientPresent() {
             emailService.sendAppointmentCancelled(
-                    appointmentEvent(AppointmentNotificationType.CANCELLED, PATIENT_EMAIL, "Doctor no disponible"));
+                    appointmentEvent(AppointmentNotificationType.CANCELLED, PATIENT_EMAIL, "Doctor no disponible")
+            );
 
             var sent = captureSent();
             assertThat(sent.to()).isEqualTo(PATIENT_EMAIL);
@@ -133,7 +135,8 @@ class EmailServiceImplTest {
         @Test
         void shouldSendRescheduleToPatientWhenRecipientPresent() {
             emailService.sendAppointmentRescheduled(
-                    appointmentEvent(AppointmentNotificationType.RESCHEDULED, PATIENT_EMAIL));
+                    appointmentEvent(AppointmentNotificationType.RESCHEDULED, PATIENT_EMAIL)
+            );
 
             var sent = captureSent();
             assertThat(sent.to()).isEqualTo(PATIENT_EMAIL);
@@ -210,7 +213,8 @@ class EmailServiceImplTest {
             doThrow(new IllegalStateException("boom")).when(mailTransport).send(any());
 
             assertThatCode(() -> emailService.sendAppointmentConfirmed(
-                    appointmentEvent(AppointmentNotificationType.CONFIRMED, PATIENT_EMAIL)))
+                    appointmentEvent(AppointmentNotificationType.CONFIRMED, PATIENT_EMAIL)
+            ))
                     .doesNotThrowAnyException();
         }
 
@@ -232,7 +236,8 @@ class EmailServiceImplTest {
                     null,
                     null,
                     null,
-                    AppointmentNotificationEvent.ALL_CHANNELS);
+                    AppointmentNotificationEvent.ALL_CHANNELS
+            );
 
             assertThatCode(() -> emailService.sendAppointmentConfirmed(event)).doesNotThrowAnyException();
             verifyNoInteractions(mailTransport);
@@ -248,7 +253,10 @@ class EmailServiceImplTest {
     }
 
     private static AppointmentNotificationEvent appointmentEvent(
-            AppointmentNotificationType type, String email, String cancellationReason) {
+            AppointmentNotificationType type,
+            String email,
+            String cancellationReason
+    ) {
         return new AppointmentNotificationEvent(
                 type,
                 AppointmentStatus.CONFIRMED,
@@ -264,7 +272,8 @@ class EmailServiceImplTest {
                 START,
                 START.plusMinutes(30),
                 cancellationReason,
-                AppointmentNotificationEvent.ALL_CHANNELS);
+                AppointmentNotificationEvent.ALL_CHANNELS
+        );
     }
 
     private static ClinicActivationEvent activationEvent(String email) {

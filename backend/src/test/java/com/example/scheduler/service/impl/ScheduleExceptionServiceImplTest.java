@@ -86,7 +86,8 @@ class ScheduleExceptionServiceImplTest {
                 appointmentService,
                 mapper,
                 CLOCK,
-                messageSource);
+                messageSource
+        );
     }
 
     private Personal givenDoctor() {
@@ -110,7 +111,10 @@ class ScheduleExceptionServiceImplTest {
     }
 
     private static <T extends ApiException> T assertApiException(
-            ThrowingCallable call, Class<T> type, String messageKey) {
+            ThrowingCallable call,
+            Class<T> type,
+            String messageKey
+    ) {
         var thrown = catchThrowable(call);
         assertThat(thrown).isInstanceOf(type);
         var ex = type.cast(thrown);
@@ -127,7 +131,8 @@ class ScheduleExceptionServiceImplTest {
             var ex = assertApiException(
                     () -> service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, null)),
                     ResourceNotFoundException.class,
-                    MessageKeys.PERSONAL_DOCTOR_NOT_FOUND);
+                    MessageKeys.PERSONAL_DOCTOR_NOT_FOUND
+            );
 
             assertThat(ex.getArgs()).containsExactly(DOCTOR_ID);
             verify(scheduleExceptionRepository, never()).save(any());
@@ -140,7 +145,8 @@ class ScheduleExceptionServiceImplTest {
             assertApiException(
                     () -> service.addDoctorScheduleException(DOCTOR_ID, fullDay(TODAY.minusDays(1), null, null)),
                     BadRequestException.class,
-                    MessageKeys.SCHEDULE_EXCEPTION_DATE_PAST);
+                    MessageKeys.SCHEDULE_EXCEPTION_DATE_PAST
+            );
             verify(scheduleExceptionRepository, never()).save(any());
             verifyNoInteractions(appointmentRepository);
         }
@@ -152,7 +158,13 @@ class ScheduleExceptionServiceImplTest {
             var response = new ScheduleExceptionResponse(1L, FUTURE_DATE, null, null, true, "Congreso");
             when(mapper.toResponse(any(ScheduleException.class))).thenReturn(response);
             var request = new ScheduleExceptionRequest(
-                    FUTURE_DATE, LocalTime.of(9, 0), LocalTime.of(10, 0), true, "Congreso", null);
+                    FUTURE_DATE,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(10, 0),
+                    true,
+                    "Congreso",
+                    null
+            );
 
             var result = service.addDoctorScheduleException(DOCTOR_ID, request);
 
@@ -164,12 +176,12 @@ class ScheduleExceptionServiceImplTest {
             assertThat(saved.getStartTime()).isNull();
             assertThat(saved.getEndTime()).isNull();
             assertThat(saved.getReason()).isEqualTo("Congreso");
-            verify(appointmentRepository)
-                    .countOverlappingAppointments(
-                            DOCTOR_ID,
-                            FUTURE_DATE.atStartOfDay(),
-                            FUTURE_DATE.plusDays(1).atStartOfDay(),
-                            EXCLUDED);
+            verify(appointmentRepository).countOverlappingAppointments(
+                    DOCTOR_ID,
+                    FUTURE_DATE.atStartOfDay(),
+                    FUTURE_DATE.plusDays(1).atStartOfDay(),
+                    EXCLUDED
+            );
             verifyNoInteractions(appointmentService);
         }
 
@@ -178,7 +190,13 @@ class ScheduleExceptionServiceImplTest {
             givenDoctor();
             givenSaveReturnsArgument();
             var request = new ScheduleExceptionRequest(
-                    FUTURE_DATE, LocalTime.of(9, 0), LocalTime.of(11, 0), false, null, null);
+                    FUTURE_DATE,
+                    LocalTime.of(9, 0),
+                    LocalTime.of(11, 0),
+                    false,
+                    null,
+                    null
+            );
 
             service.addDoctorScheduleException(DOCTOR_ID, request);
 
@@ -186,9 +204,12 @@ class ScheduleExceptionServiceImplTest {
             assertThat(saved.getIsFullDayBlock()).isFalse();
             assertThat(saved.getStartTime()).isEqualTo(LocalTime.of(9, 0));
             assertThat(saved.getEndTime()).isEqualTo(LocalTime.of(11, 0));
-            verify(appointmentRepository)
-                    .countOverlappingAppointments(
-                            DOCTOR_ID, FUTURE_DATE.atTime(9, 0), FUTURE_DATE.atTime(11, 0), EXCLUDED);
+            verify(appointmentRepository).countOverlappingAppointments(
+                    DOCTOR_ID,
+                    FUTURE_DATE.atTime(9, 0),
+                    FUTURE_DATE.atTime(11, 0),
+                    EXCLUDED
+            );
         }
 
         @Test
@@ -198,9 +219,12 @@ class ScheduleExceptionServiceImplTest {
 
             service.addDoctorScheduleException(DOCTOR_ID, fullDay(TODAY, null, null));
 
-            verify(appointmentRepository)
-                    .countOverlappingAppointments(
-                            DOCTOR_ID, NOW, TODAY.plusDays(1).atStartOfDay(), EXCLUDED);
+            verify(appointmentRepository).countOverlappingAppointments(
+                    DOCTOR_ID,
+                    NOW,
+                    TODAY.plusDays(1).atStartOfDay(),
+                    EXCLUDED
+            );
         }
 
         @Test
@@ -224,7 +248,8 @@ class ScheduleExceptionServiceImplTest {
             var ex = assertApiException(
                     () -> service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, null)),
                     BusinessException.class,
-                    MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT);
+                    MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT
+            );
 
             assertThat(ex.getStatus().value()).isEqualTo(409);
             assertThat(ex.getArgs()).containsExactly(3L);
@@ -241,7 +266,8 @@ class ScheduleExceptionServiceImplTest {
             assertApiException(
                     () -> service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, false)),
                     BusinessException.class,
-                    MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT);
+                    MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT
+            );
             verify(scheduleExceptionRepository, never()).save(any());
         }
 
@@ -254,12 +280,12 @@ class ScheduleExceptionServiceImplTest {
             service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, "Congreso", true));
 
             verify(scheduleExceptionRepository).save(any(ScheduleException.class));
-            verify(appointmentService)
-                    .cancelDoctorAppointmentsInRange(
-                            DOCTOR_ID,
-                            FUTURE_DATE.atStartOfDay(),
-                            FUTURE_DATE.plusDays(1).atStartOfDay(),
-                            "Congreso");
+            verify(appointmentService).cancelDoctorAppointmentsInRange(
+                    DOCTOR_ID,
+                    FUTURE_DATE.atStartOfDay(),
+                    FUTURE_DATE.plusDays(1).atStartOfDay(),
+                    "Congreso"
+            );
             verifyNoInteractions(messageSource);
         }
 
@@ -269,15 +295,19 @@ class ScheduleExceptionServiceImplTest {
             givenAffected(1L);
             givenSaveReturnsArgument();
             when(messageSource.getMessage(
-                            eq(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON),
-                            isNull(),
-                            any(Locale.class)))
-                    .thenReturn("El doctor bloqueó este horario");
+                    eq(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON),
+                    isNull(),
+                    any(Locale.class)
+            )).thenReturn("El doctor bloqueó este horario");
 
             service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, "   ", true));
 
-            verify(appointmentService)
-                    .cancelDoctorAppointmentsInRange(eq(DOCTOR_ID), any(), any(), eq("El doctor bloqueó este horario"));
+            verify(appointmentService).cancelDoctorAppointmentsInRange(
+                    eq(DOCTOR_ID),
+                    any(),
+                    any(),
+                    eq("El doctor bloqueó este horario")
+            );
         }
 
         @Test
@@ -286,10 +316,10 @@ class ScheduleExceptionServiceImplTest {
             givenAffected(1L);
             givenSaveReturnsArgument();
             when(messageSource.getMessage(
-                            eq(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON),
-                            isNull(),
-                            any(Locale.class)))
-                    .thenReturn("default");
+                    eq(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON),
+                    isNull(),
+                    any(Locale.class)
+            )).thenReturn("default");
 
             service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, true));
 
@@ -319,8 +349,9 @@ class ScheduleExceptionServiceImplTest {
             var entities = List.of(ScheduleException.builder().id(1L).build());
             var responses = List.of(new ScheduleExceptionResponse(1L, FUTURE_DATE, null, null, true, null));
             when(scheduleExceptionRepository.findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
-                            DOCTOR_ID, TODAY))
-                    .thenReturn(entities);
+                    DOCTOR_ID,
+                    TODAY
+            )).thenReturn(entities);
             when(mapper.toResponseList(entities)).thenReturn(responses);
 
             assertThat(service.findDoctorScheduleExceptions(DOCTOR_ID, TODAY)).isSameAs(responses);
@@ -336,7 +367,8 @@ class ScheduleExceptionServiceImplTest {
             var ex = assertApiException(
                     () -> service.deleteDoctorScheduleExceptionById(5L, DOCTOR_ID),
                     ResourceNotFoundException.class,
-                    MessageKeys.SCHEDULE_EXCEPTION_NOT_FOUND);
+                    MessageKeys.SCHEDULE_EXCEPTION_NOT_FOUND
+            );
 
             assertThat(ex.getArgs()).containsExactly(5L);
         }
@@ -349,7 +381,8 @@ class ScheduleExceptionServiceImplTest {
             assertApiException(
                     () -> service.deleteDoctorScheduleExceptionById(5L, DOCTOR_ID),
                     ForbiddenException.class,
-                    MessageKeys.COMMON_FORBIDDEN);
+                    MessageKeys.COMMON_FORBIDDEN
+            );
             verify(scheduleExceptionRepository, never()).delete(any());
         }
 

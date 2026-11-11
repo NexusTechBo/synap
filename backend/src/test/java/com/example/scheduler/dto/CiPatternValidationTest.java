@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,12 +38,22 @@ class CiPatternValidationTest {
                     "PersonalRequest",
                     "ci",
                     ci -> new PersonalRequest(
-                            "Dr House", "house@mail.test", "70000000", ci, "house", "secret123", ERole.DOCTOR, 1L)),
+                            "Dr House",
+                            "house@mail.test",
+                            "70000000",
+                            ci,
+                            "house",
+                            "secret123",
+                            ERole.DOCTOR,
+                            1L
+                    )
+            ),
             new Target("GuestPatientRequest", "ci", ci -> new GuestPatientRequest(ci, "70000000")),
             new Target(
                     "GuestNewPatientRequest",
                     "ci",
-                    ci -> new GuestNewPatientRequest(ci, "Ana Perez", "70000000", "ana@mail.test")),
+                    ci -> new GuestNewPatientRequest(ci, "Ana Perez", "70000000", "ana@mail.test")
+            ),
             new Target(
                     "ClinicRequest",
                     "adminCi",
@@ -53,7 +65,10 @@ class CiPatternValidationTest {
                             "admin",
                             "admin@mail.test",
                             "secret123",
-                            ci)));
+                            ci
+                    )
+            )
+    );
 
     private static LocalValidatorFactoryBean factory;
     private static Validator validator;
@@ -149,7 +164,7 @@ class CiPatternValidationTest {
 
     private record Target(String name, String property, Function<String, Object> build) {
         @Override
-        public String toString() {
+        public @NonNull String toString() {
             return name + "." + property;
         }
     }

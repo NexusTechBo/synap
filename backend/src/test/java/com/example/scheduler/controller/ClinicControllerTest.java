@@ -90,7 +90,14 @@ class ClinicControllerTest {
         void shouldReturnCreatedWhenAdminCiIsValid() throws Exception {
             when(clinicService.createClinic(any()))
                     .thenReturn(new ClinicCreatedResponse(
-                            7L, "Clinica Demo", "70000000", "demo", 1L, "admin", "admin@mail.test"));
+                            7L,
+                            "Clinica Demo",
+                            "70000000",
+                            "demo",
+                            1L,
+                            "admin",
+                            "admin@mail.test"
+                    ));
 
             mvc.perform(post("/api/clinics")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -99,16 +106,16 @@ class ClinicControllerTest {
                     .andExpect(jsonPath("$.id").value(7))
                     .andExpect(jsonPath("$.slug").value("demo"));
 
-            verify(clinicService)
-                    .createClinic(new ClinicRequest(
-                            "Clinica Demo",
-                            "demo",
-                            "70000000",
-                            "Admin Demo",
-                            "admin",
-                            "admin@mail.test",
-                            "secret123",
-                            "12345"));
+            verify(clinicService).createClinic(new ClinicRequest(
+                    "Clinica Demo",
+                    "demo",
+                    "70000000",
+                    "Admin Demo",
+                    "admin",
+                    "admin@mail.test",
+                    "secret123",
+                    "12345"
+            ));
         }
     }
 }

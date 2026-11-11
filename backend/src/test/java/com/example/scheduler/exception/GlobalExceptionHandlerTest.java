@@ -40,7 +40,12 @@ class GlobalExceptionHandlerTest {
         details.put("appointmentId", 555L);
         details.put("status", AppointmentStatus.CONFIRMED);
         var ex = BusinessException.withDetails(
-                details, MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE, "15/11/2026", "14:30", 1);
+                details,
+                MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE,
+                "15/11/2026",
+                "14:30",
+                1
+        );
 
         var response = handler.handleApi(ex, request);
 
@@ -56,7 +61,8 @@ class GlobalExceptionHandlerTest {
                 .containsExactly(
                         entry("startTime", start),
                         entry("appointmentId", 555L),
-                        entry("status", AppointmentStatus.CONFIRMED));
+                        entry("status", AppointmentStatus.CONFIRMED)
+                );
         assertThat(body.path()).isEqualTo("/api/appointments");
         assertThat(body.errors()).isNull();
     }
@@ -68,7 +74,8 @@ class GlobalExceptionHandlerTest {
                 MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE,
                 "15/11/2026",
                 "14:30",
-                0);
+                0
+        );
 
         var body = handler.handleApi(ex, request).getBody();
 
@@ -83,7 +90,8 @@ class GlobalExceptionHandlerTest {
                 Map.of("startTime", LocalDateTime.of(2026, 11, 15, 14, 30)),
                 MessageKeys.APPOINTMENT_PATIENT_HAS_ACTIVE_GUEST,
                 "15/11/2026",
-                "14:30");
+                "14:30"
+        );
 
         var body = handler.handleApi(ex, request).getBody();
 
@@ -97,15 +105,21 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldResolveSingularAndPluralScheduleConflictMessages() {
         var single = handler.handleApi(
-                        BusinessException.withDetails(
-                                Map.of("count", 1L), MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, 1L),
-                        request)
-                .getBody();
+                BusinessException.withDetails(
+                        Map.of("count", 1L),
+                        MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT,
+                        1L
+                ),
+                request
+        ).getBody();
         var many = handler.handleApi(
-                        BusinessException.withDetails(
-                                Map.of("count", 3L), MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT, 3L),
-                        request)
-                .getBody();
+                BusinessException.withDetails(
+                        Map.of("count", 3L),
+                        MessageKeys.SCHEDULE_EXCEPTION_ACTIVE_APPOINTMENTS_CONFLICT,
+                        3L
+                ),
+                request
+        ).getBody();
 
         assertThat(single).isNotNull();
         assertThat(many).isNotNull();
@@ -117,8 +131,9 @@ class GlobalExceptionHandlerTest {
     @Test
     void shouldResolveRescheduleMessages() {
         var onlyActive = handler.handleApi(
-                        new BusinessException(MessageKeys.APPOINTMENT_RESCHEDULE_ONLY_ACTIVE), request)
-                .getBody();
+                new BusinessException(MessageKeys.APPOINTMENT_RESCHEDULE_ONLY_ACTIVE),
+                request
+        ).getBody();
         var sameTime = handler.handleApi(new BusinessException(MessageKeys.APPOINTMENT_RESCHEDULE_SAME_TIME), request)
                 .getBody();
         var past = handler.handleApi(new BusinessException(MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE), request)
