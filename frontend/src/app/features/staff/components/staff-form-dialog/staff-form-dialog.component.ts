@@ -65,7 +65,7 @@ export class StaffFormDialogComponent {
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
-    ci: ['', this.staff ? [] : [notBlank, ciValidator]],
+    ci: ['', this.staff ? [] : [ciValidator]],
     username: ['', this.staff ? [] : [Validators.required, usernameValidator]],
     password: [
       '',
@@ -111,7 +111,7 @@ export class StaffFormDialogComponent {
       ? this.staffService.update(this.staff.id, { ...common, password: value.password || null })
       : this.staffService.create({
           ...common,
-          ci: value.ci.trim(),
+          ci: value.ci.trim() || null,
           username: value.username,
           password: value.password,
         });

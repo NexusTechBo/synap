@@ -145,6 +145,16 @@ describe('PatientsPageComponent', () => {
       expect(rows[1].querySelectorAll('td')[1].textContent?.trim()).toBe('7654321');
     });
 
+    it('shows a dash instead of the CI for a patient without CI', async () => {
+      patients.patients.set([patient({ id: 22, ci: null, name: 'Sin Carnet' })]);
+      await render();
+
+      const row = element.querySelector('tbody tr')!;
+      expect(row.querySelectorAll('td')[1].textContent?.trim()).toBe('—');
+      expect(row.querySelector('td')!.textContent).toContain('CI —');
+      expect(row.textContent).not.toContain('null');
+    });
+
     it('shows the CI under the name for small screens', () => {
       const firstCell = element.querySelector('tbody tr td')!;
       expect(firstCell.textContent).toContain('Ana Pérez');

@@ -63,7 +63,11 @@
             placeholder="Tu nombre"
           />
         </app-form-field>
-        <app-form-field label="CI" fieldId="register-admin-ci" [errorMessages]="ciErrors">
+        <app-form-field
+          label="CI (opcional)"
+          fieldId="register-admin-ci"
+          [errorMessages]="ciErrors"
+        >
           <input
             id="register-admin-ci"
             type="text"

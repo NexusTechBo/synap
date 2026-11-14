@@ -10,7 +10,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.scheduler.dto.personal.DoctorModeRequest;
+import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.dto.personal.PersonalUpdateRequest;
+import com.example.scheduler.entity.Clinic;
+import com.example.scheduler.exception.ApiException;
+import org.mockito.ArgumentCaptor;
 import com.example.scheduler.entity.Personal;
 import com.example.scheduler.entity.Specialty;
 import com.example.scheduler.enums.AppointmentStatus;
@@ -118,6 +122,70 @@ class PersonalServiceImplTest {
     private void givenActiveAppointments(long count) {
         when(appointmentRepository.countByDoctorIdAndStatusInAndStartTimeAfter(ADMIN_ID, ACTIVE, NOW))
                 .thenReturn(count);
+    }
+
+    @Nested
+    class CreatePersonal {
+        private PersonalRequest request(String ci) {
+            return new PersonalRequest(
+                    "Asistente", "asist@mail.test", null, ci, "asist", "secret123", ERole.ASSISTANT, null);
+        }
+
+        private void givenClinic() {
+            when(currentClinicProvider.getCurrentClinic())
+                    .thenReturn(Clinic.builder().name("Demo").slug("demo").build());
+        }
+
+        private Personal savedPersonal() {
+            var captor = ArgumentCaptor.forClass(Personal.class);
+            verify(personalRepository).save(captor.capture());
+            return captor.getValue();
+        }
+
+        @Test
+        void shouldSaveNullCiAndSkipCiLookupWhenCiIsNull() {
+            givenClinic();
+            when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.createPersonal(request(null));
+
+            verify(personalRepository, never()).existsByCi(any());
+            assertThat(savedPersonal().getCi()).isNull();
+        }
+
+        @Test
+        void shouldSaveNullCiWhenCiIsBlank() {
+            givenClinic();
+            when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.createPersonal(request("   "));
+
+            verify(personalRepository, never()).existsByCi(any());
+            assertThat(savedPersonal().getCi()).isNull();
+        }
+
+        @Test
+        void shouldSaveCiWhenCiIsNew() {
+            givenClinic();
+            when(personalRepository.existsByCi("123456")).thenReturn(false);
+            when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.createPersonal(request("123456"));
+
+            assertThat(savedPersonal().getCi()).isEqualTo("123456");
+        }
+
+        @Test
+        void shouldThrowAlreadyExistsWhenCiIsDuplicated() {
+            givenClinic();
+            when(personalRepository.existsByCi("123456")).thenReturn(true);
+
+            var thrown = catchThrowable(() -> service.createPersonal(request("123456")));
+
+            assertThat(thrown).isInstanceOf(BusinessException.class);
+            assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.PERSONAL_ALREADY_EXISTS);
+            verify(personalRepository, never()).save(any());
+        }
     }
 
     @Nested

@@ -87,15 +87,17 @@ public class GuestServiceImpl implements GuestService {
     }
 
     private Long resolvePatientId(GuestPatientRequest patient) {
-        return patientRepository.findActiveIdByCiAndPhoneNumber(patient.ci(), Utils.normalizePhoneNumber(patient.phoneNumber()))
+        return patientRepository.findActiveIdByPhoneNumber(Utils.normalizePhoneNumber(patient.phoneNumber()))
                 .orElseThrow(() -> new BusinessException(MessageKeys.GUEST_CANNOT_BOOK));
     }
 
     private Long resolveNewPatientId(GuestNewPatientRequest patient) {
         var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber());
         var email = Utils.normalizeEmail(patient.email());
-        var ci = patient.ci();
-        if (patientRepository.existsByCiOrPhoneNumberOrEmailIgnoreCase(ci, phoneNumber, email))
+        var ci = Utils.normalizeCi(patient.ci());
+        if ((ci != null && patientRepository.existsByCi(ci))
+                || (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
+                || (email != null && patientRepository.existsByEmailIgnoreCase(email)))
             throw new BusinessException(MessageKeys.GUEST_CANNOT_BOOK);
         try {
             return patientService.createPatient(new PatientRequest(ci, patient.name(), email, phoneNumber)).id();

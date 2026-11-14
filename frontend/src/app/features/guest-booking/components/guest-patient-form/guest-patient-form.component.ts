@@ -34,7 +34,7 @@ export class GuestPatientFormComponent implements OnInit {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     kind: [null as PatientKind | null, Validators.required],
-    ci: ['', [notBlank, ciValidator]],
+    ci: [{ value: '', disabled: true }, ciValidator],
     phoneNumber: ['', [notBlank, phoneValidator]],
     name: [{ value: '', disabled: true }, notBlank],
     email: [{ value: '', disabled: true }, Validators.email],
@@ -43,8 +43,8 @@ export class GuestPatientFormComponent implements OnInit {
 
   constructor() {
     this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed()).subscribe((kind) => {
-      const { name, email } = this.form.controls;
-      for (const control of [name, email]) {
+      const { ci, name, email } = this.form.controls;
+      for (const control of [ci, name, email]) {
         if (kind === 'new') control.enable();
         else control.disable();
       }
@@ -56,7 +56,7 @@ export class GuestPatientFormComponent implements OnInit {
     if (!initial) return;
     this.form.patchValue({
       kind: initial.name ? 'new' : 'returning',
-      ci: initial.ci,
+      ci: initial.ci ?? '',
       phoneNumber: initial.phoneNumber,
       name: initial.name ?? '',
       email: initial.email ?? '',
@@ -68,14 +68,13 @@ export class GuestPatientFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const ci = this.form.controls.ci.value.trim();
     const phoneNumber = this.form.controls.phoneNumber.value.trim();
     if (this.kind() === 'returning') {
-      this.submitted.emit({ ci, phoneNumber });
+      this.submitted.emit({ phoneNumber });
       return;
     }
     this.submitted.emit({
-      ci,
+      ci: this.form.controls.ci.value.trim() || null,
       phoneNumber,
       name: this.form.controls.name.value.trim(),
       email: this.form.controls.email.value.trim() || null,

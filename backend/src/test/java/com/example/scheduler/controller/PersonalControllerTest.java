@@ -109,6 +109,31 @@ class PersonalControllerTest {
     @Nested
     class CreatePersonal {
         @Test
+        void shouldReturnCreatedWhenCiIsOmitted() throws Exception {
+            when(personalService.createPersonal(any())).thenReturn(response(null));
+
+            mvc.perform(as(ADMIN_TOKEN, post("/api/personal"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"name":"Dr House","email":"house@mail.test","phoneNumber":"70000000",
+                                     "username":"house","password":"secret123","role":"DOCTOR","specialtyId":1}
+                                    """))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(10))
+                    .andExpect(jsonPath("$.ci").doesNotExist());
+        }
+
+        @Test
+        void shouldReturnCreatedWhenCiIsBlank() throws Exception {
+            when(personalService.createPersonal(any())).thenReturn(response(null));
+
+            mvc.perform(as(ADMIN_TOKEN, post("/api/personal"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body("   ")))
+                    .andExpect(status().isCreated());
+        }
+
+        @Test
         void shouldReturnBadRequestWithCiFieldErrorWhenCiHasSpaces() throws Exception {
             mvc.perform(as(ADMIN_TOKEN, post("/api/personal"))
                             .contentType(MediaType.APPLICATION_JSON)

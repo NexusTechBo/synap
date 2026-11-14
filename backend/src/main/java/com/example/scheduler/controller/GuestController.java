@@ -73,7 +73,7 @@ public class GuestController {
 
     @PostMapping("/appointments")
     @PreAuthorize(RoleExpressions.GUEST)
-    @Operation(summary = "POST /api/guest/appointments — book a PENDING appointment for a registered patient (CI + phone)")
+    @Operation(summary = "POST /api/guest/appointments — book a PENDING appointment for a registered patient (identified by phone number)")
     public ResponseEntity<GuestAppointmentResponse> bookAppointment(@Valid @RequestBody GuestAppointmentRequest<GuestPatientRequest> request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(guestService.bookAppointment(request));
     }

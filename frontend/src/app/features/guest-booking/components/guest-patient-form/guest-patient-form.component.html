@@ -28,22 +28,22 @@
   @if (kind(); as selected) {
     @if (selected === 'returning') {
       <p class="text-sm font-medium text-gray-600">
-        Ingresa el CI y el teléfono con los que te registraste.
+        Ingresa el teléfono con el que te registraste.
       </p>
     }
 
-    <app-form-field label="CI" fieldId="guest-ci" [errorMessages]="ciErrors">
-      <input
-        id="guest-ci"
-        class="field-input"
-        formControlName="ci"
-        inputmode="numeric"
-        maxlength="10"
-        autocomplete="off"
-      />
-    </app-form-field>
-
     @if (selected === 'new') {
+      <app-form-field label="CI (opcional)" fieldId="guest-ci" [errorMessages]="ciErrors">
+        <input
+          id="guest-ci"
+          class="field-input"
+          formControlName="ci"
+          inputmode="numeric"
+          maxlength="10"
+          autocomplete="off"
+        />
+      </app-form-field>
+
       <app-form-field label="Nombre completo" fieldId="guest-name">
         <input id="guest-name" class="field-input" formControlName="name" autocomplete="name" />
       </app-form-field>

@@ -83,11 +83,24 @@ class GuestControllerTest {
         SliceTokens.givenStandardTokens(jwtUtil, activeUserChecker);
     }
 
-    private static String existingPatientBody(String ci) {
+    private static String existingPatientBody() {
         return """
                 {"doctorId":10,"startTime":"2026-11-10T09:00:00",
-                 "patient":{"ci":"%s","phoneNumber":"70000000"}}
-                """.formatted(ci);
+                 "patient":{"phoneNumber":"70000000"}}
+                """;
+    }
+
+    private static String existingPatientBodyWithoutPhone() {
+        return """
+                {"doctorId":10,"startTime":"2026-11-10T09:00:00","patient":{}}
+                """;
+    }
+
+    private static String newPatientBodyWithoutCi() {
+        return """
+                {"doctorId":10,"startTime":"2026-11-10T09:00:00",
+                 "patient":{"name":"Ana Perez","phoneNumber":"70000000","email":"ana@mail.test"}}
+                """;
     }
 
     private static String newPatientBody(String ci) {
@@ -201,35 +214,31 @@ class GuestControllerTest {
     @Nested
     class BookAppointment {
         @Test
-        @DisplayName("should return 400 with patient.ci field error in Spanish when the CI has letters")
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiHasLetters() throws Exception {
+        @DisplayName("should return 400 with patient.phoneNumber field error when phoneNumber is missing")
+        void shouldReturnBadRequestWhenPhoneNumberIsMissing() throws Exception {
             mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(existingPatientBody("12a456")))
+                            .content(existingPatientBodyWithoutPhone()))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.status").value(400))
-                    .andExpect(jsonPath("$.message").value("Error de validación en los datos enviados."))
-                    .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("patient.ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
-                    .andExpect(jsonPath("$.path").value("/api/guest/appointments"));
+                    .andExpect(jsonPath("$.errors[0].field").value("patient.phoneNumber"));
 
             verifyNoInteractions(guestService);
         }
 
         @Test
-        void shouldReturnCreatedWhenCiIsValid() throws Exception {
+        @DisplayName("should return 201 when only phoneNumber is sent")
+        void shouldReturnCreatedWhenOnlyPhoneNumberIsSent() throws Exception {
             when(guestService.bookAppointment(any())).thenReturn(response());
 
             mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(existingPatientBody("12345")))
+                            .content(existingPatientBody()))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.appointmentId").value(99))
                     .andExpect(jsonPath("$.status").value("PENDING"));
 
             verify(guestService).bookAppointment(
-                    new GuestAppointmentRequest<>(10L, START, new GuestPatientRequest("12345", "70000000"))
+                    new GuestAppointmentRequest<>(10L, START, new GuestPatientRequest("70000000"))
             );
         }
 
@@ -237,7 +246,7 @@ class GuestControllerTest {
         void shouldReturnForbiddenWhenStaffTokenIsUsed() throws Exception {
             mvc.perform(as(ADMIN_TOKEN, post("/api/guest/appointments"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(existingPatientBody("12345")))
+                            .content(existingPatientBody()))
                     .andExpect(status().isForbidden());
 
             verifyNoInteractions(guestService);
@@ -246,6 +255,34 @@ class GuestControllerTest {
 
     @Nested
     class BookAppointmentForNewPatient {
+        @Test
+        @DisplayName("should return 201 when the CI is omitted")
+        void shouldReturnCreatedWhenCiIsOmitted() throws Exception {
+            when(guestService.bookAppointmentForNewPatient(any())).thenReturn(response());
+
+            mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments/new-patient"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(newPatientBodyWithoutCi()))
+                    .andExpect(status().isCreated());
+
+            verify(guestService).bookAppointmentForNewPatient(new GuestAppointmentRequest<>(
+                    10L,
+                    START,
+                    new GuestNewPatientRequest(null, "Ana Perez", "70000000", "ana@mail.test")
+            ));
+        }
+
+        @Test
+        @DisplayName("should return 201 when the CI is blank")
+        void shouldReturnCreatedWhenCiIsBlank() throws Exception {
+            when(guestService.bookAppointmentForNewPatient(any())).thenReturn(response());
+
+            mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments/new-patient"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(newPatientBody("  ")))
+                    .andExpect(status().isCreated());
+        }
+
         @Test
         @DisplayName("should return 400 with patient.ci field error in Spanish when the CI has eleven digits")
         void shouldReturnBadRequestWithCiFieldErrorWhenCiHasElevenDigits() throws Exception {

@@ -39,7 +39,8 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public PatientResponse createPatient(PatientRequest request) {
-        if (patientRepository.existsByCi(request.ci()))
+        var ci = Utils.normalizeCi(request.ci());
+        if (ci != null && patientRepository.existsByCi(ci))
             throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (email != null && patientRepository.existsByEmailIgnoreCase(email))
@@ -48,7 +49,7 @@ public class PatientServiceImpl implements PatientService {
         if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
         var patient = Patient.builder()
-                .ci(request.ci())
+                .ci(ci)
                 .name(request.name())
                 .email(email)
                 .phoneNumber(phoneNumber)
@@ -65,7 +66,8 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
-        if (!patient.getCi().equals(request.ci()) && patientRepository.existsByCi(request.ci()))
+        var ci = Utils.normalizeCi(request.ci());
+        if (ci != null && !Objects.equals(patient.getCi(), ci) && patientRepository.existsByCi(ci))
             throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (email != null
@@ -77,7 +79,7 @@ public class PatientServiceImpl implements PatientService {
                 && !Objects.equals(patient.getPhoneNumber(), phoneNumber)
                 && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
-        patient.setCi(request.ci());
+        patient.setCi(ci);
         patient.setName(request.name());
         patient.setEmail(email);
         patient.setPhoneNumber(phoneNumber);

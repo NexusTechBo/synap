@@ -39,14 +39,6 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    @Query("SELECT COUNT(p) > 0 FROM Patient p "
-            + "WHERE p.ci = :ci OR p.phoneNumber = :phoneNumber "
-            + "OR LOWER(p.email) = LOWER(:email)")
-    boolean existsByCiOrPhoneNumberOrEmailIgnoreCase(
-            @Param("ci") String ci, @Param("phoneNumber") String phoneNumber, @Param("email") String email);
-
-    @Query("SELECT p.id FROM Patient p "
-            + "WHERE p.ci = :ci AND p.phoneNumber = :phoneNumber "
-            + "AND p.active = true")
-    Optional<Long> findActiveIdByCiAndPhoneNumber(@Param("ci") String ci, @Param("phoneNumber") String phoneNumber);
+    @Query("SELECT p.id FROM Patient p WHERE p.phoneNumber = :phoneNumber AND p.active = true")
+    Optional<Long> findActiveIdByPhoneNumber(@Param("phoneNumber") String phoneNumber);
 }
