@@ -3,15 +3,16 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, map } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { DayOfWeek } from '../../../../core/models/api.models';
 import { addMinutesToTime } from '../../../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../../../core/utils/labels.util';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
-import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
 import { availabilityEndAfterStart } from '../../availability.util';
 
@@ -24,18 +25,34 @@ import { availabilityEndAfterStart } from '../../availability.util';
     FormFieldComponent,
     SelectComponent,
     TimePickerComponent,
+    TranslatePipe,
   ],
   templateUrl: './availability-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvailabilityFormDialogComponent {
   private readonly availability = inject(AvailabilityService);
+  private readonly i18n = inject(I18nService);
   protected readonly ref = inject(DialogRef);
 
-  protected readonly days = DAYS_OF_WEEK;
-  protected readonly durationOptions: SelectOption<number>[] = [15, 20, 30, 45, 60].map(
-    (minutes) => ({ value: minutes, label: `${minutes} minutos` }),
-  );
+  protected readonly days = computed(() => {
+    this.i18n.currentLang();
+    return DAYS_OF_WEEK.map((day) => ({
+      value: day.value,
+      label: this.i18n.translate(`days.${day.value}.label`),
+      short: this.i18n.translate(`days.${day.value}.short`),
+    }));
+  });
+
+  protected readonly durationOptions = computed<SelectOption<number>[]>(() => {
+    this.i18n.currentLang();
+    const unit = this.i18n.translate('availability.formDialog.minutesUnit');
+    return [15, 20, 30, 45, 60].map((minutes) => ({
+      value: minutes,
+      label: `${minutes} ${unit}`,
+    }));
+  });
+
   protected readonly selectedDays = signal<Set<DayOfWeek>>(new Set(['MONDAY']));
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -45,7 +62,13 @@ export class AvailabilityFormDialogComponent {
     endTime: ['12:00', [Validators.required, availabilityEndAfterStart]],
     slotDurationMinutes: [30, [Validators.required, Validators.min(5)]],
   });
-  protected readonly endErrors = TIME_RANGE_ERRORS;
+
+  protected readonly endErrors = computed(() => {
+    this.i18n.currentLang();
+    return {
+      endBeforeStart: this.i18n.translate('validation.endBeforeStart'),
+    };
+  });
 
   private readonly startTime = toSignal(this.form.controls.startTime.valueChanges, {
     initialValue: this.form.controls.startTime.value,
@@ -86,7 +109,8 @@ export class AvailabilityFormDialogComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const days = this.days.map((d) => d.value).filter((day) => this.selectedDays().has(day));
+    const currentDays = this.days();
+    const days = currentDays.map((d) => d.value).filter((day) => this.selectedDays().has(day));
     this.saving.set(true);
     this.availability
       .addAvailability(days, this.form.getRawValue())
@@ -97,10 +121,12 @@ export class AvailabilityFormDialogComponent {
           return;
         }
         this.selectedDays.set(new Set(failed.map((f) => f.day)));
-        const label = (day: DayOfWeek) => this.days.find((d) => d.value === day)!.label;
+        const label = (day: DayOfWeek) => currentDays.find((d) => d.value === day)!.label;
+        const savedPrefix = this.i18n.translate('availability.formDialog.savedSummaryPrefix');
+        const failedPrefix = this.i18n.translate('availability.formDialog.failedSummaryPrefix');
         this.error.set(
-          (saved.length ? `Se guardó: ${saved.map(label).join(', ')}. ` : '') +
-            `No se pudo guardar: ${failed.map((f) => `${label(f.day)} (${f.message})`).join('; ')}`,
+          (saved.length ? `${savedPrefix} ${saved.map(label).join(', ')}. ` : '') +
+            `${failedPrefix} ${failed.map((f) => `${label(f.day)} (${f.message})`).join('; ')}`,
         );
       });
   }

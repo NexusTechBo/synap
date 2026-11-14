@@ -1,13 +1,13 @@
 <app-dialog-frame
-  title="Bloquear agenda"
-  subtitle="Nadie podrá reservar en ese horario"
+  [title]="'availability.exceptionDialog.title' | translate"
+  [subtitle]="'availability.exceptionDialog.subtitle' | translate"
   (closed)="ref.close()"
 >
   <form id="exception-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
     <app-form-field
-      label="Fecha"
+      [label]="'availability.exceptionDialog.dateLabel' | translate"
       fieldId="ex-date"
-      [errorMessages]="{ required: 'Elige una fecha' }"
+      [errorMessages]="dateErrors()"
     >
       <app-date-picker class="block" id="ex-date" [min]="today" formControlName="date" />
     </app-form-field>
@@ -15,39 +15,48 @@
     <label class="flex cursor-pointer items-center gap-3 rounded-2xl bg-white/50 px-4 py-3">
       <input type="checkbox" class="h-4 w-4 accent-primary" formControlName="isFullDayBlock" />
       <span>
-        <span class="block text-sm font-bold text-gray-900">Todo el día</span>
-        <span class="block text-xs text-gray-500"
-          >Desmarca para bloquear solo un rango de horas</span
-        >
+        <span class="block text-sm font-bold text-gray-900">{{
+          'availability.exceptionDialog.fullDayTitle' | translate
+        }}</span>
+        <span class="block text-xs text-gray-500">
+          {{ 'availability.exceptionDialog.fullDayHint' | translate }}
+        </span>
       </span>
     </label>
 
     @if (!form.controls.isFullDayBlock.value) {
       <div class="grid grid-cols-2 gap-4">
         <app-form-field
-          label="Desde"
+          [label]="'availability.exceptionDialog.fromLabel' | translate"
           fieldId="ex-start"
           [linkedErrorId]="rangeInvalid() ? 'ex-end-error' : null"
         >
           <app-time-picker id="ex-start" formControlName="startTime" />
         </app-form-field>
-        <app-form-field label="Hasta" fieldId="ex-end" [errorMessages]="endErrors">
+        <app-form-field
+          [label]="'availability.exceptionDialog.toLabel' | translate"
+          fieldId="ex-end"
+          [errorMessages]="endErrors()"
+        >
           <app-time-picker id="ex-end" formControlName="endTime" />
         </app-form-field>
       </div>
     }
 
-    <app-form-field label="Motivo (opcional)" fieldId="ex-reason">
+    <app-form-field
+      [label]="'availability.exceptionDialog.reasonLabel' | translate"
+      fieldId="ex-reason"
+    >
       <input
         id="ex-reason"
         class="field-input"
         formControlName="reason"
-        placeholder="Vacaciones, congreso, reunión…"
+        [placeholder]="'availability.exceptionDialog.reasonPlaceholder' | translate"
       />
     </app-form-field>
 
     <p class="text-xs text-gray-500">
-      Si hay citas agendadas en ese horario, te pediremos confirmar antes de cancelarlas.
+      {{ 'availability.exceptionDialog.activeAppointmentsNotice' | translate }}
     </p>
 
     @if (error(); as message) {
@@ -56,7 +65,9 @@
   </form>
 
   <ng-container ngProjectAs="[dialogFooter]">
-    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cancelar</button>
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">
+      {{ 'common.cancel' | translate }}
+    </button>
     <button
       #submitButton
       type="submit"
@@ -64,7 +75,10 @@
       class="btn btn-primary"
       [disabled]="saving()"
     >
-      {{ saving() ? 'Guardando…' : 'Bloquear' }}
+      {{
+        (saving() ? 'availability.exceptionDialog.saving' : 'availability.exceptionDialog.block')
+          | translate
+      }}
     </button>
   </ng-container>
 </app-dialog-frame>

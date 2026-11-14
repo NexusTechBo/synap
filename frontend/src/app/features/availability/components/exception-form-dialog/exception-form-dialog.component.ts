@@ -5,6 +5,7 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
+  computed,
   inject,
   signal,
   viewChild,
@@ -13,13 +14,14 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { toIso } from '../../../../core/utils/calendar.util';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { DatePickerComponent } from '../../../../shared/ui/forms/date-picker/date-picker.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
-import { TIME_RANGE_ERRORS } from '../../../../shared/utils/validation-messages.util';
 import { AvailabilityService } from '../../availability.service';
 import { exceptionEndAfterStart } from '../../availability.util';
 
@@ -32,6 +34,7 @@ import { exceptionEndAfterStart } from '../../availability.util';
     FormFieldComponent,
     TimePickerComponent,
     ReactiveFormsModule,
+    TranslatePipe,
   ],
   templateUrl: './exception-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +43,7 @@ export class ExceptionFormDialogComponent {
   private readonly submitButton = viewChild.required<ElementRef<HTMLButtonElement>>('submitButton');
 
   private readonly availability = inject(AvailabilityService);
+  private readonly i18n = inject(I18nService);
   private readonly injector = inject(Injector);
   protected readonly ref = inject(DialogRef);
 
@@ -54,10 +58,21 @@ export class ExceptionFormDialogComponent {
     endTime: ['10:00', exceptionEndAfterStart],
     reason: [''],
   });
-  protected readonly endErrors = {
-    ...TIME_RANGE_ERRORS,
-    rangeRequired: 'Indica el rango de horas',
-  };
+
+  protected readonly dateErrors = computed(() => {
+    this.i18n.currentLang();
+    return {
+      required: this.i18n.translate('availability.exceptionDialog.dateRequired'),
+    };
+  });
+
+  protected readonly endErrors = computed(() => {
+    this.i18n.currentLang();
+    return {
+      endBeforeStart: this.i18n.translate('validation.endBeforeStart'),
+      rangeRequired: this.i18n.translate('validation.rangeRequired'),
+    };
+  });
 
   protected readonly rangeInvalid = toSignal(
     this.form.controls.endTime.events.pipe(
@@ -108,7 +123,10 @@ export class ExceptionFormDialogComponent {
           saved = true;
           this.ref.close();
         },
-        error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo guardar el bloqueo')),
+        error: (error) =>
+          this.error.set(
+            apiErrorMessage(error, this.i18n.translate('availability.errors.saveException')),
+          ),
       });
   }
 }
