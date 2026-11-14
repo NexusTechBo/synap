@@ -309,4 +309,17 @@ export const ES_TRANSLATIONS = {
       block: 'Bloquear',
     },
   },
+
+  calendar: {
+    scopeAll: 'Toda la clínica',
+    scopeMine: 'Mi agenda',
+    errorLoad: 'No se pudo cargar el calendario',
+    previousMonthAria: 'Mes anterior',
+    nextMonthAria: 'Mes siguiente',
+    today: 'Hoy',
+    appointmentSingular: 'cita',
+    appointmentPlural: 'citas',
+    bookAppointment: 'Agendar cita',
+    emptyDay: 'Sin citas este día',
+  },
 };

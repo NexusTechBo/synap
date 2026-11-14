@@ -30,8 +30,11 @@
   </div>
 
   @if (count()) {
-    <span class="hidden text-[11px] font-bold text-gray-500 sm:inline"
-      >{{ count() }} {{ count() === 1 ? 'cita' : 'citas' }}</span
-    >
+    <span class="hidden text-[11px] font-bold text-gray-500 sm:inline">
+      {{ count() }}
+      {{
+        (count() === 1 ? 'calendar.appointmentSingular' : 'calendar.appointmentPlural') | translate
+      }}
+    </span>
   }
 </button>

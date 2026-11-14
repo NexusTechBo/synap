@@ -310,4 +310,17 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       block: 'Block',
     },
   },
+
+  calendar: {
+    scopeAll: 'Entire clinic',
+    scopeMine: 'My schedule',
+    errorLoad: 'Could not load calendar',
+    previousMonthAria: 'Previous month',
+    nextMonthAria: 'Next month',
+    today: 'Today',
+    appointmentSingular: 'appointment',
+    appointmentPlural: 'appointments',
+    bookAppointment: 'Book appointment',
+    emptyDay: 'No appointments on this day',
+  },
 };

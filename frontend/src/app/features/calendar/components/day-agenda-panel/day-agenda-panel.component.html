@@ -3,14 +3,18 @@
     <h2 class="text-xl font-extrabold text-gray-900">{{ dayLabel() }}</h2>
     @if (appointments(); as list) {
       <p class="text-sm font-medium text-gray-500">
-        {{ list.length }} {{ list.length === 1 ? 'cita' : 'citas' }}
+        {{ list.length }}
+        {{
+          (list.length === 1 ? 'calendar.appointmentSingular' : 'calendar.appointmentPlural')
+            | translate
+        }}
       </p>
     }
   </div>
   @if (canCreate()) {
     <button type="button" (click)="newAppointment.emit()" class="btn btn-primary shrink-0">
       <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
-      Agendar cita
+      {{ 'calendar.bookAppointment' | translate }}
     </button>
   }
 </div>
@@ -23,7 +27,7 @@
       <div
         class="flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-gray-900/10 py-8 text-sm font-medium text-gray-500"
       >
-        Sin citas este día
+        {{ 'calendar.emptyDay' | translate }}
       </div>
     }
   } @else if (errorMessage()) {
