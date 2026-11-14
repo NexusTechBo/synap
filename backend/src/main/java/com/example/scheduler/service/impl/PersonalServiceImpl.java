@@ -78,7 +78,8 @@ public class PersonalServiceImpl implements PersonalService {
         var username = request.username() + Utils.usernameSuffix(clinic.getSlug());
         if (personalRepository.existsByUsername(username))
             throw new BusinessException(MessageKeys.PERSONAL_USERNAME_TAKEN, username);
-        if (personalRepository.existsByCi(request.ci()))
+        var ci = Utils.normalizeCi(request.ci());
+        if (ci != null && personalRepository.existsByCi(ci))
             throw new BusinessException(MessageKeys.PERSONAL_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (personalRepository.existsByEmailIgnoreCase(email))
@@ -88,7 +89,7 @@ public class PersonalServiceImpl implements PersonalService {
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         var personal = Personal.builder()
                 .username(username)
-                .ci(request.ci())
+                .ci(ci)
                 .name(request.name())
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))

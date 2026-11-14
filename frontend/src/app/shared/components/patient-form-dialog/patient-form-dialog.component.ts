@@ -40,7 +40,7 @@ export class PatientFormDialogComponent {
     name: [this.patient?.name ?? '', notBlank],
     phoneNumber: [this.patient?.phoneNumber ?? '', [notBlank, phoneValidator]],
     email: [this.patient?.email ?? '', Validators.email],
-    ci: [this.patient?.ci ?? '', [notBlank, ciValidator]],
+    ci: [this.patient?.ci ?? '', [ciValidator]],
   });
 
   protected save(): void {
@@ -55,7 +55,7 @@ export class PatientFormDialogComponent {
     this.patients
       .save(this.patient, {
         name: name.trim(),
-        ci: ci.trim(),
+        ci: ci.trim() || null,
         phoneNumber: phoneNumber.trim(),
         email: email.trim() || null,
       })

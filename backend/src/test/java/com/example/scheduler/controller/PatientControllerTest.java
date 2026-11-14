@@ -84,6 +84,44 @@ class PatientControllerTest {
     @Nested
     class CreatePatient {
         @Test
+        void shouldReturnCreatedWhenCiIsOmitted() throws Exception {
+            when(patientService.createPatient(any())).thenReturn(response(21L, null));
+
+            mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("""
+                                    {"name":"Ana Perez","email":"ana@mail.test","phoneNumber":"70000000"}
+                                    """))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(21))
+                    .andExpect(jsonPath("$.ci").doesNotExist());
+
+            verify(patientService).createPatient(request(null));
+        }
+
+        @Test
+        void shouldReturnCreatedWhenCiIsBlank() throws Exception {
+            when(patientService.createPatient(any())).thenReturn(response(21L, null));
+
+            mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body("")))
+                    .andExpect(status().isCreated());
+        }
+
+        @Test
+        void shouldPassStrippedCiToServiceWhenJsonCiHasSurroundingSpaces() throws Exception {
+            when(patientService.createPatient(any())).thenReturn(response(22L, "12345"));
+
+            mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body(" 12345 ")))
+                    .andExpect(status().isCreated());
+
+            verify(patientService).createPatient(request("12345"));
+        }
+
+        @Test
         void shouldReturnBadRequestWithCiFieldErrorWhenCiIsMalformed() throws Exception {
             mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
                             .contentType(MediaType.APPLICATION_JSON)

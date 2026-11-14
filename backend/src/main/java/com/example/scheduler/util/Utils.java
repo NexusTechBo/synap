@@ -30,6 +30,10 @@ public final class Utils {
         return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
     }
 
+    public static String normalizeCi(String ci) {
+        return StringUtils.hasText(ci) ? ci.strip() : null;
+    }
+
     public static String normalizeEmail(String email) {
         return StringUtils.hasText(email) ? email.strip().toLowerCase(Locale.ROOT) : null;
     }

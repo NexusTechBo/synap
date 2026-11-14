@@ -29,7 +29,7 @@
             </div>
             <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
               <dt class="font-semibold text-gray-500">CI</dt>
-              <dd class="font-bold text-gray-800">{{ p.ci }}</dd>
+              <dd class="font-bold text-gray-800">{{ p.ci || '—' }}</dd>
             </div>
             @if (p.specialtyName) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">

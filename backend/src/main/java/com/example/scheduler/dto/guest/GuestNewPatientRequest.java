@@ -6,8 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record GuestNewPatientRequest(
-        @NotBlank
-        @Pattern(regexp = "^\\d{5,10}$", message = "{validation.ci.pattern}")
+        @Pattern(regexp = "^(\\s*|\\d{5,10})$", message = "{validation.ci.pattern}")
         String ci,
         @NotBlank
         @Size(max = 255)

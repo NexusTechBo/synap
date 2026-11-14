@@ -30,7 +30,7 @@ export class RegisterFormComponent {
     slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9]{3,50}$/)]],
     phoneNumber: ['', [notBlank, phoneValidator]],
     adminName: ['', notBlank],
-    adminCi: ['', [notBlank, ciValidator]],
+    adminCi: ['', [ciValidator]],
     adminUsername: ['', [Validators.required, usernameValidator]],
     adminEmail: ['', [Validators.required, Validators.email]],
     adminPassword: ['', [Validators.required, Validators.minLength(8)]],
