@@ -99,17 +99,22 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   board: {
     title: 'Board',
-    subtitle: 'Drag an appointment to confirm or cancel it',
+    subtitle: 'Drag appointments to update their status',
     refresh: 'Refresh',
-    noAppointments: 'No appointments',
+    noAppointments: 'No appointments in this column',
+    pastAppointmentTitle: 'Past appointment (read-only)',
+    pastAppointmentSr: '(past appointment)',
     columns: {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
-      cancelled: 'Cancelled',
-      completed: 'Completed',
+      PENDING: 'Pending',
+      CONFIRMED: 'Confirmed',
+      CANCELLED: 'Cancelled',
     },
-    pastAppointmentTitle: 'Past appointment: cannot be confirmed or cancelled',
-    pastAppointmentSr: '(past appointment, cannot be confirmed or cancelled)',
+    errors: {
+      load: 'Could not load board',
+      cannotReturnToPending: 'An appointment cannot return to pending',
+      cannotReactivateCancelled: 'A cancelled appointment cannot be reactivated',
+      cannotModifyPast: 'A past appointment cannot be modified',
+    },
   },
 
   appointments: {

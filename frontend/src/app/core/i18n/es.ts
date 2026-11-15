@@ -97,17 +97,22 @@ export const ES_TRANSLATIONS = {
 
   board: {
     title: 'Tablero',
-    subtitle: 'Arrastra una cita para confirmarla o cancelarla',
+    subtitle: 'Arrastra las citas para cambiar su estado',
     refresh: 'Actualizar',
-    noAppointments: 'Sin citas',
+    noAppointments: 'Sin citas en esta columna',
+    pastAppointmentTitle: 'Cita pasada (solo lectura)',
+    pastAppointmentSr: '(cita pasada)',
     columns: {
-      pending: 'Pendientes',
-      confirmed: 'Confirmadas',
-      cancelled: 'Canceladas',
-      completed: 'Completadas',
+      PENDING: 'Pendientes',
+      CONFIRMED: 'Confirmadas',
+      CANCELLED: 'Canceladas',
     },
-    pastAppointmentTitle: 'Cita pasada: no se puede confirmar ni cancelar',
-    pastAppointmentSr: '(cita pasada, no se puede confirmar ni cancelar)',
+    errors: {
+      load: 'No se pudo cargar el tablero',
+      cannotReturnToPending: 'Una cita no puede volver a pendiente',
+      cannotReactivateCancelled: 'Una cita cancelada no puede reactivarse',
+      cannotModifyPast: 'No se puede modificar una cita que ya pasó',
+    },
   },
 
   appointments: {

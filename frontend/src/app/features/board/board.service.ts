@@ -4,6 +4,7 @@ import { Observable, debounceTime, merge, skip } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { BoardSocket } from '../../core/api/board.socket';
 import { resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
 import {
   appointmentStartDateTime,
@@ -12,11 +13,7 @@ import {
   hasAppointmentStarted,
 } from '../../core/utils/appointment.util';
 import { addDays, toIso } from '../../core/utils/calendar.util';
-import {
-  APPOINTMENT_STATUSES,
-  STATUS_PLURAL_LABEL,
-  STATUS_STYLE,
-} from '../../core/utils/labels.util';
+import { APPOINTMENT_STATUSES, STATUS_STYLE } from '../../core/utils/labels.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
@@ -28,6 +25,7 @@ export class BoardService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly notifications = inject(NotificationService);
   private readonly socket = inject(BoardSocket);
+  private readonly i18n = inject(I18nService);
 
   private readonly _range = signal<DateRange>({
     from: toIso(new Date()),
@@ -43,7 +41,7 @@ export class BoardService {
   readonly isLoading = this.resource.isLoading;
   readonly showDates = computed(() => this.range().from !== this.range().to);
   readonly hasData = computed(() => this.resource.hasValue());
-  readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el tablero');
+  readonly errorMessage = resourceError(this.resource, this.i18n.translate('board.errors.load'));
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
     return APPOINTMENT_STATUSES.map((status) => {
@@ -55,7 +53,7 @@ export class BoardService {
       }
       return {
         id: status,
-        title: STATUS_PLURAL_LABEL[status],
+        title: `board.columns.${status}`,
         accentClass: STATUS_STYLE[status].dot,
         appointments,
         pastIds,
@@ -96,9 +94,11 @@ export class BoardService {
 
     if (!action) {
       this.notifications.error(
-        target === 'PENDING'
-          ? 'Una cita no puede volver a pendiente'
-          : 'Una cita cancelada no puede reactivarse',
+        this.i18n.translate(
+          target === 'PENDING'
+            ? 'board.errors.cannotReturnToPending'
+            : 'board.errors.cannotReactivateCancelled',
+        ),
       );
       return;
     }
@@ -110,6 +110,6 @@ export class BoardService {
   }
 
   private rejectPast(): void {
-    this.notifications.error('No se puede modificar una cita que ya pasó');
+    this.notifications.error(this.i18n.translate('board.errors.cannotModifyPast'));
   }
 }
