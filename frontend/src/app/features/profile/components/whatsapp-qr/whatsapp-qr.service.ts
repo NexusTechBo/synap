@@ -22,10 +22,8 @@ import {
 } from 'rxjs';
 import { WhatsappApi } from '../../../../core/api/whatsapp.api';
 import { apiErrorMessage } from '../../../../core/http/api-error';
-import {
-  WhatsappSessionStatus,
-  WhatsappSessionStatusResponse,
-} from '../../../../core/models/api.models';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { WhatsappSessionStatusResponse } from '../../../../core/models/api.models';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
 export type WhatsappView =
@@ -34,14 +32,6 @@ export type WhatsappView =
 const STATUS_POLL_MS = 3_000;
 const QR_REFRESH_MS = 20_000;
 const QR_MAX_CODES = 6;
-
-const WHATSAPP_STATUS_LABEL: Record<WhatsappSessionStatus, string> = {
-  IDLE: 'Sin vincular',
-  INITIALIZING: 'Iniciando…',
-  QR_PENDING: 'Esperando escaneo',
-  READY: 'Conectado',
-  DISCONNECTED: 'Reconectando…',
-};
 
 function withJsonErrorBody(error: unknown): Observable<never> {
   if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
@@ -72,6 +62,7 @@ function withJsonErrorBody(error: unknown): Observable<never> {
 export class WhatsappQrService {
   private readonly api = inject(WhatsappApi);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
 
   private readonly run = signal(0);
 
@@ -89,8 +80,9 @@ export class WhatsappQrService {
 
   readonly status = computed(() => this.session()?.status ?? null);
   readonly statusLabel = computed(() => {
+    this.i18n.currentLang();
     const status = this.status();
-    return status ? WHATSAPP_STATUS_LABEL[status] : '';
+    return status ? this.i18n.translate(`profile.whatsapp.status.${status}`) : '';
   });
   readonly clinicPhoneNumber = computed(() => this.session()?.clinicPhoneNumber ?? null);
   readonly view = computed<WhatsappView>(() => {
@@ -146,7 +138,7 @@ export class WhatsappQrService {
       takeWhile((session) => session.status !== 'READY' && !this.expired(), true),
       tap((session) => this.onStatus(session)),
       ignoreElements(),
-      catchError((error) => this.fail(error, 'No se pudo consultar el estado de WhatsApp')),
+      catchError((error) => this.fail(error, this.i18n.translate('profile.whatsapp.statusError'))),
     );
   }
 
@@ -159,7 +151,7 @@ export class WhatsappQrService {
       timer(QR_REFRESH_MS).pipe(tap(() => this._expired.set(true))),
     ).pipe(
       ignoreElements(),
-      catchError((error) => this.fail(error, 'No se pudo generar el código QR')),
+      catchError((error) => this.fail(error, this.i18n.translate('profile.whatsapp.qrError'))),
     );
   }
 
@@ -174,7 +166,7 @@ export class WhatsappQrService {
     const previous = this.status();
     this._session.set(session);
     if (session.status === 'READY' && previous && previous !== 'READY') {
-      this.notifications.success('WhatsApp vinculado correctamente');
+      this.notifications.success(this.i18n.translate('profile.whatsapp.linkedSuccess'));
     }
   }
 

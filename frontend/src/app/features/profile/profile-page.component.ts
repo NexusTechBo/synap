@@ -6,7 +6,10 @@ import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
 import { apiErrorMessage } from '../../core/http/api-error';
-import { initials, rolesLabel } from '../../core/utils/labels.util';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { Role } from '../../core/models/api.models';
+import { initials } from '../../core/utils/labels.util';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
@@ -14,7 +17,6 @@ import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.compon
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
 import {
-  PHONE_ERRORS,
   currentPasswordWhenChanging,
   notBlank,
   phoneValidator,
@@ -33,6 +35,7 @@ import { ProfileService } from './profile.service';
     FormFieldComponent,
     PageHeaderComponent,
     LoadErrorComponent,
+    TranslatePipe,
   ],
   providers: [ProfileService],
   templateUrl: './profile-page.component.html',
@@ -41,11 +44,22 @@ import { ProfileService } from './profile.service';
 })
 export class ProfilePageComponent {
   private readonly dialog = inject(Dialog);
+  private readonly i18n = inject(I18nService);
   protected readonly profile = inject(ProfileService);
   protected readonly auth = inject(AuthService);
 
   protected readonly me = this.profile.me;
-  protected readonly phoneErrors = PHONE_ERRORS;
+
+  protected readonly phoneErrors = computed(() => {
+    this.i18n.currentLang();
+    return { pattern: this.i18n.translate('validation.phonePattern') };
+  });
+
+  protected readonly currentPasswordErrors = computed(() => {
+    this.i18n.currentLang();
+    return { required: this.i18n.translate('profile.form.currentPasswordRequired') };
+  });
+
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -58,9 +72,11 @@ export class ProfilePageComponent {
   });
 
   protected readonly roleLabel = computed(() => {
+    this.i18n.currentLang();
     const profile = this.me();
     if (!profile) return '';
-    return rolesLabel(profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role]);
+    const roles: Role[] = profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role];
+    return roles.map((role) => this.i18n.translate(`roles.${role}`)).join(' · ');
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
   protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
@@ -98,7 +114,8 @@ export class ProfilePageComponent {
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo actualizar el perfil')),
+        error: (error) =>
+          this.error.set(apiErrorMessage(error, this.i18n.translate('profile.errors.update'))),
       });
   }
 
