@@ -2,6 +2,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient } from '../../core/models/api.models';
 import { formatLongDate } from '../../core/utils/calendar.util';
 import { DoctorPickerComponent } from '../../shared/components/doctor-picker/doctor-picker.component';
@@ -13,6 +14,7 @@ import { SlotGridComponent } from '../../shared/components/slot-grid/slot-grid.c
 import { SpecialtyFilterComponent } from '../../shared/components/specialty-filter/specialty-filter.component';
 import { InitialsPipe } from '../../shared/pipes/initials.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
@@ -28,6 +30,7 @@ import { BookingService } from './booking.service';
   imports: [
     InitialsPipe,
     TimeRangePipe,
+    TranslatePipe,
     SkeletonComponent,
     FormsModule,
     DatePickerComponent,
@@ -48,9 +51,13 @@ import { BookingService } from './booking.service';
 })
 export class BookingPageComponent {
   private readonly dialog = inject(Dialog);
+  private readonly i18n = inject(I18nService);
   protected readonly booking = inject(BookingService);
 
-  protected readonly dateLabel = computed(() => formatLongDate(this.booking.selectedDate()));
+  protected readonly dateLabel = computed(() => {
+    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    return formatLongDate(this.booking.selectedDate(), locale);
+  });
 
   protected registerPatient(): void {
     this.dialog

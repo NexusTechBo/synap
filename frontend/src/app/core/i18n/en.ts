@@ -632,4 +632,62 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       totalLabel: 'Total',
     },
   },
+
+  booking: {
+    title: 'Book appointment',
+    subtitle: 'Reserve a time slot for a patient',
+    back: 'Back',
+    steps: {
+      patient: 'Patient',
+      specialtyAndDoctor: 'Specialty and doctor',
+      dateAndTime: 'Date and time',
+    },
+    patient: {
+      change: 'Change',
+      searchPlaceholder: 'Search by name or email',
+      searchAria: 'Search patient',
+      registerPatient: 'Register patient',
+      emptySearch: 'No matching patients found.',
+      emptyList: 'No patients registered yet.',
+      emptyHint: 'Use “Register patient” to add a new one.',
+    },
+    doctor: {
+      emptyAll: 'There are no active doctors.',
+      emptyBySpecialty: 'There are no active doctors for this specialty.',
+    },
+    schedule: {
+      dateAria: 'Date',
+      chooseDoctorTitle: 'Choose a doctor',
+      chooseDoctorMessage: 'We will show their available time slots.',
+      emptySlots:
+        'The doctor is unavailable or has no remaining slots on this day. Try another date.',
+    },
+    summary: {
+      title: 'Summary',
+      patient: 'Patient',
+      doctor: 'Doctor',
+      date: 'Date',
+      time: 'Time',
+      submit: 'Book appointment',
+    },
+    notifications: {
+      booked: 'Appointment booked: pending confirmation',
+      rescheduled: 'Appointment rescheduled: pending confirmation',
+    },
+    errors: {
+      book: 'Could not book appointment',
+      reschedule: 'Could not reschedule appointment',
+      loadPatients: 'Could not load patients',
+      loadSlots: 'Could not load available slots',
+    },
+    rescheduleConfirm: {
+      title: 'Patient has an active appointment',
+      alreadyHas: 'already has a',
+      withDoctor: 'appointment with',
+      onDate: 'on',
+      atTime: 'at',
+      questionPrefix: 'Do you want to reschedule it to',
+      confirmLabel: 'Reschedule',
+    },
+  },
 };

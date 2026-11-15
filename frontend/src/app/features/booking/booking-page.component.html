@@ -1,7 +1,7 @@
-<app-page-header title="Agendar cita" subtitle="Reserva un horario para un paciente">
+<app-page-header [title]="'booking.title' | translate" [subtitle]="'booking.subtitle' | translate">
   <a routerLink="/appointments" class="btn btn-secondary">
     <app-ui-icon name="chevronLeft" class="h-4 w-4" />
-    Volver
+    {{ 'booking.back' | translate }}
   </a>
 </app-page-header>
 
@@ -13,7 +13,7 @@
           class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
           >1</span
         >
-        Paciente
+        {{ 'booking.steps.patient' | translate }}
       </h2>
 
       @if (booking.selectedPatient(); as patient) {
@@ -31,7 +31,7 @@
             </div>
           </div>
           <button type="button" class="btn btn-ghost btn-sm" (click)="booking.selectPatient(null)">
-            Cambiar
+            {{ 'booking.patient.change' | translate }}
           </button>
         </div>
       } @else {
@@ -43,15 +43,15 @@
             />
             <input
               class="field-input pl-10"
-              placeholder="Buscar por nombre o email"
-              aria-label="Buscar paciente"
+              [placeholder]="'booking.patient.searchPlaceholder' | translate"
+              [attr.aria-label]="'booking.patient.searchAria' | translate"
               [ngModel]="booking.patientSearch()"
               (ngModelChange)="booking.setPatientSearch($event)"
             />
           </div>
           <button type="button" class="btn btn-primary shrink-0" (click)="registerPatient()">
             <app-ui-icon name="plus" class="h-4 w-4" />
-            Registrar paciente
+            {{ 'booking.patient.registerPatient' | translate }}
           </button>
         </div>
         <div class="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
@@ -86,11 +86,12 @@
             @if (!booking.patientsLoading() && !booking.patientsErrorMessage()) {
               <p class="px-3 py-4 text-sm text-gray-500">
                 {{
-                  booking.patientSearch().trim()
-                    ? 'No hay pacientes que coincidan.'
-                    : 'Aún no hay pacientes registrados.'
+                  (booking.patientSearch().trim()
+                    ? 'booking.patient.emptySearch'
+                    : 'booking.patient.emptyList'
+                  ) | translate
                 }}
-                Usa «Registrar paciente» para añadir uno nuevo.
+                {{ 'booking.patient.emptyHint' | translate }}
               </p>
             }
           }
@@ -105,7 +106,7 @@
             class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
             >2</span
           >
-          Especialidad y doctor
+          {{ 'booking.steps.specialtyAndDoctor' | translate }}
         </h2>
 
         @if (booking.specialtiesErrorMessage(); as error) {
@@ -125,9 +126,10 @@
           [loading]="booking.doctorsLoading()"
           [errorMessage]="booking.doctorsErrorMessage()"
           [emptyMessage]="
-            booking.specialtyId() === null
-              ? 'No hay doctores activos.'
-              : 'No hay doctores activos para esta especialidad.'
+            (booking.specialtyId() === null
+              ? 'booking.doctor.emptyAll'
+              : 'booking.doctor.emptyBySpecialty'
+            ) | translate
           "
           (select)="booking.selectDoctor($event)"
           (retry)="booking.reloadDoctors()"
@@ -142,10 +144,10 @@
             class="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
             >{{ booking.ownDataOnly ? 2 : 3 }}</span
           >
-          Fecha y horario
+          {{ 'booking.steps.dateAndTime' | translate }}
         </h2>
         <app-date-picker
-          ariaLabel="Fecha"
+          [ariaLabel]="'booking.schedule.dateAria' | translate"
           [min]="booking.today"
           [ngModel]="booking.selectedDate()"
           (ngModelChange)="booking.selectDate($event)"
@@ -161,8 +163,8 @@
       @if (!booking.selectedDoctor()) {
         <app-empty-state
           icon="stethoscope"
-          title="Elige un doctor"
-          message="Te mostraremos sus horarios libres."
+          [title]="'booking.schedule.chooseDoctorTitle' | translate"
+          [message]="'booking.schedule.chooseDoctorMessage' | translate"
         />
       } @else {
         <app-slot-grid
@@ -170,7 +172,7 @@
           [selected]="booking.selectedSlot()"
           [loading]="booking.slotsLoading()"
           [errorMessage]="booking.slotsErrorMessage()"
-          emptyMessage="El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha."
+          [emptyMessage]="'booking.schedule.emptySlots' | translate"
           (select)="booking.selectSlot($event)"
           (retry)="booking.reloadSlots()"
         />
@@ -179,26 +181,36 @@
   </div>
 
   <aside class="glass-panel flex w-full flex-col rounded-3xl p-6 lg:w-88 lg:shrink-0 lg:self-start">
-    <h2 class="mb-5 text-xl font-extrabold text-gray-900">Resumen</h2>
+    <h2 class="mb-5 text-xl font-extrabold text-gray-900">
+      {{ 'booking.summary.title' | translate }}
+    </h2>
 
     <dl class="space-y-4 text-sm">
       <div>
-        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</dt>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          {{ 'booking.summary.patient' | translate }}
+        </dt>
         <dd class="mt-0.5 font-bold text-gray-900">{{ booking.selectedPatient()?.name ?? '—' }}</dd>
       </div>
       <div>
-        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</dt>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          {{ 'booking.summary.doctor' | translate }}
+        </dt>
         <dd class="mt-0.5 font-bold text-gray-900">{{ booking.selectedDoctor()?.name ?? '—' }}</dd>
         @if (booking.selectedDoctor()?.specialtyName; as specialty) {
           <dd class="text-gray-500">{{ specialty }}</dd>
         }
       </div>
       <div>
-        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Fecha</dt>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          {{ 'booking.summary.date' | translate }}
+        </dt>
         <dd class="mt-0.5 font-bold text-gray-900">{{ dateLabel() }}</dd>
       </div>
       <div>
-        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">Horario</dt>
+        <dt class="text-xs font-bold uppercase tracking-wide text-gray-500">
+          {{ 'booking.summary.time' | translate }}
+        </dt>
         <dd class="mt-0.5 font-bold text-gray-900">
           @if (booking.selectedSlot(); as slot) {
             {{ slot | timeRange }}
@@ -220,7 +232,7 @@
           class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
         ></span>
       }
-      Agendar cita
+      {{ 'booking.summary.submit' | translate }}
     </button>
   </aside>
 </div>

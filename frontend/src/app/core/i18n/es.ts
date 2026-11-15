@@ -631,4 +631,61 @@ export const ES_TRANSLATIONS = {
       totalLabel: 'Total',
     },
   },
+
+  booking: {
+    title: 'Agendar cita',
+    subtitle: 'Reserva un horario para un paciente',
+    back: 'Volver',
+    steps: {
+      patient: 'Paciente',
+      specialtyAndDoctor: 'Especialidad y doctor',
+      dateAndTime: 'Fecha y horario',
+    },
+    patient: {
+      change: 'Cambiar',
+      searchPlaceholder: 'Buscar por nombre o email',
+      searchAria: 'Buscar paciente',
+      registerPatient: 'Registrar paciente',
+      emptySearch: 'No hay pacientes que coincidan.',
+      emptyList: 'Aún no hay pacientes registrados.',
+      emptyHint: 'Usa «Registrar paciente» para añadir uno nuevo.',
+    },
+    doctor: {
+      emptyAll: 'No hay doctores activos.',
+      emptyBySpecialty: 'No hay doctores activos para esta especialidad.',
+    },
+    schedule: {
+      dateAria: 'Fecha',
+      chooseDoctorTitle: 'Elige un doctor',
+      chooseDoctorMessage: 'Te mostraremos sus horarios libres.',
+      emptySlots: 'El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha.',
+    },
+    summary: {
+      title: 'Resumen',
+      patient: 'Paciente',
+      doctor: 'Doctor',
+      date: 'Fecha',
+      time: 'Horario',
+      submit: 'Agendar cita',
+    },
+    notifications: {
+      booked: 'Cita agendada: queda pendiente de confirmación',
+      rescheduled: 'Cita reprogramada: queda pendiente de confirmación',
+    },
+    errors: {
+      book: 'No se pudo agendar la cita',
+      reschedule: 'No se pudo reprogramar la cita',
+      loadPatients: 'No se pudieron cargar los pacientes',
+      loadSlots: 'No se pudieron cargar los horarios',
+    },
+    rescheduleConfirm: {
+      title: 'Paciente con cita activa',
+      alreadyHas: 'ya tiene una cita',
+      withDoctor: 'con',
+      onDate: 'el',
+      atTime: 'a las',
+      questionPrefix: '¿Deseas reprogramarla al',
+      confirmLabel: 'Reprogramar',
+    },
+  },
 };

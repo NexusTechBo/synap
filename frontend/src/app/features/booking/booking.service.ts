@@ -25,9 +25,9 @@ import {
   resourceError,
   staffActiveAppointmentConflict,
 } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
 import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
-import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { BookingAttempt, DoctorOption } from './booking.model';
@@ -47,6 +47,7 @@ export class BookingService {
   private readonly confirm = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly i18n = inject(I18nService);
 
   readonly ownDataOnly = this.auth.restrictedToOwnData();
   readonly today = toIso(new Date());
@@ -128,7 +129,10 @@ export class BookingService {
   readonly filteredPatients = computed(() =>
     this.patientsResource.hasValue() ? this.patientsResource.value() : [],
   );
-  readonly patientsErrorMessage = resourceError(this.patientsResource, LOAD_ERROR.patients);
+  readonly patientsErrorMessage = resourceError(
+    this.patientsResource,
+    this.i18n.translate('booking.errors.loadPatients'),
+  );
   readonly doctors = computed(() => {
     const all = this.doctorsStore.doctors();
     const id = this._specialtyId();
@@ -137,7 +141,10 @@ export class BookingService {
   readonly slots = computed(() =>
     this.slotsResource.hasValue() ? this.slotsResource.value() : [],
   );
-  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
+  readonly slotsErrorMessage = resourceError(
+    this.slotsResource,
+    this.i18n.translate('booking.errors.loadSlots'),
+  );
   readonly canSubmit = computed(
     () =>
       !!this.selectedDoctor() &&
@@ -217,7 +224,7 @@ export class BookingService {
     this.appointmentsApi
       .book({ doctorId: doctor.id, patientId: patient.id, startTime: attempt.startDateTime })
       .pipe(
-        map(() => 'Cita agendada: queda pendiente de confirmación'),
+        map(() => this.i18n.translate('booking.notifications.booked')),
         catchError((error: unknown) => this.recoverFromBookingError(error, attempt)),
         finalize(() => this._submitting.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -231,20 +238,23 @@ export class BookingService {
   private recoverFromBookingError(error: unknown, attempt: BookingAttempt): Observable<string> {
     const conflict = staffActiveAppointmentConflict(error);
     if (!conflict) {
-      this.handleBookingFailure(error, 'No se pudo agendar la cita');
+      this.handleBookingFailure(error, this.i18n.translate('booking.errors.book'));
       return EMPTY;
     }
     this._submitting.set(false);
-    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt)).pipe(
+    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt, this.i18n)).pipe(
       filter(Boolean),
       tap(() => this._submitting.set(true)),
       switchMap(() =>
         this.appointmentsApi
           .reschedule(conflict.appointmentId, { startTime: attempt.startDateTime })
           .pipe(
-            map(() => 'Cita reprogramada: queda pendiente de confirmación'),
+            map(() => this.i18n.translate('booking.notifications.rescheduled')),
             catchError((rescheduleError: unknown) => {
-              this.handleBookingFailure(rescheduleError, 'No se pudo reprogramar la cita');
+              this.handleBookingFailure(
+                rescheduleError,
+                this.i18n.translate('booking.errors.reschedule'),
+              );
               return EMPTY;
             }),
           ),
