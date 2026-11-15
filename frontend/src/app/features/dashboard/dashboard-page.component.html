@@ -1,8 +1,11 @@
-<app-page-header title="Inicio" subtitle="Resumen de la actividad de esta semana" />
+<app-page-header
+  [title]="'dashboard.title' | translate"
+  [subtitle]="'dashboard.subtitle' | translate"
+/>
 
 <div class="min-h-0 flex-1 overflow-y-auto pb-2">
   <div class="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-    @for (kpi of dashboard.kpis(); track kpi.label) {
+    @for (kpi of dashboard.kpis(); track kpi.icon) {
       <div class="glass-panel flex items-center gap-4 rounded-3xl p-5">
         <span
           class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
@@ -28,10 +31,16 @@
     <section class="glass-panel flex min-w-0 min-h-72 flex-col rounded-3xl p-6">
       <div class="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-extrabold text-gray-900">Agenda de hoy</h2>
-          <p class="text-sm font-medium text-gray-500">Citas pendientes y confirmadas</p>
+          <h2 class="text-xl font-extrabold text-gray-900">
+            {{ 'dashboard.todayAgenda.title' | translate }}
+          </h2>
+          <p class="text-sm font-medium text-gray-500">
+            {{ 'dashboard.todayAgenda.subtitle' | translate }}
+          </p>
         </div>
-        <a routerLink="/calendar" class="btn btn-secondary btn-sm">Ver calendario</a>
+        <a routerLink="/calendar" class="btn btn-secondary btn-sm">
+          {{ 'dashboard.todayAgenda.viewCalendar' | translate }}
+        </a>
       </div>
 
       @if (dashboard.isWeekLoading()) {
@@ -51,8 +60,8 @@
             <app-empty-state
               class="flex-1"
               icon="calendar"
-              title="Sin citas para hoy"
-              message="Las nuevas reservas aparecerán aquí."
+              [title]="'dashboard.todayAgenda.emptyTitle' | translate"
+              [message]="'dashboard.todayAgenda.emptyMessage' | translate"
             />
           }
         </div>
@@ -62,18 +71,27 @@
     <section class="glass-panel flex min-w-0 flex-col rounded-3xl p-6">
       <div class="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-extrabold text-gray-900">Por confirmar</h2>
+          <h2 class="text-xl font-extrabold text-gray-900">
+            {{ 'dashboard.toConfirm.title' | translate }}
+          </h2>
           <p class="text-sm font-medium text-gray-500">
             @if (dashboard.pendingCount(); as count) {
               {{ count }}
-              {{ count === 1 ? 'próxima cita sin confirmar' : 'próximas citas sin confirmar' }}
+              {{
+                (count === 1
+                  ? 'dashboard.toConfirm.countSingular'
+                  : 'dashboard.toConfirm.countPlural'
+                ) | translate
+              }}
             } @else {
-              Próximas citas pendientes de la semana
+              {{ 'dashboard.toConfirm.subtitleEmpty' | translate }}
             }
           </p>
         </div>
         @if (dashboard.pendingCount() > dashboard.pendingToConfirm().length) {
-          <a routerLink="/board" class="btn btn-secondary btn-sm">Ver todas</a>
+          <a routerLink="/board" class="btn btn-secondary btn-sm">
+            {{ 'dashboard.toConfirm.viewAll' | translate }}
+          </a>
         }
       </div>
 
@@ -103,8 +121,12 @@
               <button
                 type="button"
                 class="btn btn-icon btn-ghost text-primary"
-                [attr.aria-label]="'Confirmar cita de ' + appointment.clientName"
-                title="Confirmar"
+                [attr.aria-label]="
+                  ('dashboard.toConfirm.confirmAriaPrefix' | translate) +
+                  ' ' +
+                  appointment.clientName
+                "
+                [title]="'dashboard.toConfirm.confirmTitle' | translate"
                 (click)="dashboard.confirm(appointment)"
               >
                 <app-ui-icon name="check" class="h-4 w-4" />
@@ -112,8 +134,12 @@
               <button
                 type="button"
                 class="btn btn-icon btn-ghost text-gray-500"
-                [attr.aria-label]="'Cancelar cita de ' + appointment.clientName"
-                title="Cancelar"
+                [attr.aria-label]="
+                  ('dashboard.toConfirm.cancelAriaPrefix' | translate) +
+                  ' ' +
+                  appointment.clientName
+                "
+                [title]="'dashboard.toConfirm.cancelTitle' | translate"
                 (click)="dashboard.cancel(appointment)"
               >
                 <app-ui-icon name="block" class="h-4 w-4" />
@@ -123,8 +149,8 @@
             <app-empty-state
               class="flex-1"
               icon="check"
-              title="Todo confirmado"
-              message="No hay citas pendientes de confirmar esta semana."
+              [title]="'dashboard.toConfirm.emptyTitle' | translate"
+              [message]="'dashboard.toConfirm.emptyMessage' | translate"
             />
           }
         </ul>
@@ -134,10 +160,18 @@
 
   <section class="glass-panel mt-5 min-w-0 rounded-3xl p-6">
     <div class="mb-4">
-      <h2 class="text-xl font-extrabold text-gray-900">Citas de la semana</h2>
+      <h2 class="text-xl font-extrabold text-gray-900">
+        {{ 'dashboard.weekChart.title' | translate }}
+      </h2>
       <p class="text-sm font-medium text-gray-500">
-        {{ dashboard.weekTotal() }} {{ dashboard.weekTotal() === 1 ? 'cita' : 'citas' }} por día y
-        estado
+        {{ dashboard.weekTotal() }}
+        {{
+          (dashboard.weekTotal() === 1
+            ? 'dashboard.weekChart.appointmentSingular'
+            : 'dashboard.weekChart.appointmentPlural'
+          ) | translate
+        }}
+        {{ 'dashboard.weekChart.subtitleSuffix' | translate }}
       </p>
     </div>
 

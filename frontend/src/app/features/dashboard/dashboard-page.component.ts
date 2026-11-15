@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AppointmentListItemComponent } from '../../shared/components/appointment-list-item/appointment-list-item.component';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -15,6 +16,7 @@ import { DashboardService } from './dashboard.service';
   imports: [
     WeekChartComponent,
     TimeRangePipe,
+    TranslatePipe,
     LoadErrorComponent,
     SkeletonComponent,
     RouterLink,
