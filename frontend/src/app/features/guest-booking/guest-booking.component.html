@@ -202,7 +202,9 @@
                   <dd class="mt-0.5 font-bold text-gray-900">
                     {{ patient.name ?? 'Paciente registrado' }}
                   </dd>
-                  <dd class="text-gray-500">CI {{ patient.ci }} · {{ patient.phoneNumber }}</dd>
+                  <dd class="text-gray-500">
+                    {{ patient.ci ? 'CI ' + patient.ci + ' · ' : '' }}{{ patient.phoneNumber }}
+                  </dd>
                   @if (patient.email) {
                     <dd class="text-gray-500">{{ patient.email }}</dd>
                   }

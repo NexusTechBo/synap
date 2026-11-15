@@ -56,7 +56,7 @@ describe('RegisterFormComponent', () => {
     await type('Teléfono', '70000000');
     await type('Identificador de la clínica', 'clinicacentral');
     await type('Nombre completo', 'Ana Rojas');
-    await type('CI', ci);
+    await type('CI (opcional)', ci);
     await type('Usuario', 'admin');
     await type('Correo electrónico', 'admin@email.com');
     await type('Contraseña', 'secreto123');
@@ -75,7 +75,7 @@ describe('RegisterFormComponent', () => {
 
   describe('admin CI validation (DEF-02)', () => {
     it('limits the CI input to 10 characters', () => {
-      expect(field('CI').getAttribute('maxlength')).toBe('10');
+      expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
     });
 
     it.each(['1234', '12a45', '12 345', '12345678901'])(
@@ -88,6 +88,15 @@ describe('RegisterFormComponent', () => {
         expect(register.register).not.toHaveBeenCalled();
       },
     );
+
+    it('is valid with an empty CI and sends it as an empty string', async () => {
+      await fillValid('');
+
+      await submit();
+
+      expect(ciError()).toBeUndefined();
+      expect(register.register).toHaveBeenCalledWith(expect.objectContaining({ adminCi: '' }));
+    });
 
     it('registers the clinic with a valid CI', async () => {
       await fillValid('1234567890');

@@ -71,7 +71,7 @@ describe('PatientFormDialogComponent', () => {
   async function fillValid(ci = '1234567'): Promise<void> {
     await type('Nombre completo', '  Ana Rojas  ');
     await type('Teléfono', '70000000');
-    await type('CI', ci);
+    await type('CI (opcional)', ci);
   }
 
   async function submit(): Promise<void> {
@@ -84,8 +84,8 @@ describe('PatientFormDialogComponent', () => {
 
     it('renders the create title and an empty CI limited to 10 characters', () => {
       expect(element.querySelector('h2')?.textContent).toContain('Nuevo paciente');
-      expect(field('CI').value).toBe('');
-      expect(field('CI').getAttribute('maxlength')).toBe('10');
+      expect(field('CI (opcional)').value).toBe('');
+      expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
       expect(submitButton().textContent).toContain('Crear paciente');
     });
 
@@ -103,10 +103,28 @@ describe('PatientFormDialogComponent', () => {
       expect(dialogRef.close).toHaveBeenCalledWith(expect.objectContaining({ ci: '1234567' }));
     });
 
-    it('asks for the required fields on an empty submit', async () => {
+    it('asks for the required fields on an empty submit but not for the optional CI', async () => {
       await submit();
 
-      expect(ciError()).toBe('Este campo es obligatorio');
+      expect(ciError()).toBeUndefined();
+      expect(element.querySelector('#patient-name-error')).not.toBeNull();
+      expect(patients.save).not.toHaveBeenCalled();
+    });
+
+    it('is valid with an empty CI and sends null', async () => {
+      await fillValid('');
+
+      await submit();
+
+      expect(ciError()).toBeUndefined();
+      expect(patients.save).toHaveBeenCalledWith(undefined, expect.objectContaining({ ci: null }));
+    });
+
+    it('treats a whitespace-only CI as invalid and does not send it', async () => {
+      await fillValid('   ');
+
+      expect(ciError()).toBe(CI_MESSAGE);
+      await submit();
       expect(patients.save).not.toHaveBeenCalled();
     });
 
@@ -119,7 +137,7 @@ describe('PatientFormDialogComponent', () => {
         await fillValid(ci);
 
         expect(ciError()).toBe(CI_MESSAGE);
-        expect(field('CI').getAttribute('aria-invalid')).toBe('true');
+        expect(field('CI (opcional)').getAttribute('aria-invalid')).toBe('true');
         await submit();
         expect(patients.save).not.toHaveBeenCalled();
         expect(dialogRef.close).not.toHaveBeenCalled();
@@ -191,7 +209,7 @@ describe('PatientFormDialogComponent', () => {
       await setup({ patient: existing });
 
       expect(element.querySelector('h2')?.textContent).toContain('Editar paciente');
-      expect(field('CI').value).toBe('1234567');
+      expect(field('CI (opcional)').value).toBe('1234567');
       await submit();
 
       expect(patients.save).toHaveBeenCalledWith(existing, {
@@ -200,6 +218,18 @@ describe('PatientFormDialogComponent', () => {
         phoneNumber: '70000000',
         email: null,
       });
+    });
+
+    it('edits a patient without CI and keeps it null', async () => {
+      await setup({ patient: patient({ ci: null }) });
+
+      expect(field('CI (opcional)').value).toBe('');
+      await submit();
+
+      expect(patients.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ ci: null }),
+      );
     });
 
     it('blocks saving an existing patient whose CI no longer matches the rule', async () => {

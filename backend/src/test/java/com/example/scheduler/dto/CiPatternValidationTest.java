@@ -5,13 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.example.scheduler.config.LocaleConfig;
 import com.example.scheduler.dto.clinic.ClinicRequest;
 import com.example.scheduler.dto.guest.GuestNewPatientRequest;
-import com.example.scheduler.dto.guest.GuestPatientRequest;
 import com.example.scheduler.dto.patient.PatientRequest;
 import com.example.scheduler.dto.personal.PersonalRequest;
 import com.example.scheduler.enums.ERole;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import java.util.Set;
@@ -48,7 +46,6 @@ class CiPatternValidationTest {
                             1L
                     )
             ),
-            new Target("GuestPatientRequest", "ci", ci -> new GuestPatientRequest(ci, "70000000")),
             new Target(
                     "GuestNewPatientRequest",
                     "ci",
@@ -107,21 +104,16 @@ class CiPatternValidationTest {
         assertThat(violation.getPropertyPath()).hasToString(target.property());
     }
 
-    @ParameterizedTest(name = "{0} rejects blank \"{1}\"")
+    @ParameterizedTest(name = "{0} accepts blank \"{1}\"")
     @MethodSource("blankCis")
-    void shouldRejectAsRequiredWhenCiIsBlank(Target target, String ci) {
-        var violations = violationsOn(target, ci);
-
-        assertThat(violations).extracting(CiPatternValidationTest::annotationOf).contains(NotBlank.class);
-        assertThat(violations).extracting(v -> v.getPropertyPath().toString()).containsOnly(target.property());
+    void shouldAcceptWhenCiIsBlank(Target target, String ci) {
+        assertThat(validator.validate(target.build().apply(ci))).isEmpty();
     }
 
-    @ParameterizedTest(name = "{0} rejects null")
+    @ParameterizedTest(name = "{0} accepts null")
     @MethodSource("targets")
-    void shouldRejectOnlyAsRequiredWhenCiIsNull(Target target) {
-        var violations = violationsOn(target, null);
-
-        assertThat(violations).extracting(CiPatternValidationTest::annotationOf).containsExactly(NotBlank.class);
+    void shouldAcceptWhenCiIsNull(Target target) {
+        assertThat(validator.validate(target.build().apply(null))).isEmpty();
     }
 
     @ParameterizedTest(name = "{0} accepts \"{1}\"")
@@ -131,7 +123,7 @@ class CiPatternValidationTest {
     }
 
     static Stream<Arguments> malformedCis() {
-        return combine("1234", "12345678901", "12a456", "12 345", "-12345");
+        return combine("1234", "12345678901", "12a456", "12 345", "-12345", " 12345 ", "12345 ");
     }
 
     static Stream<Arguments> blankCis() {
