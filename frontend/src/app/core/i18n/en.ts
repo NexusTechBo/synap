@@ -290,16 +290,41 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   validation: {
     required: 'This field is required',
-    email: 'Enter a valid email',
-    minlength: 'Must be at least {{min}} characters',
-    maxlength: 'Must be at most {{max}} characters',
-    pattern: 'The entered format is not valid',
-    invalidField: 'Invalid field',
-    endBeforeStart: 'End time must be after start time',
-    rangeRequired: 'Specify the time range',
+    email: 'Enter a valid email address',
+    minlength: 'Must be at least {min} characters',
+    maxlength: 'Must be at most {max} characters',
+    pattern: 'Invalid format',
     ciPattern: 'Numbers only, 5 to 10 digits',
     phonePattern: '7 to 20 characters: numbers, spaces, +, - or parentheses',
     usernamePattern: '3 to 50 characters: lowercase letters, numbers, dot, hyphen or underscore',
+    endBeforeStart: 'End time must be after start time',
+    invalidField: 'Invalid field',
+  },
+
+  banner: {
+    welcome: 'Welcome',
+    tagline: 'Manage your appointments and schedules simply, quickly, and securely.',
+  },
+
+  resendActivation: {
+    adminEmailLabel: 'Administrator email',
+    adminEmailPlaceholder: 'admin@email.com',
+    defaultLabel: 'Resend email',
+    sending: 'Sending…',
+    resendIn: 'Resend in',
+    sentMessage: 'If the email matches a pending clinic, we have sent you a new link.',
+    resendError: 'Could not resend email, please try again',
+  },
+
+  dateRangePicker: {
+    ariaLabel: 'Date range:',
+    dialogAriaLabel: 'Select date range',
+    placeholder: 'Select dates',
+    presets: {
+      today: 'Today',
+      next7Days: 'Next 7 days',
+      thisMonth: 'This month',
+    },
   },
 
   availability: {

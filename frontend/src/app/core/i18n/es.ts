@@ -289,15 +289,40 @@ export const ES_TRANSLATIONS = {
   validation: {
     required: 'Este campo es obligatorio',
     email: 'Ingresa un email válido',
-    minlength: 'Debe tener al menos {{min}} caracteres',
-    maxlength: 'Debe tener como máximo {{max}} caracteres',
+    minlength: 'Debe tener al menos {min} caracteres',
+    maxlength: 'Debe tener como máximo {max} caracteres',
     pattern: 'El formato ingresado no es válido',
-    invalidField: 'Campo inválido',
-    endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
-    rangeRequired: 'Indica el rango de horas',
     ciPattern: 'Solo números, de 5 a 10 dígitos',
     phonePattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
     usernamePattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+    endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
+    invalidField: 'Campo inválido',
+  },
+
+  banner: {
+    welcome: 'Bienvenido',
+    tagline: 'Gestiona tus citas y horarios de forma simple, rápida y segura.',
+  },
+
+  resendActivation: {
+    adminEmailLabel: 'Correo del administrador',
+    adminEmailPlaceholder: 'admin@email.com',
+    defaultLabel: 'Reenviar correo',
+    sending: 'Enviando…',
+    resendIn: 'Reenviar en',
+    sentMessage: 'Si el correo corresponde a una clínica pendiente, te enviamos un nuevo enlace.',
+    resendError: 'No se pudo reenviar el correo, intenta de nuevo',
+  },
+
+  dateRangePicker: {
+    ariaLabel: 'Rango de fechas:',
+    dialogAriaLabel: 'Seleccionar rango de fechas',
+    placeholder: 'Seleccionar fechas',
+    presets: {
+      today: 'Hoy',
+      next7Days: 'Próximos 7 días',
+      thisMonth: 'Este mes',
+    },
   },
 
   availability: {
