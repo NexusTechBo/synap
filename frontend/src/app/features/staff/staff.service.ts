@@ -5,13 +5,13 @@ import { StaffApi } from '../../core/api/staff.api';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import { resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import {
   Staff,
   StaffFilters,
   StaffRegisterRequest,
   StaffUpdateRequest,
 } from '../../core/models/api.models';
-import { ACTION_LABEL } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { StaffRoleFilter } from './staff.model';
@@ -29,6 +29,7 @@ export class StaffService {
   private readonly doctorsStore = inject(DoctorsStore);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
 
   private readonly filters = signal<StaffFilters>({
     page: 0,
@@ -52,7 +53,10 @@ export class StaffService {
   );
   readonly roleFilter = computed<StaffRoleFilter>(() => this.filters().role ?? 'all');
   readonly onlyActive = computed(() => this.filters().isActive === true);
-  readonly errorMessage = resourceError(this.staffResource, 'No se pudo cargar el personal');
+  readonly errorMessage = resourceError(
+    this.staffResource,
+    this.i18n.translate('staff.errors.load'),
+  );
 
   constructor() {
     this.specialtiesStore.load();
@@ -75,27 +79,35 @@ export class StaffService {
   }
 
   create(request: StaffRegisterRequest): Observable<Staff> {
-    return this.afterSave(this.staffApi.create(request), 'Miembro del personal creado');
+    return this.afterSave(
+      this.staffApi.create(request),
+      this.i18n.translate('staff.notifications.created'),
+    );
   }
 
   update(id: number, request: StaffUpdateRequest): Observable<Staff> {
-    return this.afterSave(this.staffApi.update(id, request), 'Datos actualizados');
+    return this.afterSave(
+      this.staffApi.update(id, request),
+      this.i18n.translate('staff.notifications.updated'),
+    );
   }
 
   deactivate(staff: Staff): Observable<unknown> {
+    const message = isDoctor(staff)
+      ? `${staff.name} ${this.i18n.translate('staff.confirm.deactivateDoctorSuffix')}`
+      : `${this.i18n.translate('staff.confirm.deactivateStaffPrefix')} ${staff.name}?`;
+
     return this.confirm
       .confirmThen(
         {
-          title: 'Desactivar cuenta',
-          message: isDoctor(staff)
-            ? `${staff.name} dejará de aparecer para nuevas reservas. Sus citas futuras se cancelarán y se notificará a los pacientes por WhatsApp.`
-            : `¿Desactivar la cuenta de ${staff.name}?`,
-          confirmLabel: ACTION_LABEL.deactivate,
+          title: this.i18n.translate('staff.confirm.deactivateTitle'),
+          message,
+          confirmLabel: this.i18n.translate('staff.confirm.deactivateLabel'),
           danger: true,
         },
         () => this.staffApi.deactivate(staff.id),
-        'Cuenta desactivada',
-        'No se pudo desactivar la cuenta',
+        this.i18n.translate('staff.notifications.deactivated'),
+        this.i18n.translate('staff.errors.deactivate'),
       )
       .pipe(tap(() => this.afterChange()));
   }
@@ -104,13 +116,13 @@ export class StaffService {
     return this.confirm
       .confirmThen(
         {
-          title: 'Reactivar cuenta',
-          message: `¿Reactivar a ${staff.name}?`,
-          confirmLabel: ACTION_LABEL.reactivate,
+          title: this.i18n.translate('staff.confirm.reactivateTitle'),
+          message: `${this.i18n.translate('staff.confirm.reactivatePrefix')} ${staff.name}?`,
+          confirmLabel: this.i18n.translate('staff.confirm.reactivateLabel'),
         },
         () => this.staffApi.activate(staff.id),
-        'Cuenta reactivada',
-        'No se pudo reactivar la cuenta',
+        this.i18n.translate('staff.notifications.reactivated'),
+        this.i18n.translate('staff.errors.reactivate'),
       )
       .pipe(tap(() => this.afterChange()));
   }

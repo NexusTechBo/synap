@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Availability, ScheduleException } from '../../core/models/api.models';
 import { LongDatePipe } from '../../shared/pipes/long-date.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { DatePickerComponent } from '../../shared/ui/forms/date-picker/date-picker.component';
@@ -23,6 +24,7 @@ import { ExceptionFormDialogComponent } from './components/exception-form-dialog
     LongDatePipe,
     LowerCasePipe,
     TimeRangePipe,
+    TranslatePipe,
     LoadErrorComponent,
     SkeletonComponent,
     FormsModule,

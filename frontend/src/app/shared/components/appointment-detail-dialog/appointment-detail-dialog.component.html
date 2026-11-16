@@ -1,6 +1,10 @@
 <app-dialog-frame
-  title="Detalle de la cita"
-  [subtitle]="detail.appointment() ? 'Cita #' + detail.appointment()!.id : ''"
+  [title]="'shared.detailDialog.title' | translate"
+  [subtitle]="
+    detail.appointment()
+      ? ('shared.detailDialog.subtitlePrefix' | translate) + detail.appointment()!.id
+      : ''
+  "
   (closed)="close()"
 >
   @if (detail.isLoading()) {
@@ -29,7 +33,7 @@
           </span>
           <div class="min-w-0 pt-0.5">
             <p class="text-xs font-bold uppercase tracking-wide text-gray-500">
-              Motivo de cancelación
+              {{ 'shared.detailDialog.cancellationReasonLabel' | translate }}
             </p>
             @if (appt.cancellationReason) {
               <p
@@ -38,7 +42,9 @@
                 {{ appt.cancellationReason }}
               </p>
             } @else {
-              <p class="mt-0.5 text-sm italic text-gray-400">No se indicó un motivo.</p>
+              <p class="mt-0.5 text-sm italic text-gray-400">
+                {{ 'shared.detailDialog.noReasonProvided' | translate }}
+              </p>
             }
           </div>
         </div>
@@ -51,7 +57,9 @@
           <app-ui-icon name="user" class="h-5 w-5" />
         </span>
         <div class="min-w-0">
-          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Paciente</p>
+          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {{ 'shared.detailDialog.patientLabel' | translate }}
+          </p>
           <p class="truncate text-[15px] font-bold text-gray-900">{{ appt.patientName }}</p>
           @if (appt.patientEmail) {
             <p class="truncate text-sm text-gray-500">{{ appt.patientEmail }}</p>
@@ -66,7 +74,9 @@
           <app-ui-icon name="stethoscope" class="h-5 w-5" />
         </span>
         <div class="min-w-0">
-          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">Doctor</p>
+          <p class="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {{ 'shared.detailDialog.doctorLabel' | translate }}
+          </p>
           <p class="truncate text-[15px] font-bold text-gray-900">{{ appt.doctorName }}</p>
           <p class="truncate text-sm text-gray-500">
             {{ appt.doctorSpecialty | specialtyLabel }} · {{ appt.doctorEmail }}
@@ -83,7 +93,7 @@
         [disabled]="detail.busy()"
         (click)="cancel($event)"
       >
-        Cancelar cita
+        {{ 'shared.detailDialog.cancelButton' | translate }}
       </button>
     }
     @if (detail.canConfirm()) {
@@ -94,11 +104,13 @@
         (click)="confirm($event)"
       >
         <app-ui-icon name="check" class="h-4 w-4" [strokeWidth]="2.4" />
-        Confirmar
+        {{ 'shared.detailDialog.confirmButton' | translate }}
       </button>
     }
     @if (!detail.canCancel() && !detail.canConfirm()) {
-      <button type="button" class="btn btn-secondary" (click)="close()">Cerrar</button>
+      <button type="button" class="btn btn-secondary" (click)="close()">
+        {{ 'shared.detailDialog.closeButton' | translate }}
+      </button>
     }
   </ng-container>
 </app-dialog-frame>

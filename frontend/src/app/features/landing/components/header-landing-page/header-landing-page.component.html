@@ -10,25 +10,28 @@
     <ul class="hidden items-center gap-6 text-sm font-semibold text-gray-600 md:flex">
       @for (item of nav; track item.anchor) {
         <li>
-          <a [href]="'#' + item.anchor" class="hover:text-gray-300 text-white">{{ item.label }}</a>
+          <a [href]="'#' + item.anchor" class="hover:text-gray-300 text-white">
+            {{ item.labelKey | translate }}
+          </a>
         </li>
       }
     </ul>
 
     <div class="flex items-center gap-2">
       @if (isLoggedIn()) {
-        <a [routerLink]="homeUrl" class="btn btn-primary btn-sm hover:text-gray-300 text-white"
-          >Ir al panel</a
-        >
+        <a [routerLink]="homeUrl" class="btn btn-primary btn-sm hover:text-gray-300 text-white">
+          {{ 'landing.nav.goToDashboard' | translate }}
+        </a>
       } @else {
         <a
           routerLink="/login"
           class="btn btn-ghost bg-blue-500 btn-sm hover:text-gray-300 text-white"
-          >Iniciar sesión</a
         >
-        <a routerLink="/register" class="btn btn-primary btn-sm hover:text-gray-300 text-white"
-          >Registrar clínica</a
-        >
+          {{ 'landing.nav.login' | translate }}
+        </a>
+        <a routerLink="/register" class="btn btn-primary btn-sm hover:text-gray-300 text-white">
+          {{ 'landing.nav.registerClinic' | translate }}
+        </a>
       }
     </div>
   </nav>

@@ -8,24 +8,26 @@
       class="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-white/70 px-4 py-1.5 text-sm font-semibold text-primary shadow-sm"
     >
       <span class="h-2 w-2 rounded-full bg-secondary"></span>
-      Gestión de citas para clínicas
+      {{ 'landing.hero.badge' | translate }}
     </p>
     <h1
       appReveal
       class="mx-auto max-w-4xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl"
     >
-      La agenda de tu clínica, <span class="landing-text-gradient">simple y en orden</span>
+      {{ 'landing.hero.titlePrefix' | translate }}
+      <span class="landing-text-gradient">{{ 'landing.hero.titleHighlight' | translate }}</span>
     </h1>
     <p appReveal class="mx-auto mt-6 max-w-2xl text-lg text-gray-600">
-      Citas, doctores, pacientes y horarios en un solo lugar. Menos llamadas, menos inasistencias y
-      más tiempo para tus pacientes.
+      {{ 'landing.hero.subtitle' | translate }}
     </p>
     <div appReveal class="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
       <a routerLink="/register" class="btn btn-primary shadow-lg shadow-primary/25">
-        Empieza gratis
+        {{ 'landing.hero.ctaPrimary' | translate }}
         <app-ui-icon name="chevronRight" class="h-4 w-4" />
       </a>
-      <a [href]="productHref" class="btn btn-secondary">Ver el producto</a>
+      <a [href]="productHref" class="btn btn-secondary">
+        {{ 'landing.hero.ctaSecondary' | translate }}
+      </a>
     </div>
   </div>
 
@@ -37,7 +39,7 @@
     <img
       class="landing-float absolute -bottom-10 right-2 hidden w-40 rounded-4xl border-[6px] border-gray-900 shadow-2xl sm:block md:right-0 md:w-48 lg:-right-6 lg:w-56"
       [src]="heroMobileShot.src"
-      [alt]="heroMobileShot.alt"
+      [alt]="heroMobileShot.altKey | translate"
       decoding="async"
     />
 
@@ -52,8 +54,12 @@
         <app-ui-icon name="check" class="h-5 w-5" />
       </span>
       <span class="text-left">
-        <span class="block text-sm font-bold">Cita confirmada</span>
-        <span class="block text-xs text-gray-500">Natalia Herrera · 10:00</span>
+        <span class="block text-sm font-bold">{{
+          'landing.hero.floatingCardTitle' | translate
+        }}</span>
+        <span class="block text-xs text-gray-500">{{
+          'landing.hero.floatingCardSubtitle' | translate
+        }}</span>
       </span>
     </div>
   </div>

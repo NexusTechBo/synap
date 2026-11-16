@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
@@ -28,12 +29,24 @@ import { DayAgendaPanelComponent } from './components/day-agenda-panel/day-agend
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CalendarPageComponent {
+  private readonly i18n = inject(I18nService);
   protected readonly calendar = inject(CalendarService);
-  protected readonly weekdays = DAYS_OF_WEEK;
-  protected readonly scopeTabs: SegmentedTabItem[] = [
-    { id: 'all', label: 'Toda la clínica' },
-    { id: 'mine', label: 'Mi agenda' },
-  ];
+
+  protected readonly weekdays = computed(() => {
+    this.i18n.currentLang();
+    return DAYS_OF_WEEK.map((day) => ({
+      value: day.value,
+      short: this.i18n.translate(`days.${day.value}.short`),
+    }));
+  });
+
+  protected readonly scopeTabs = computed<SegmentedTabItem[]>(() => {
+    this.i18n.currentLang();
+    return [
+      { id: 'all', label: this.i18n.translate('calendar.scopeAll') },
+      { id: 'mine', label: this.i18n.translate('calendar.scopeMine') },
+    ];
+  });
 
   protected setScope(scope: string): void {
     this.calendar.setScope(scope as CalendarScope);

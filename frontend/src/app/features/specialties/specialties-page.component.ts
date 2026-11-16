@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -18,6 +19,7 @@ import { SpecialtiesService } from './specialties.service';
     EmptyStateComponent,
     LoadErrorComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   providers: [SpecialtiesService],
   templateUrl: './specialties-page.component.html',

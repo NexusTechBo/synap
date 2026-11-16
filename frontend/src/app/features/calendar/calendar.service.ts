@@ -5,6 +5,7 @@ import { map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
 import {
   buildMonthMatrix,
@@ -25,8 +26,11 @@ export class CalendarService {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
   private readonly today = toIso(new Date());
   private readonly _scope = signal<CalendarScope>('all');
+
+  private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
 
   readonly canFilterMine = computed(
     () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
@@ -43,7 +47,7 @@ export class CalendarService {
   private readonly monthKey = computed(() => this.selectedDate().slice(0, 7));
   private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
 
-  readonly monthLabel = computed(() => formatMonthLabel(this.viewDate()));
+  readonly monthLabel = computed(() => formatMonthLabel(this.viewDate(), this.locale()));
   private readonly weeks = computed(() =>
     buildMonthMatrix(this.viewDate().getFullYear(), this.viewDate().getMonth()),
   );
@@ -57,7 +61,7 @@ export class CalendarService {
     stream: ({ params }) => this.api.calendar(params),
   });
   readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, 'No se pudo cargar el calendario');
+  readonly errorMessage = resourceError(this.resource, this.i18n.translate('calendar.errorLoad'));
 
   private readonly byDay = computed(() => {
     const result = new Map<string, AppointmentSummaryItem[]>();
@@ -79,7 +83,7 @@ export class CalendarService {
     );
   });
 
-  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate()));
+  readonly selectedDayLabel = computed(() => formatDayLabel(this.selectedDate(), this.locale()));
   readonly selectedDayAppointments = computed(() =>
     this.resource.hasValue() ? (this.byDay().get(this.selectedDate()) ?? []) : null,
   );

@@ -1,8 +1,17 @@
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { ChangeDetectionStrategy, Component, computed, forwardRef, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { addDays, formatShortDate, parseIso, toIso } from '../../../../core/utils/calendar.util';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { POPOVER_POSITIONS } from '../../../utils/overlay-positions.util';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
 import { MonthGridComponent } from '../month-grid/month-grid.component';
@@ -20,6 +29,7 @@ export interface DateRange {
     CdkOverlayOrigin,
     MonthGridComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   templateUrl: './date-range-picker.component.html',
   host: { class: 'relative' },
@@ -33,15 +43,20 @@ export interface DateRange {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DateRangePickerComponent implements ControlValueAccessor {
+  private readonly i18n = inject(I18nService);
+
   protected readonly positions = POPOVER_POSITIONS;
-  protected readonly presets: { label: string; range: () => DateRange }[] = [
-    { label: 'Hoy', range: () => ({ from: toIso(new Date()), to: toIso(new Date()) }) },
+  protected readonly presets: { labelKey: string; range: () => DateRange }[] = [
     {
-      label: 'Próximos 7 días',
+      labelKey: 'dateRangePicker.presets.today',
+      range: () => ({ from: toIso(new Date()), to: toIso(new Date()) }),
+    },
+    {
+      labelKey: 'dateRangePicker.presets.next7Days',
       range: () => ({ from: toIso(new Date()), to: toIso(addDays(new Date(), 6)) }),
     },
     {
-      label: 'Este mes',
+      labelKey: 'dateRangePicker.presets.thisMonth',
       range: () => {
         const now = new Date();
         return {
@@ -63,8 +78,9 @@ export class DateRangePickerComponent implements ControlValueAccessor {
   private onTouched: () => void = () => {};
 
   protected readonly label = computed(() => {
+    this.i18n.currentLang();
     const range = this.value();
-    if (!range) return 'Seleccionar fechas';
+    if (!range) return this.i18n.translate('dateRangePicker.placeholder');
     return range.from === range.to
       ? formatShortDate(range.from)
       : `${formatShortDate(range.from)} – ${formatShortDate(range.to)}`;

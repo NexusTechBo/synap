@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ClinicsApi } from '../../core/api/clinics.api';
 import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { ClinicRequest } from '../../core/models/api.models';
 import { createCooldown } from '../../core/utils/cooldown.util';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -10,6 +11,7 @@ import { NotificationService } from '../../shared/services/notification.service'
 export class RegisterService {
   private readonly clinicsApi = inject(ClinicsApi);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
   private readonly cooldown = createCooldown();
 
   private readonly _submitting = signal(false);
@@ -33,7 +35,7 @@ export class RegisterService {
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter);
           this.notifications.error(
-            apiErrorMessage(error, 'Ocurrió un error al registrar, intenta de nuevo'),
+            apiErrorMessage(error, this.i18n.translate('register.registerError')),
           );
         },
       });

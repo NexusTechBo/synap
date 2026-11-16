@@ -3,9 +3,9 @@
     class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 py-10 sm:flex-row sm:px-6"
   >
     <div class="flex flex-col items-center gap-3 sm:items-start">
-      <span class="text-xs font-semibold uppercase tracking-wider text-gray-500"
-        >Desarrollado por</span
-      >
+      <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        {{ 'landing.footer.developedBy' | translate }}
+      </span>
       <img
         class="w-34 h-19"
         src="images/logo/nexus-tech-logo.webp"
@@ -26,7 +26,7 @@
 
   <div class="border-t border-white/10">
     <p class="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-gray-500 sm:px-6">
-      © {{ year }} ClinicFlow · Nexus Tech. Todos los derechos reservados.
+      © {{ year }} ClinicFlow · Nexus Tech. {{ 'landing.footer.rights' | translate }}
     </p>
   </div>
 </footer>

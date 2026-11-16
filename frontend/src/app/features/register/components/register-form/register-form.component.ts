@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { map } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,
@@ -17,7 +18,7 @@ import { RegisterService } from '../../register.service';
 
 @Component({
   selector: 'app-register-form',
-  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent],
+  imports: [ReactiveFormsModule, RouterLink, FormFieldComponent, TranslatePipe],
   templateUrl: './register-form.component.html',
   host: { class: 'flex min-h-screen items-center justify-center px-4 py-10 sm:px-6' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,7 +40,7 @@ export class RegisterFormComponent {
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly slugErrors = {
-    pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
+    pattern: 'register.slugPatternError',
   };
   protected readonly usernameErrors = USERNAME_ERRORS;
   protected readonly suffix = toSignal(

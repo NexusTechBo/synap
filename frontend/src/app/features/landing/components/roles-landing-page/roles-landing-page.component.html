@@ -1,9 +1,11 @@
 <section [id]="anchor" class="scroll-mt-20 py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     <div appReveal class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-bold uppercase tracking-wider text-primary">Para todo el equipo</p>
+      <p class="text-sm font-bold uppercase tracking-wider text-primary">
+        {{ 'landing.roles.eyebrow' | translate }}
+      </p>
       <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
-        Una vista para cada rol
+        {{ 'landing.roles.title' | translate }}
       </h2>
     </div>
 
@@ -11,7 +13,7 @@
       appReveal
       class="mx-auto mt-10 flex w-fit flex-wrap justify-center gap-1 rounded-2xl border border-white/80 bg-white/70 p-1.5 shadow-sm backdrop-blur"
       role="tablist"
-      aria-label="Roles"
+      [attr.aria-label]="'landing.roles.tablistAriaLabel' | translate"
     >
       @for (role of roles; track role.id) {
         <button
@@ -29,7 +31,7 @@
           (click)="activeRoleId.set(role.id)"
         >
           <app-ui-icon [name]="role.icon" class="h-4 w-4" />
-          {{ role.label }}
+          {{ role.labelKey | translate }}
         </button>
       }
     </div>
@@ -42,8 +44,8 @@
       class="mt-10"
     >
       <div class="mx-auto max-w-2xl text-center">
-        <h3 class="text-xl font-bold">{{ role.title }}</h3>
-        <p class="mt-2 text-gray-600">{{ role.description }}</p>
+        <h3 class="text-xl font-bold">{{ role.titleKey | translate }}</h3>
+        <p class="mt-2 text-gray-600">{{ role.descriptionKey | translate }}</p>
       </div>
       <app-browser-frame class="mx-auto mt-8 max-w-5xl" [shot]="role.shot" />
     </div>

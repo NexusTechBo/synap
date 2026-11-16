@@ -4,7 +4,7 @@
       form.controls.kind.touched && form.controls.kind.invalid ? 'guest-kind-error' : null
     "
   >
-    <legend class="field-label">¿Ya te atendiste en esta clínica?</legend>
+    <legend class="field-label">{{ 'guestBooking.patientForm.legend' | translate }}</legend>
     <div class="grid gap-2 sm:grid-cols-2">
       @for (option of kinds; track option.id) {
         <label
@@ -16,24 +16,30 @@
           "
         >
           <input type="radio" class="sr-only" formControlName="kind" [value]="option.id" />
-          {{ option.label }}
+          {{ option.labelKey | translate }}
         </label>
       }
     </div>
     @if (form.controls.kind.touched && form.controls.kind.invalid) {
-      <p id="guest-kind-error" class="field-error">Elige una opción</p>
+      <p id="guest-kind-error" class="field-error">
+        {{ 'guestBooking.patientForm.kindRequiredError' | translate }}
+      </p>
     }
   </fieldset>
 
   @if (kind(); as selected) {
     @if (selected === 'returning') {
       <p class="text-sm font-medium text-gray-600">
-        Ingresa el teléfono con el que te registraste.
+        {{ 'guestBooking.patientForm.returningHint' | translate }}
       </p>
     }
 
     @if (selected === 'new') {
-      <app-form-field label="CI (opcional)" fieldId="guest-ci" [errorMessages]="ciErrors">
+      <app-form-field
+        [label]="'guestBooking.patientForm.ciLabel' | translate"
+        fieldId="guest-ci"
+        [errorMessages]="ciErrors"
+      >
         <input
           id="guest-ci"
           class="field-input"
@@ -44,12 +50,19 @@
         />
       </app-form-field>
 
-      <app-form-field label="Nombre completo" fieldId="guest-name">
+      <app-form-field
+        [label]="'guestBooking.patientForm.nameLabel' | translate"
+        fieldId="guest-name"
+      >
         <input id="guest-name" class="field-input" formControlName="name" autocomplete="name" />
       </app-form-field>
     }
 
-    <app-form-field label="Teléfono" fieldId="guest-phone" [errorMessages]="phoneErrors">
+    <app-form-field
+      [label]="'guestBooking.patientForm.phoneLabel' | translate"
+      fieldId="guest-phone"
+      [errorMessages]="phoneErrors"
+    >
       <input
         id="guest-phone"
         type="tel"
@@ -60,7 +73,10 @@
     </app-form-field>
 
     @if (selected === 'new') {
-      <app-form-field label="Email (opcional)" fieldId="guest-email">
+      <app-form-field
+        [label]="'guestBooking.patientForm.emailLabel' | translate"
+        fieldId="guest-email"
+      >
         <input
           id="guest-email"
           type="email"
@@ -73,7 +89,11 @@
   }
 
   <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
-    <button type="button" class="btn btn-secondary" (click)="back.emit()">Atrás</button>
-    <button type="submit" class="btn btn-primary">Continuar</button>
+    <button type="button" class="btn btn-secondary" (click)="back.emit()">
+      {{ 'guestBooking.backButton' | translate }}
+    </button>
+    <button type="submit" class="btn btn-primary">
+      {{ 'guestBooking.continueButton' | translate }}
+    </button>
   </div>
 </form>

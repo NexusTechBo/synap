@@ -47,7 +47,7 @@
         type="button"
         (click)="dismiss(notification.id)"
         class="btn-icon -m-1 h-8 w-8 shrink-0"
-        aria-label="Cerrar notificación"
+        [attr.aria-label]="'shared.closeNotificationAria' | translate"
       >
         <svg class="h-4 w-4" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
           <path

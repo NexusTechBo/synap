@@ -4,6 +4,7 @@ import { PatientsApi } from '../../../core/api/patients.api';
 import { StaffApi } from '../../../core/api/staff.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../core/http/api-error';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { Patient, PatientRequest } from '../../../core/models/api.models';
 import { PATIENT_ASSIGNMENT_ENABLED } from '../../../core/utils/feature-flags.util';
 import { NotificationService } from '../../services/notification.service';
@@ -14,6 +15,7 @@ export class PatientFormService {
   private readonly staffApi = inject(StaffApi);
   private readonly notifications = inject(NotificationService);
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
 
   save(patient: Patient | undefined, request: PatientRequest): Observable<Patient> {
     const save$ = patient
@@ -28,14 +30,20 @@ export class PatientFormService {
                 map(() => saved),
                 catchError((error) => {
                   this.notifications.error(
-                    'Paciente creado, pero no se pudo asignar: ' + apiErrorMessage(error),
+                    `${this.i18n.translate('patients.formDialog.assignWarningPrefix')} ${apiErrorMessage(error)}`,
                   );
                   return of(saved);
                 }),
               )
           : of(saved),
       ),
-      tap(() => this.notifications.success(patient ? 'Paciente actualizado' : 'Paciente creado')),
+      tap(() =>
+        this.notifications.success(
+          this.i18n.translate(
+            patient ? 'patients.formDialog.updatedSuccess' : 'patients.formDialog.createdSuccess',
+          ),
+        ),
+      ),
     );
   }
 }

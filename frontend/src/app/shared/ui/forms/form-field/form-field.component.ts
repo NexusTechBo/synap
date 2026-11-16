@@ -11,7 +11,11 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NgControl } from '@angular/forms';
 import { map, of, startWith, switchMap } from 'rxjs';
-import { getValidationErrorMessage } from '../../../utils/validation-messages.util';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import {
+  getValidationErrorMessage,
+  translateValidationKey,
+} from '../../../utils/validation-messages.util';
 
 function toggleAttribute(element: HTMLElement, name: string, value: string | null): void {
   if (value === null) element.removeAttribute(name);
@@ -31,6 +35,7 @@ export class FormFieldComponent {
   readonly errorMessages = input<Record<string, string>>({});
   readonly linkedErrorId = input<string | null>(null);
 
+  private readonly i18n = inject(I18nService);
   private readonly ngControl = contentChild(NgControl);
   private readonly controlElement = contentChild(NgControl, { read: ElementRef });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
@@ -53,10 +58,12 @@ export class FormFieldComponent {
   );
 
   protected readonly error = computed(() => {
+    this.i18n.currentLang();
     const errors = this.errors();
     if (!errors) return null;
     const override = this.errorMessages()[Object.keys(errors)[0]];
-    return override ?? getValidationErrorMessage(errors);
+    if (override) return translateValidationKey(this.i18n, override);
+    return getValidationErrorMessage(errors, this.i18n);
   });
 
   constructor() {

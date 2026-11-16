@@ -6,6 +6,7 @@ import { PatientsApi } from '../../../../core/api/patients.api';
 import { StaffApi } from '../../../../core/api/staff.api';
 import { DoctorsStore } from '../../../../core/catalogs/doctors.store';
 import { apiErrorMessage, resourceError } from '../../../../core/http/api-error';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import type { AssignDoctorData } from './assign-doctor-dialog.component';
 
@@ -15,6 +16,7 @@ export class AssignDoctorService {
   private readonly staffApi = inject(StaffApi);
   private readonly doctorsStore = inject(DoctorsStore);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
 
   readonly patient = inject<AssignDoctorData>(DIALOG_DATA).patient;
 
@@ -35,7 +37,7 @@ export class AssignDoctorService {
   );
   readonly assignedErrorMessage = resourceError(
     this.assignedResource,
-    'No se pudieron cargar los doctores asignados',
+    this.i18n.translate('patients.assignDoctorDialog.loadError'),
   );
   readonly assignableDoctors = computed(() => {
     const assigned = new Set(this.assignedDoctors().map((doctor) => doctor.id));
@@ -73,9 +75,15 @@ export class AssignDoctorService {
       .pipe(finalize(() => this._assigning.set(false)))
       .subscribe({
         next: () => {
-          this._message.set(
-            `${doctorName ?? 'Doctor'} ${assign ? 'asignado' : 'quitado'} correctamente`,
+          const name =
+            doctorName ?? this.i18n.translate('patients.assignDoctorDialog.defaultDoctorName');
+          const action = this.i18n.translate(
+            assign
+              ? 'patients.assignDoctorDialog.assignedStatus'
+              : 'patients.assignDoctorDialog.removedStatus',
           );
+          const suffix = this.i18n.translate('patients.assignDoctorDialog.statusSuffix');
+          this._message.set(`${name} ${action} ${suffix}`);
           this._changed.set(true);
           this.assignedResource.reload();
         },

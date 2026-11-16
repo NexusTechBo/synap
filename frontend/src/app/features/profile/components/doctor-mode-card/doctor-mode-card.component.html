@@ -1,9 +1,10 @@
 <div class="flex items-start justify-between gap-4">
   <div class="min-w-0">
-    <h2 id="doctor-mode-title" class="text-xl font-extrabold text-gray-900">Atender como doctor</h2>
+    <h2 id="doctor-mode-title" class="text-xl font-extrabold text-gray-900">
+      {{ 'profile.doctorMode.title' | translate }}
+    </h2>
     <p id="doctor-mode-description" class="mt-1 text-sm text-gray-500">
-      Recibe citas de pacientes, define tu horario de atención y gestiona tu propia agenda sin
-      perder tus permisos de administrador.
+      {{ 'profile.doctorMode.description' | translate }}
     </p>
   </div>
   <button
@@ -28,7 +29,9 @@
 @if (enabled()) {
   <dl class="mt-4 text-sm">
     <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-      <dt class="font-semibold text-gray-500">Especialidad</dt>
+      <dt class="font-semibold text-gray-500">
+        {{ 'profile.doctorMode.specialtyLabel' | translate }}
+      </dt>
       <dd class="font-bold text-gray-800">{{ profile.me()?.specialtyName ?? '—' }}</dd>
     </div>
   </dl>
@@ -38,17 +41,18 @@
       <app-load-error [message]="message" (retry)="profile.reloadSpecialties()" />
     } @else {
       <app-form-field
-        label="Especialidad"
+        [label]="'profile.doctorMode.specialtyLabel' | translate"
         fieldId="doctor-mode-specialty"
-        [errorMessages]="{ required: 'Selecciona tu especialidad' }"
+        [errorMessages]="specialtyErrors()"
       >
         <app-select
           id="doctor-mode-specialty"
           icon="tag"
           [placeholder]="
-            profile.specialtiesLoading()
-              ? 'Cargando especialidades…'
-              : 'Selecciona una especialidad'
+            (profile.specialtiesLoading()
+              ? 'profile.doctorMode.loadingSpecialties'
+              : 'profile.doctorMode.specialtyPlaceholder'
+            ) | translate
           "
           formControlName="specialtyId"
           [options]="specialtyOptions()"
@@ -62,7 +66,9 @@
 
     <div class="flex justify-end">
       <button type="submit" class="btn btn-primary" [disabled]="saving()">
-        {{ saving() ? 'Guardando…' : 'Activar modo doctor' }}
+        {{
+          (saving() ? 'profile.doctorMode.saving' : 'profile.doctorMode.enableButton') | translate
+        }}
       </button>
     </div>
   </form>

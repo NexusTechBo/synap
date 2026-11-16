@@ -1,4 +1,7 @@
-<app-page-header title="Mi perfil" subtitle="Tus datos de contacto en la clínica" />
+<app-page-header
+  [title]="'profile.title' | translate"
+  [subtitle]="'profile.subtitle' | translate"
+/>
 
 <div class="min-h-0 flex-1 overflow-y-auto">
   @if (profile.errorMessage(); as message) {
@@ -24,29 +27,31 @@
           <p class="text-sm font-semibold text-primary">{{ roleLabel() }}</p>
           <dl class="mt-5 w-full space-y-2.5 text-left text-sm">
             <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-              <dt class="font-semibold text-gray-500">Usuario</dt>
+              <dt class="font-semibold text-gray-500">{{ 'profile.info.username' | translate }}</dt>
               <dd class="min-w-0 break-all text-right font-bold text-gray-800">{{ p.username }}</dd>
             </div>
             <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-              <dt class="font-semibold text-gray-500">CI</dt>
+              <dt class="font-semibold text-gray-500">{{ 'profile.info.ci' | translate }}</dt>
               <dd class="font-bold text-gray-800">{{ p.ci || '—' }}</dd>
             </div>
             @if (p.specialtyName) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-                <dt class="font-semibold text-gray-500">Especialidad</dt>
+                <dt class="font-semibold text-gray-500">
+                  {{ 'profile.info.specialty' | translate }}
+                </dt>
                 <dd class="font-bold text-gray-800">{{ p.specialtyName }}</dd>
               </div>
             }
             @if (auth.clinic(); as clinic) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-                <dt class="font-semibold text-gray-500">Clínica</dt>
+                <dt class="font-semibold text-gray-500">{{ 'profile.info.clinic' | translate }}</dt>
                 <dd class="min-w-0 truncate font-bold text-gray-800">{{ clinic.name }}</dd>
               </div>
             }
           </dl>
           @if (canLinkWhatsapp()) {
             <button type="button" class="btn btn-primary mt-4" (click)="openWhatsapp()">
-              WhatsApp de la clínica
+              {{ 'profile.info.clinicWhatsapp' | translate }}
             </button>
           }
         }
@@ -54,8 +59,10 @@
 
       <section class="glass-panel min-w-0 rounded-3xl p-6">
         <form [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
-          <h2 class="mb-1 text-xl font-extrabold text-gray-900">Datos personales</h2>
-          <app-form-field label="Nombre completo" fieldId="profile-name">
+          <h2 class="mb-1 text-xl font-extrabold text-gray-900">
+            {{ 'profile.form.personalDataTitle' | translate }}
+          </h2>
+          <app-form-field [label]="'profile.form.fullNameLabel' | translate" fieldId="profile-name">
             <input
               id="profile-name"
               class="field-input"
@@ -64,7 +71,7 @@
             />
           </app-form-field>
           <div class="grid gap-4 sm:grid-cols-2">
-            <app-form-field label="Email" fieldId="profile-email">
+            <app-form-field [label]="'profile.form.emailLabel' | translate" fieldId="profile-email">
               <input
                 id="profile-email"
                 type="email"
@@ -74,9 +81,9 @@
               />
             </app-form-field>
             <app-form-field
-              label="Teléfono (opcional)"
+              [label]="'profile.form.phoneLabel' | translate"
               fieldId="profile-phone"
-              [errorMessages]="phoneErrors"
+              [errorMessages]="phoneErrors()"
             >
               <input
                 id="profile-phone"
@@ -88,13 +95,17 @@
             </app-form-field>
           </div>
 
-          <h2 class="mb-1 pt-4 text-xl font-extrabold text-gray-900">Cambiar contraseña</h2>
-          <p class="text-sm text-gray-500">Opcional. Déjalo vacío para mantener la actual.</p>
+          <h2 class="mb-1 pt-4 text-xl font-extrabold text-gray-900">
+            {{ 'profile.form.changePasswordTitle' | translate }}
+          </h2>
+          <p class="text-sm text-gray-500">
+            {{ 'profile.form.changePasswordSubtitle' | translate }}
+          </p>
           <div class="grid gap-4 sm:grid-cols-2">
             <app-form-field
-              label="Contraseña actual"
+              [label]="'profile.form.currentPasswordLabel' | translate"
               fieldId="profile-current-password"
-              [errorMessages]="{ required: 'Ingresa tu contraseña actual para cambiarla' }"
+              [errorMessages]="currentPasswordErrors()"
             >
               <input
                 id="profile-current-password"
@@ -104,14 +115,17 @@
                 autocomplete="current-password"
               />
             </app-form-field>
-            <app-form-field label="Nueva contraseña" fieldId="profile-new-password">
+            <app-form-field
+              [label]="'profile.form.newPasswordLabel' | translate"
+              fieldId="profile-new-password"
+            >
               <input
                 id="profile-new-password"
                 type="password"
                 class="field-input"
                 formControlName="newPassword"
                 autocomplete="new-password"
-                placeholder="Mínimo 8 caracteres"
+                [placeholder]="'profile.form.newPasswordPlaceholder' | translate"
               />
             </app-form-field>
           </div>
@@ -122,7 +136,7 @@
 
           <div class="flex justify-end pt-2">
             <button type="submit" class="btn btn-primary" [disabled]="saving() || form.pristine">
-              {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+              {{ (saving() ? 'profile.form.saving' : 'profile.form.saveChanges') | translate }}
             </button>
           </div>
         </form>

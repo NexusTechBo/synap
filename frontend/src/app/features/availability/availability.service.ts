@@ -21,6 +21,7 @@ import {
   apiErrorMessage,
   resourceError,
 } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import {
   Availability,
   DayOfWeek,
@@ -33,13 +34,12 @@ import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { AddAvailabilityResult, AvailabilityBlock } from './availability.model';
 
-const REMOVE_LABEL = 'Quitar';
-
 @Injectable()
 export class AvailabilityService {
   private readonly api = inject(AgendaApi);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
   private readonly doctorId = inject(AuthService).userId()!;
 
   readonly today = toIso(new Date());
@@ -62,9 +62,12 @@ export class AvailabilityService {
   readonly isPreviewLoading = this.previewResource.isLoading;
 
   readonly week = computed(() => {
+    this.i18n.currentLang();
     const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
     return DAYS_OF_WEEK.map((day) => ({
-      ...day,
+      value: day.value,
+      label: this.i18n.translate(`days.${day.value}.label`),
+      short: this.i18n.translate(`days.${day.value}.short`),
       blocks: blocks
         .filter((block) => block.dayOfWeek === day.value)
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
@@ -76,14 +79,17 @@ export class AvailabilityService {
   readonly previewSlots = computed(() =>
     this.previewResource.hasValue() ? this.previewResource.value() : [],
   );
-  readonly weekError = resourceError(this.availabilityResource, 'No se pudo cargar tu horario');
+  readonly weekError = resourceError(
+    this.availabilityResource,
+    this.i18n.translate('availability.errors.loadWeek'),
+  );
   readonly exceptionsError = resourceError(
     this.exceptionsResource,
-    'No se pudieron cargar los bloqueos',
+    this.i18n.translate('availability.errors.loadExceptions'),
   );
   readonly previewError = resourceError(
     this.previewResource,
-    'No se pudieron cargar los horarios libres',
+    this.i18n.translate('availability.errors.loadPreview'),
   );
 
   reload(): void {
@@ -106,7 +112,13 @@ export class AvailabilityService {
         this.api.addAvailability({ dayOfWeek: day, ...block }).pipe(
           map(() => ({ day, message: null })),
           catchError((error) =>
-            of({ day, message: apiErrorMessage(error, 'No se pudo guardar el horario') }),
+            of({
+              day,
+              message: apiErrorMessage(
+                error,
+                this.i18n.translate('availability.errors.saveSchedule'),
+              ),
+            }),
           ),
         ),
       ),
@@ -116,31 +128,40 @@ export class AvailabilityService {
         failed: results.flatMap(({ day, message }) => (message === null ? [] : [{ day, message }])),
       })),
       tap(({ saved }) => {
-        if (saved.length) this.notifications.success('Horario agregado');
+        if (saved.length) {
+          this.notifications.success(
+            this.i18n.translate('availability.notifications.scheduleAdded'),
+          );
+        }
       }),
       finalize(() => this.reload()),
     );
   }
 
   removeAvailability(block: Availability, dayLabel: string): Observable<void> {
+    const prefix = this.i18n.translate('availability.confirm.removeScheduleMessagePrefix');
+    const fromWord = this.i18n.translate('availability.confirm.removeScheduleMessageFrom');
+    const toWord = this.i18n.translate('availability.confirm.removeScheduleMessageTo');
+    const suffix = this.i18n.translate('availability.confirm.removeScheduleMessageSuffix');
+
     return this.confirm
       .confirmThen(
         {
-          title: 'Quitar horario',
-          message: `¿Quitar el bloque del ${dayLabel.toLowerCase()} de ${formatTime(block.startTime)} a ${formatTime(block.endTime)}? Las citas ya agendadas se mantienen.`,
-          confirmLabel: REMOVE_LABEL,
+          title: this.i18n.translate('availability.confirm.removeScheduleTitle'),
+          message: `${prefix} ${dayLabel.toLowerCase()} ${fromWord} ${formatTime(block.startTime)} ${toWord} ${formatTime(block.endTime)}${suffix}`,
+          confirmLabel: this.i18n.translate('availability.confirm.removeLabel'),
           danger: true,
         },
         () => this.api.removeAvailability(block.id),
-        'Horario quitado',
-        'No se pudo quitar el horario',
+        this.i18n.translate('availability.notifications.scheduleRemoved'),
+        this.i18n.translate('availability.errors.removeSchedule'),
       )
       .pipe(tap(() => this.reload()));
   }
 
   addException(request: Omit<ScheduleExceptionRequest, 'cancelAppointments'>): Observable<void> {
     return this.api.addException({ ...request, cancelAppointments: false }).pipe(
-      map(() => 'Agenda bloqueada'),
+      map(() => this.i18n.translate('availability.notifications.scheduleBlocked')),
       catchError((error) => {
         const count = activeAppointmentsConflict(error);
         if (count === null) return throwError(() => error);
@@ -148,8 +169,8 @@ export class AvailabilityService {
           switchMap(() => this.api.addException({ ...request, cancelAppointments: true })),
           map(() =>
             count === 1
-              ? 'Agenda bloqueada. Se canceló la cita y se notificó al paciente'
-              : 'Agenda bloqueada. Se cancelaron las citas y se notificó a los pacientes',
+              ? this.i18n.translate('availability.notifications.scheduleBlockedSingleCancelled')
+              : this.i18n.translate('availability.notifications.scheduleBlockedMultipleCancelled'),
           ),
         );
       }),
@@ -162,16 +183,17 @@ export class AvailabilityService {
   }
 
   removeException(exception: ScheduleException): Observable<void> {
+    const prefix = this.i18n.translate('availability.confirm.removeBlockMessagePrefix');
     return this.confirm
       .confirmThen(
         {
-          title: 'Quitar bloqueo',
-          message: `¿Habilitar nuevamente el ${formatLongDate(exception.date).toLowerCase()}?`,
-          confirmLabel: REMOVE_LABEL,
+          title: this.i18n.translate('availability.confirm.removeBlockTitle'),
+          message: `${prefix} ${formatLongDate(exception.date).toLowerCase()}?`,
+          confirmLabel: this.i18n.translate('availability.confirm.removeLabel'),
         },
         () => this.api.removeException(exception.id),
-        'Bloqueo quitado',
-        'No se pudo quitar el bloqueo',
+        this.i18n.translate('availability.notifications.blockRemoved'),
+        this.i18n.translate('availability.errors.removeException'),
       )
       .pipe(tap(() => this.reload()));
   }
@@ -179,15 +201,15 @@ export class AvailabilityService {
   private confirmCancelAppointments(count: number): Observable<true> {
     const message =
       count === 1
-        ? 'Hay 1 cita activa en este horario. Si bloqueas, se cancelará y se notificará al paciente.'
+        ? this.i18n.translate('availability.confirm.cancelAppointmentsSingle')
         : count > 1
-          ? `Hay ${count} citas activas en este horario. Si bloqueas, se cancelarán y se notificará a los pacientes.`
-          : 'Hay citas activas en este horario. Si bloqueas, se cancelarán y se notificará a los pacientes.';
+          ? `${this.i18n.translate('availability.confirm.cancelAppointmentsMultiplePrefix')} ${count} ${this.i18n.translate('availability.confirm.cancelAppointmentsMultipleSuffix')}`
+          : this.i18n.translate('availability.confirm.cancelAppointmentsGeneric');
     return this.confirm
       .ask({
-        title: 'Cancelar citas',
+        title: this.i18n.translate('availability.confirm.cancelAppointmentsTitle'),
         message,
-        confirmLabel: 'Bloquear y cancelar citas',
+        confirmLabel: this.i18n.translate('availability.confirm.cancelAppointmentsConfirm'),
         danger: true,
       })
       .pipe(switchMap((confirmed) => (confirmed ? [true as const] : EMPTY)));

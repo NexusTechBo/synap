@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import { Observable, catchError, finalize, map, of, shareReplay, throwError } from 'rxjs';
 import { GuestApi } from '../api/guest.api';
 import { apiErrorMessage, isRateLimited, retryAfterSeconds } from '../http/api-error';
+import { I18nService } from '../i18n/i18n.service';
 import { GuestTokenPayload } from '../models/api.models';
 import { createCooldown } from '../utils/cooldown.util';
 
@@ -17,7 +18,6 @@ interface GuestSession {
 
 const GUEST_TOKEN_KEY = 'scheduler.guestToken';
 const EXPIRY_MARGIN_MS = 30_000;
-const UNAVAILABLE_MESSAGE = 'Esta clínica no está disponible para reservas en línea.';
 
 function readStorage(): string | null {
   try {
@@ -52,6 +52,7 @@ function isFresh(session: GuestSession | null): session is GuestSession {
 @Injectable({ providedIn: 'root' })
 export class GuestSessionService {
   private readonly guestApi = inject(GuestApi);
+  private readonly i18n = inject(I18nService);
 
   private slug: string | null = null;
   private session: GuestSession | null = null;
@@ -73,7 +74,7 @@ export class GuestSessionService {
     this.slug = slug?.trim() || null;
     this.pending = null;
     if (!this.slug) {
-      this.setStatus('unavailable', UNAVAILABLE_MESSAGE);
+      this.setStatus('unavailable', this.i18n.translate('guestBooking.unavailableMessage'));
       return;
     }
     const stored = decodeGuestSession(readStorage(), this.slug);
@@ -129,7 +130,7 @@ export class GuestSessionService {
     const unavailable =
       error instanceof HttpErrorResponse &&
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);
-    if (unavailable) this.setStatus('unavailable', UNAVAILABLE_MESSAGE);
+    if (unavailable) this.setStatus('unavailable');
     else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
   }
 

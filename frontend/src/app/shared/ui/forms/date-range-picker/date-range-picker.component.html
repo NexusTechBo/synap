@@ -4,7 +4,7 @@
   #trigger="cdkOverlayOrigin"
   [disabled]="disabled()"
   [attr.aria-expanded]="isOpen()"
-  [attr.aria-label]="'Rango de fechas: ' + label()"
+  [attr.aria-label]="('dateRangePicker.ariaLabel' | translate) + ' ' + label()"
   aria-haspopup="dialog"
   class="group inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gray-900/5 py-1 pl-2.5 pr-2 text-[15px] font-bold text-gray-600 transition-colors hover:bg-gray-900/8 hover:text-gray-900"
   (click)="isOpen() ? close() : open()"
@@ -38,7 +38,7 @@
   <div
     class="glass-modal w-[min(19rem,calc(100vw-2rem))] rounded-3xl p-4"
     role="dialog"
-    aria-label="Seleccionar rango de fechas"
+    [attr.aria-label]="'dateRangePicker.dialogAriaLabel' | translate"
     cdkTrapFocus
     [cdkTrapFocusAutoCapture]="true"
   >
@@ -50,13 +50,13 @@
       (hover)="hovered.set($event)"
     />
     <div class="mt-3.5 flex flex-wrap gap-1.5 border-t border-white/60 pt-3.5">
-      @for (preset of presets; track preset.label) {
+      @for (preset of presets; track preset.labelKey) {
         <button
           type="button"
           (click)="commit(preset.range())"
           class="glass-panel rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-white/70"
         >
-          {{ preset.label }}
+          {{ preset.labelKey | translate }}
         </button>
       }
     </div>

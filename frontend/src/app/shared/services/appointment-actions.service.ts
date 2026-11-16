@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, switchMap, tap } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentResponse } from '../../core/models/api.models';
 import { datePart, formatDayLabel, formatTime } from '../../core/utils/calendar.util';
 import {
@@ -18,27 +19,34 @@ import { labelledByFrame } from '../ui/dialog-frame/dialog-frame.component';
 import { ConfirmService } from './confirm.service';
 import { NotificationService } from './notification.service';
 
-function dayTime(startTime: string): string {
-  return `${formatDayLabel(datePart(startTime)).toLowerCase()} ${formatTime(startTime)}`;
-}
-
 @Injectable({ providedIn: 'root' })
 export class AppointmentActionsService {
   private readonly api = inject(AppointmentsApi);
   private readonly confirmService = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly dialog = inject(Dialog);
+  private readonly i18n = inject(I18nService);
+
+  private dayTime(startTime: string): string {
+    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    return `${formatDayLabel(datePart(startTime), locale).toLowerCase()} ${formatTime(startTime)}`;
+  }
 
   confirm(id: number, patientName: string, startTime: string): Observable<AppointmentResponse> {
     return this.confirmService
       .ask({
-        title: 'Confirmar cita',
-        message: `¿Confirmar la cita de ${patientName} del ${dayTime(startTime)}?`,
-        confirmLabel: 'Confirmar',
+        title: this.i18n.translate('shared.appointmentActions.confirmTitle'),
+        message: `${this.i18n.translate('shared.appointmentActions.confirmMessagePrefix')} ${patientName} ${this.i18n.translate('shared.appointmentActions.confirmMessageConnector')} ${this.dayTime(startTime)}?`,
+        confirmLabel: this.i18n.translate('shared.appointmentActions.confirmLabel'),
       })
       .pipe(
         filter(Boolean),
-        switchMap(() => this.run(this.api.confirm(id), 'Cita confirmada')),
+        switchMap(() =>
+          this.run(
+            this.api.confirm(id),
+            this.i18n.translate('shared.appointmentActions.confirmedSuccess'),
+          ),
+        ),
       );
   }
 
@@ -46,11 +54,16 @@ export class AppointmentActionsService {
     return this.dialog
       .open<CancelAppointmentResult, CancelAppointmentData>(CancelAppointmentDialogComponent, {
         ...labelledByFrame(),
-        data: { patientName, when: dayTime(startTime) },
+        data: { patientName, when: this.dayTime(startTime) },
       })
       .closed.pipe(
         filter((result): result is CancelAppointmentResult => !!result),
-        switchMap(({ reason }) => this.run(this.api.cancel(id, { reason }), 'Cita cancelada')),
+        switchMap(({ reason }) =>
+          this.run(
+            this.api.cancel(id, { reason }),
+            this.i18n.translate('shared.appointmentActions.cancelledSuccess'),
+          ),
+        ),
       );
   }
 

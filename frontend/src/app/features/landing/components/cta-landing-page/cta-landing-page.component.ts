@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 import { RevealDirective } from '../../directives/reveal.directive';
 
 @Component({
   selector: 'app-cta-landing-page',
-  imports: [RouterLink, UiIconComponent, RevealDirective],
+  imports: [RouterLink, UiIconComponent, RevealDirective, TranslatePipe],
   templateUrl: './cta-landing-page.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

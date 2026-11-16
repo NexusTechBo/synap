@@ -1,37 +1,67 @@
 import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
+import { I18nService } from '../../core/i18n/i18n.service';
 
-export const INVALID_EMAIL_MESSAGE = 'Ingresa un email válido';
+export const INVALID_EMAIL_KEY = 'validation.email';
 
-const VALIDATION_MESSAGES: Record<string, (error: { requiredLength?: number }) => string> = {
-  required: () => 'Este campo es obligatorio',
-  email: () => INVALID_EMAIL_MESSAGE,
-  minlength: (error) => `Debe tener al menos ${error.requiredLength} caracteres`,
-  maxlength: (error) => `Debe tener como máximo ${error.requiredLength} caracteres`,
-  pattern: () => 'El formato ingresado no es válido',
+const VALIDATION_MESSAGE_KEYS: Record<
+  string,
+  (error: { requiredLength?: number }) => { key: string; params?: Record<string, string | number> }
+> = {
+  required: () => ({ key: 'validation.required' }),
+  email: () => ({ key: INVALID_EMAIL_KEY }),
+  minlength: (error) => ({
+    key: 'validation.minlength',
+    params: { min: error.requiredLength ?? 0 },
+  }),
+  maxlength: (error) => ({
+    key: 'validation.maxlength',
+    params: { max: error.requiredLength ?? 0 },
+  }),
+  pattern: () => ({ key: 'validation.pattern' }),
 };
 
 export const ciValidator = Validators.pattern(/^\d{5,10}$/);
-export const CI_ERRORS = { pattern: 'Solo números, de 5 a 10 dígitos' };
+export const CI_ERRORS = { pattern: 'validation.ciPattern' };
 
 export const phoneValidator = Validators.pattern(/^[\d\s()+-]{7,20}$/);
 export const PHONE_ERRORS = {
-  pattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
+  pattern: 'validation.phonePattern',
 };
 
 export const usernameValidator = Validators.pattern(/^[a-z0-9._-]{3,50}$/);
 export const USERNAME_ERRORS = {
-  pattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+  pattern: 'validation.usernamePattern',
 };
 
 export const TIME_RANGE_ERRORS = {
-  endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
+  endBeforeStart: 'validation.endBeforeStart',
 };
 
-export function getValidationErrorMessage(errors: ValidationErrors | null): string | null {
+export function translateValidationKey(
+  i18n: I18nService,
+  keyOrMessage: string,
+  params?: Record<string, string | number>,
+): string {
+  let text = i18n.translate(keyOrMessage);
+  if (params) {
+    for (const [paramKey, paramValue] of Object.entries(params)) {
+      text = text.replace(`{${paramKey}}`, String(paramValue));
+    }
+  }
+  return text;
+}
+
+export function getValidationErrorMessage(
+  errors: ValidationErrors | null,
+  i18n?: I18nService,
+): string | null {
   if (!errors) return null;
 
   const key = Object.keys(errors)[0];
-  return VALIDATION_MESSAGES[key]?.(errors[key]) ?? 'Campo inválido';
+  const resolved = VALIDATION_MESSAGE_KEYS[key]?.(errors[key]) ?? {
+    key: 'validation.invalidField',
+  };
+  return i18n ? translateValidationKey(i18n, resolved.key, resolved.params) : resolved.key;
 }
 
 export function notBlank(control: AbstractControl): ValidationErrors | null {

@@ -9,6 +9,7 @@ import {
   resourceError,
   retryAfterSeconds,
 } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import {
   GuestAppointmentResponse,
   GuestBookingPatient,
@@ -31,6 +32,7 @@ import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
 export class GuestBookingService {
   private readonly guestApi = inject(GuestApi);
   private readonly guestSession = inject(GuestSessionService);
+  private readonly i18n = inject(I18nService);
   private readonly cooldown = createCooldown();
 
   readonly today = toIso(new Date());
@@ -109,7 +111,10 @@ export class GuestBookingService {
   readonly clinicName = computed(() =>
     this.clinicResource.hasValue() ? this.clinicResource.value().name : null,
   );
-  readonly clinicErrorMessage = resourceError(this.clinicResource, 'No se pudo cargar la clínica');
+  readonly clinicErrorMessage = resourceError(
+    this.clinicResource,
+    this.i18n.translate('guestBooking.clinicLoadError'),
+  );
   readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
   readonly error = computed(
     () =>
@@ -234,7 +239,10 @@ export class GuestBookingService {
     date: string,
     slot: TimeSlot,
   ): Observable<never> {
-    const message = apiErrorMessage(error, 'No se pudo registrar la reserva');
+    const message = apiErrorMessage(
+      error,
+      this.i18n.translate('guestBooking.errors.bookingFailed'),
+    );
     const retryAfter = retryAfterSeconds(error);
     if (retryAfter) {
       this._rateLimitMessage.set(message);
