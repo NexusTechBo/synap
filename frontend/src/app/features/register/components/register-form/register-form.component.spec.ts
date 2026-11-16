@@ -1,6 +1,7 @@
 import { provideZoneChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { RegisterService } from '../../register.service';
 import { RegisterFormComponent } from './register-form.component';
 
@@ -30,6 +31,8 @@ describe('RegisterFormComponent', () => {
         },
       ],
     });
+    localStorage.setItem('lang', 'es');
+    await TestBed.inject(I18nService).init();
     fixture = TestBed.createComponent(RegisterFormComponent);
     fixture.autoDetectChanges();
     element = fixture.nativeElement;
@@ -52,9 +55,9 @@ describe('RegisterFormComponent', () => {
   }
 
   async function fillValid(ci: string): Promise<void> {
-    await type('Nombre', 'Clínica Central');
+    await type('Nombre del espacio de trabajo', 'Mi consultorio');
     await type('Teléfono', '70000000');
-    await type('Identificador de la clínica', 'clinicacentral');
+    await type('Identificador del espacio de trabajo', 'miconsultorio');
     await type('Nombre completo', 'Ana Rojas');
     await type('CI (opcional)', ci);
     await type('Usuario', 'admin');
@@ -64,7 +67,7 @@ describe('RegisterFormComponent', () => {
 
   async function submit(): Promise<void> {
     [...element.querySelectorAll<HTMLButtonElement>('button')]
-      .find((b) => b.textContent?.trim() === 'Registrar clínica')!
+      .find((b) => b.textContent?.trim() === 'Crear mi espacio de trabajo')!
       .click();
     await fixture.whenStable();
   }
@@ -105,7 +108,7 @@ describe('RegisterFormComponent', () => {
 
       expect(ciError()).toBeUndefined();
       expect(register.register).toHaveBeenCalledWith(
-        expect.objectContaining({ adminCi: '1234567890', slug: 'clinicacentral' }),
+        expect.objectContaining({ adminCi: '1234567890', slug: 'miconsultorio' }),
       );
     });
   });

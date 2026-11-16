@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient, PatientActiveAppointmentConflict } from '../../core/models/api.models';
 import { BookingAttempt } from './booking.model';
 import { rescheduleConfirmOptions } from './booking.util';
@@ -31,15 +33,26 @@ function conflict(
 }
 
 describe('rescheduleConfirmOptions', () => {
+  let i18n: I18nService;
+
+  beforeEach(async () => {
+    localStorage.setItem('lang', 'es');
+    TestBed.configureTestingModule({});
+    i18n = TestBed.inject(I18nService);
+    await i18n.init();
+  });
+
+  afterEach(() => localStorage.removeItem('lang'));
+
   it('builds the reschedule confirmation title and label', () => {
-    const options = rescheduleConfirmOptions(conflict(), attempt());
+    const options = rescheduleConfirmOptions(conflict(), attempt(), i18n);
     expect(options.title).toBe('Paciente con cita activa');
     expect(options.confirmLabel).toBe('Reprogramar');
     expect(options.danger).toBeUndefined();
   });
 
   it('describes the current and the new appointment in lowercase Spanish', () => {
-    const options = rescheduleConfirmOptions(conflict(), attempt());
+    const options = rescheduleConfirmOptions(conflict(), attempt(), i18n);
     expect(options.message).toBe(
       'Ana Pérez ya tiene una cita confirmada con Dr. Gómez el jueves, 5 de noviembre de 2026 ' +
         'a las 09:00. ¿Deseas reprogramarla al jueves, 12 de noviembre de 2026 a las 11:30?',
@@ -47,7 +60,7 @@ describe('rescheduleConfirmOptions', () => {
   });
 
   it('uses the pending label for a pending conflict', () => {
-    const options = rescheduleConfirmOptions(conflict({ status: 'PENDING' }), attempt());
+    const options = rescheduleConfirmOptions(conflict({ status: 'PENDING' }), attempt(), i18n);
     expect(options.message).toContain('ya tiene una cita pendiente con');
   });
 });

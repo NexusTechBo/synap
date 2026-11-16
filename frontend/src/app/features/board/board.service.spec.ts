@@ -122,7 +122,11 @@ describe('BoardService', () => {
       setup();
       const columns = service.columns();
       expect(columns.map((c) => c.id)).toEqual(['PENDING', 'CONFIRMED', 'CANCELLED']);
-      expect(columns.map((c) => c.title)).toEqual(['Pendientes', 'Confirmadas', 'Canceladas']);
+      expect(columns.map((c) => c.title)).toEqual([
+        'board.columns.PENDING',
+        'board.columns.CONFIRMED',
+        'board.columns.CANCELLED',
+      ]);
       expect(columns.every((c) => c.appointments.length === 0)).toBe(true);
     });
 

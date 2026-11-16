@@ -15,25 +15,25 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     title: 'Sign in',
     subtitle: 'Enter your credentials to access your account',
     usernameLabel: 'Username',
-    usernamePlaceholder: 'user@clinic.com',
+    usernamePlaceholder: 'user@myoffice.com',
     passwordLabel: 'Password',
     passwordPlaceholder: 'Enter your password',
     submit: 'Sign in',
     submitting: 'Signing in…',
     retryIn: 'Retry in',
     cooldownFinished: 'You can try again now',
-    activationPendingTitle: 'Your clinic is not activated yet. Check your email to activate it.',
+    activationPendingTitle: 'Your workspace is not activated yet. Check your email to activate it.',
     activationPendingHelp: "Can't find the email? We can send you a new link.",
     resendActivation: 'Resend email',
-    notUsingClinicFlow: 'Does your clinic not use ClinicFlow yet?',
-    registerClinic: 'Register clinic',
-    staffDisclaimer: 'Staff members are created by the clinic administrator.',
+    notUsingPulso: "Don't have a Pulso workspace yet?",
+    registerClinic: 'Create workspace',
+    staffDisclaimer: 'Staff members are created by the workspace administrator.',
     loginError: 'Could not sign in',
   },
   nav: {
     login: 'Sign in',
-    register: 'Register clinic',
-    activation: 'Activate clinic',
+    register: 'Create workspace',
+    activation: 'Activate workspace',
     guestBooking: 'Book appointment',
     dashboard: 'Home',
     board: 'Board',
@@ -58,7 +58,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       appointments: 'History and upcoming appointments',
       patients: 'Register and assign patients',
       availability: 'Weekly schedule and time blocks',
-      staff: 'Clinic doctors and assistants',
+      staff: 'Workspace doctors and assistants',
       specialties: 'Specialties catalog',
     },
     openMenu: 'Open menu',
@@ -70,16 +70,16 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   },
 
   register: {
-    title: 'Register your clinic',
-    subtitle: 'Create your clinic space and its administrator account',
-    sectionClinic: 'Clinic',
-    clinicNameLabel: 'Name',
-    clinicNamePlaceholder: 'Central Clinic',
+    title: 'Create your workspace',
+    subtitle: 'Create your workspace and its administrator account',
+    sectionClinic: 'Workspace',
+    clinicNameLabel: 'Workspace name',
+    clinicNamePlaceholder: 'My office',
     clinicPhoneLabel: 'Phone',
     clinicPhonePlaceholder: '+591 700 00000',
-    clinicSlugLabel: 'Clinic identifier',
-    clinicSlugPlaceholder: 'centralclinic',
-    slugHintPrefix: 'Your clinic users will end in @',
+    clinicSlugLabel: 'Workspace identifier',
+    clinicSlugPlaceholder: 'myoffice',
+    slugHintPrefix: 'Your workspace users will end in @',
     slugDefault: 'identifier',
     sectionAdmin: 'Administrator',
     adminNameLabel: 'Full name',
@@ -92,7 +92,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     adminEmailPlaceholder: 'admin@email.com',
     adminPasswordLabel: 'Password',
     adminPasswordPlaceholder: 'Minimum 8 characters',
-    submit: 'Register clinic',
+    submit: 'Create my workspace',
     submitting: 'Registering…',
     retryIn: 'Retry in',
     cooldownFinished: 'You can try again now',
@@ -101,7 +101,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     slugPatternError: '3 to 50 characters: lowercase letters and numbers only (no "@" or ".com")',
     registerError: 'An error occurred during registration, please try again',
     // --- Llaves de register-success ---
-    successTitle: 'Clinic registered!',
+    successTitle: 'Workspace created!',
     successSentTo: 'We sent an email to',
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
     successSpamHelp: "Didn't receive it? Check your spam folder or request a new one.",
@@ -109,16 +109,16 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   },
 
   activation: {
-    loadingTitle: 'Activating your clinic…',
+    loadingTitle: 'Activating your workspace…',
     loadingMessage: 'This will only take a moment.',
-    successTitlePrefix: 'Your clinic',
+    successTitlePrefix: 'Your workspace',
     successTitleSuffix: 'is active!',
     successMessage: 'You can now sign in with your administrator username:',
     activeSessionWarning:
-      'You currently have an active session. Continuing will sign you out so you can log in to your new clinic.',
+      'You currently have an active session. Continuing will sign you out so you can log in to your new workspace.',
     loginButton: 'Sign in',
-    errorTitle: 'We could not activate your clinic',
-    defaultError: 'Could not activate clinic, please try again',
+    errorTitle: 'We could not activate your workspace',
+    defaultError: 'Could not activate workspace, please try again',
     retryButton: 'Try again',
     retryIn: 'Retry in',
     cooldownFinished: 'You can try again now',
@@ -168,7 +168,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     },
     subtitles: {
       own: 'Your appointments',
-      all: 'All clinic appointments',
+      all: 'All workspace appointments',
     },
     tabs: {
       all: 'All',
@@ -197,7 +197,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     title: 'Patients',
     subtitles: {
       mine: 'Patients assigned to you',
-      all: 'Patients registered in the clinic',
+      all: 'Patients registered in the workspace',
     },
     tabs: {
       all: 'All',
@@ -211,7 +211,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     emptyTitle: 'No patients',
     emptySearchMessage: 'No patients match your search.',
     emptyMineMessage: 'Assign patients to yourself from the All tab or register a new one.',
-    emptyAllMessage: 'Register the first patient in the clinic.',
+    emptyAllMessage: 'Register the first patient in the workspace.',
     table: {
       patient: 'Patient',
       ci: 'ID',
@@ -305,6 +305,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     ciPattern: 'Numbers only, 5 to 10 digits',
     phonePattern: '7 to 20 characters: numbers, spaces, +, - or parentheses',
     usernamePattern: '3 to 50 characters: lowercase letters, numbers, dot, hyphen or underscore',
+    rangeRequired: 'Enter the time range',
     endBeforeStart: 'End time must be after start time',
     invalidField: 'Invalid field',
   },
@@ -320,7 +321,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     defaultLabel: 'Resend email',
     sending: 'Sending…',
     resendIn: 'Resend in',
-    sentMessage: 'If the email matches a pending clinic, we have sent you a new link.',
+    sentMessage: 'If the email matches a pending workspace, we have sent you a new link.',
     resendError: 'Could not resend email, please try again',
   },
 
@@ -427,7 +428,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   },
 
   calendar: {
-    scopeAll: 'Entire clinic',
+    scopeAll: 'Entire workspace',
     scopeMine: 'My schedule',
     errorLoad: 'Could not load calendar',
     previousMonthAria: 'Previous month',
@@ -447,7 +448,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   staff: {
     title: 'Staff',
-    subtitle: 'Clinic doctors and assistants',
+    subtitle: 'Workspace doctors and assistants',
     newMember: 'New member',
     onlyActive: 'Active only',
     tabs: {
@@ -500,7 +501,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     formDialog: {
       editTitle: 'Edit staff member',
       createTitle: 'New staff member',
-      createSubtitle: 'Clinic doctor or assistant',
+      createSubtitle: 'Workspace doctor or assistant',
       roleLabel: 'Role',
       fullNameLabel: 'Full name',
       fullNamePlaceholder: 'Dr. John Doe',
@@ -524,13 +525,13 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   profile: {
     title: 'My profile',
-    subtitle: 'Your contact details at the clinic',
+    subtitle: 'Your contact details at the workspace',
     info: {
       username: 'Username',
       ci: 'ID Number',
       specialty: 'Specialty',
-      clinic: 'Clinic',
-      clinicWhatsapp: 'Clinic WhatsApp',
+      clinic: 'Workspace',
+      clinicWhatsapp: 'Workspace WhatsApp',
     },
     form: {
       personalDataTitle: 'Personal details',
@@ -597,7 +598,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         'Appointment confirmations and cancellations are sent to your patients from the linked WhatsApp account.',
       reconnectingDescription:
         'Connection to WhatsApp was lost. We are trying to reconnect, please wait a few seconds.',
-      clinicPhoneTip: 'We recommend scanning it with the clinic phone number:',
+      clinicPhoneTip: 'We recommend scanning it with the workspace phone number:',
       step1: 'Open WhatsApp on the phone that will send notifications to your patients.',
       step2Prefix: 'Go to',
       step2LinkedDevices: 'Linked devices',
@@ -637,7 +638,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   shared: {
     noSpecialty: 'No specialty',
-    defaultClinicName: 'My clinic',
+    defaultClinicName: 'My workspace',
     closeNotificationAria: 'Close notification',
     pagination: {
       page: 'Page',
@@ -665,7 +666,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         patientRequested: 'Requested by the patient',
         medicalEmergency: 'Medical emergency',
         reschedule: 'The appointment will be rescheduled',
-        scheduleChange: 'Clinic schedule change',
+        scheduleChange: 'Workspace schedule change',
       },
       reasonLabel: 'Message for the patient',
       reasonRequiredTag: '(required)',
@@ -814,7 +815,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   guestBooking: {
     unavailableTitle: 'Online booking unavailable',
-    unavailableMessage: 'This clinic is not available for online booking.',
+    unavailableMessage: 'This workspace is not available for online booking.',
     sessionErrorTitle: 'We could not start your booking',
     defaultUnexpectedError: 'An unexpected error occurred',
     retryButton: 'Try again',
@@ -822,8 +823,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     cooldownFinished: 'You can try again now',
     loadingSessionTitle: 'Preparing your booking…',
     headerPrefix: 'Book your appointment at',
-    loadingClinicSr: 'Loading clinic…',
-    clinicLoadError: 'Could not load clinic',
+    loadingClinicSr: 'Loading workspace…',
+    clinicLoadError: 'Could not load workspace',
     stepPrefix: 'Step',
     stepOf: 'of',
     steps: {
@@ -841,8 +842,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     backButton: 'Back',
     continueButton: 'Continue',
     patientForm: {
-      legend: 'Have you visited this clinic before?',
-      returningLabel: 'I have visited this clinic before',
+      legend: 'Have you visited this workspace before?',
+      returningLabel: 'I have visited this workspace before',
       newLabel: 'It is my first time',
       kindRequiredError: 'Choose an option',
       returningHint: 'Enter the phone number you registered with.',
@@ -860,7 +861,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       confirmButton: 'Confirm booking',
     },
     done: {
-      pendingNotice: 'Your appointment is pending confirmation by the clinic.',
+      pendingNotice: 'Your appointment is pending confirmation by the workspace.',
       bookAnotherButton: 'Book another appointment',
     },
     errors: {
@@ -870,36 +871,43 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
 
   landing: {
     nav: {
+      audience: 'Who it is for',
       features: 'Features',
-      product: 'Product',
       roles: 'Roles',
       howItWorks: 'How it works',
       goToDashboard: 'Go to dashboard',
       login: 'Sign in',
-      registerClinic: 'Register clinic',
+      register: 'Start for free',
     },
     hero: {
-      badge: 'Appointment management for clinics',
-      titlePrefix: 'Your clinic schedule,',
-      titleHighlight: 'simple and organized',
+      badge: 'Medical scheduling in the cloud',
+      titlePrefix: 'Your practice,',
+      titleHighlight: 'simple and organized.',
       subtitle:
-        'Appointments, doctors, patients, and schedules in one place. Fewer calls, fewer no-shows, and more time for your patients.',
+        'For independent doctors, small offices, multi-specialty offices, and clinics. Appointments, patients, and schedules in one place, from a single calendar to a whole team.',
       ctaPrimary: 'Start for free',
       ctaSecondary: 'See the product',
       shotAlt: 'Appointment board with pending, confirmed, and cancelled columns',
-      mobileShotAlt: 'ClinicFlow home screen on a mobile phone',
       floatingCardTitle: 'Appointment confirmed',
       floatingCardSubtitle: 'Natalia Herrera · 10:00',
     },
-    stats: {
-      roles: 'roles with custom permissions',
-      cloud: 'cloud-available schedule',
-      responsive: 'responsive, mobile-ready too',
-      installations: 'installations required',
+    audience: {
+      eyebrow: '01 — Who it is for',
+      title: 'For every way of seeing patients.',
+      items: {
+        independentTitle: 'Independent doctor',
+        independentDesc: 'Your schedule and your patients, without the hassle.',
+        officeTitle: 'Small office',
+        officeDesc: 'Share the schedule with an assistant or a colleague.',
+        multiOfficeTitle: 'Multi-specialty office',
+        multiOfficeDesc: 'Several specialties, one front desk.',
+        clinicTitle: 'Clinic',
+        clinicDesc: 'Large teams with roles and permissions.',
+      },
     },
     features: {
-      eyebrow: 'Features',
-      title: 'Everything your clinic needs',
+      eyebrow: '02 — Features',
+      title: 'Everything your front desk does by hand, in a single calendar.',
       subtitle: 'Tools designed for administrators, doctors, and assistants.',
       items: {
         calendarTitle: 'Schedule & calendar',
@@ -917,71 +925,44 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
           'Your patients receive a notification when their appointment is confirmed or cancelled.',
       },
     },
-    showcase: {
-      calendar: {
-        eyebrow: 'Calendar',
-        title: 'The entire month at a glance',
-        description:
-          'Each day shows how many appointments it has and their status. Click any day to see the full schedule and book instantly.',
-        point1: 'Pending, confirmed, and cancelled appointments color-coded',
-        point2: 'Daily agenda right alongside the calendar',
-        point3: 'Book an appointment directly from the selected day',
-        shotAlt: 'Monthly calendar with the selected day agenda',
-      },
-      booking: {
-        eyebrow: 'Book appointment',
-        title: 'Booking in three steps',
-        description:
-          'Choose the patient, specialty, and doctor, and only truly available slots are shown. No double bookings.',
-        point1: 'Filter doctors by specialty',
-        point2: 'Available time slots based on doctor availability',
-        point3: 'Clear summary before confirming',
-        shotAlt: 'Appointment booking flow with doctor, date, and time selected',
-      },
-    },
     roles: {
-      eyebrow: 'For the whole team',
-      title: 'A tailored view for every role',
-      tablistAriaLabel: 'Roles',
+      eyebrow: '03 — Roles',
+      title: 'Everyone sees what they need.',
       assistant: {
         label: 'Assistant',
-        title: 'Control all clinic appointments',
+        title: 'Control all appointments in the workspace',
         description:
-          'Filter by status, confirm or cancel with one click, and browse full appointment history with pagination.',
-        shotAlt: 'Appointment list with statuses and confirm or cancel actions',
+          'Filter by status, confirm or cancel with one click, and browse the full history.',
       },
       doctor: {
         label: 'Doctor',
         title: 'Your schedule, your rules',
         description:
-          'Set your daily working blocks, block off vacations or conferences, and preview the slots your patients will see.',
-        shotAlt: 'Weekly doctor schedule with morning and afternoon blocks',
+          'Set your working blocks, block off vacations or conferences, and preview your free slots.',
       },
       admin: {
         label: 'Administrator',
         title: 'Manage your team',
         description:
-          'Onboard doctors and assistants, assign specialties, and enable or disable access whenever needed.',
-        shotAlt: 'Clinic staff list with roles and specialties',
+          'Onboard doctors and assistants, assign specialties, and enable or disable access.',
       },
     },
     steps: {
-      eyebrow: 'How it works',
-      title: 'Get started in three steps',
-      step1Title: 'Register your clinic',
-      step1Desc: 'Create your clinic account and activate access from your email.',
-      step2Title: 'Set up your team',
-      step2Desc: 'Add doctors, assistants, specialties, and working hours.',
+      eyebrow: '04 — How it works',
+      title: 'Up and running the same day.',
+      step1Title: 'Create your workspace',
+      step1Desc: 'Choose how you see patients and activate it from your email.',
+      step2Title: 'Set up your schedule',
+      step2Desc: 'Define your hours; if you have a team, add doctors and assistants.',
       step3Title: 'Start scheduling',
       step3Desc: 'Register patients and manage all appointments from one place.',
     },
     cta: {
-      title: 'Ready to organize your schedule?',
-      subtitle: 'Register your clinic today and start managing appointments in minutes.',
-      button: 'Register my clinic',
+      title: 'Start scheduling today.',
+      subtitle: 'Create your workspace and activate it from your email. No installation.',
+      button: 'Create my workspace',
     },
     footer: {
-      developedBy: 'Developed by',
       rights: 'All rights reserved.',
     },
   },

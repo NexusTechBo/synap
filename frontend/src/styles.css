@@ -6,6 +6,7 @@
   --color-tertiary: #973c00;
   --color-neutral: #f8f9fa;
   --font-sans: 'Inter', sans-serif;
+  --font-brand: 'Outfit', 'Inter', sans-serif;
 }
 
 .cdk-drag-preview {

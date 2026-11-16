@@ -1,0 +1,20 @@
+package com.example.pulso.repository;
+
+import com.example.pulso.entity.ScheduleException;
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ScheduleExceptionRepository extends JpaRepository<ScheduleException, Long> {
+    @EntityGraph(attributePaths = {"doctor.specialty"})
+    List<ScheduleException> findByDoctorIdAndDate(Long doctorId, LocalDate date);
+
+    List<ScheduleException> findByDoctorIdAndDateBetween(Long doctorId, LocalDate from, LocalDate to);
+
+    @EntityGraph(attributePaths = {"doctor.specialty"})
+    List<ScheduleException> findByDoctorIdAndDateGreaterThanEqualOrderByDateAscStartTimeAsc(
+            Long doctorId,
+            LocalDate from
+    );
+}

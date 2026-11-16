@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { LANDING_ANCHORS, LANDING_STEPS } from '../../constants/landing.content';
@@ -5,7 +6,7 @@ import { RevealDirective } from '../../directives/reveal.directive';
 
 @Component({
   selector: 'app-steps-landing-page',
-  imports: [RevealDirective, TranslatePipe],
+  imports: [RevealDirective, TranslatePipe, DecimalPipe],
   templateUrl: './steps-landing-page.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
