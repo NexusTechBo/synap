@@ -136,7 +136,7 @@ export class AuthService {
 
   replaceToken(token: string): Session {
     const session = decodeSession(token);
-    if (!session) throw new Error('Token inválido');
+    if (!session) throw new Error('Invalid token');
     writeStorage(TOKEN_KEY, session.token);
     this.setSession(session);
     return session;

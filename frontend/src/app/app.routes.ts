@@ -96,14 +96,14 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    title: 'Iniciar sesión',
+    title: PAGE_TITLES.login,
     canActivate: [guestGuard],
     data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'register',
-    title: 'Registrar clínica',
+    title: PAGE_TITLES.register,
     canActivate: [guestGuard],
     data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () =>
@@ -111,13 +111,13 @@ export const routes: Routes = [
   },
   {
     path: 'activar',
-    title: 'Activar clínica',
+    title: PAGE_TITLES.activation,
     loadComponent: () =>
       import('./features/activation/activation.component').then((m) => m.ActivationComponent),
   },
   {
     path: GUEST_BOOKING_PATH,
-    title: 'Reservar cita',
+    title: PAGE_TITLES.guestBooking,
     loadComponent: () =>
       import('./features/guest-booking/guest-booking.component').then(
         (m) => m.GuestBookingComponent,

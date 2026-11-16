@@ -18,7 +18,6 @@ interface GuestSession {
 
 const GUEST_TOKEN_KEY = 'scheduler.guestToken';
 const EXPIRY_MARGIN_MS = 30_000;
-const UNAVAILABLE_MESSAGE = 'Esta clínica no está disponible para reservas en línea.';
 
 function readStorage(): string | null {
   try {
@@ -131,7 +130,7 @@ export class GuestSessionService {
     const unavailable =
       error instanceof HttpErrorResponse &&
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);
-    if (unavailable) this.setStatus('unavailable', UNAVAILABLE_MESSAGE);
+    if (unavailable) this.setStatus('unavailable');
     else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
   }
 

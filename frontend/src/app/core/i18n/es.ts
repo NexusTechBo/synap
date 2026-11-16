@@ -29,6 +29,10 @@ export const ES_TRANSLATIONS = {
     loginError: 'No se pudo iniciar sesión',
   },
   nav: {
+    login: 'Iniciar sesión',
+    register: 'Registrar clínica',
+    activation: 'Activar clínica',
+    guestBooking: 'Reservar cita',
     dashboard: 'Inicio',
     board: 'Tablero',
     calendar: 'Calendario',
@@ -40,6 +44,11 @@ export const ES_TRANSLATIONS = {
     specialties: 'Especialidades',
     profile: 'Mi perfil',
     logout: 'Cerrar sesión',
+    httpErrors: {
+      rateLimited: 'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.',
+      networkError: 'No se pudo conectar con el servidor',
+      unexpectedError: 'Ocurrió un error inesperado',
+    },
     descriptions: {
       dashboard: 'Resumen de la actividad',
       board: 'Confirma o cancela citas pendientes',
@@ -50,7 +59,6 @@ export const ES_TRANSLATIONS = {
       staff: 'Doctores y asistentes de la clínica',
       specialties: 'Catálogo de especialidades',
     },
-    // Dentro de nav: { ... }
     openMenu: 'Abrir menú',
     greetings: {
       morning: 'Buenos días',

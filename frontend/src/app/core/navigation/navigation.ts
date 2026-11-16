@@ -30,6 +30,10 @@ export const PAGE_TITLES = {
   staff: 'nav.staff',
   specialties: 'nav.specialties',
   profile: 'nav.profile',
+  login: 'nav.login',
+  register: 'nav.register',
+  activation: 'nav.activation',
+  guestBooking: 'nav.guestBooking',
 } as const;
 
 const NAV_ITEMS: NavItem[] = [

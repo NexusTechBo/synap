@@ -31,6 +31,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loginError: 'Could not sign in',
   },
   nav: {
+    login: 'Sign in',
+    register: 'Register clinic',
+    activation: 'Activate clinic',
+    guestBooking: 'Book appointment',
     dashboard: 'Home',
     board: 'Board',
     calendar: 'Calendar',
@@ -42,6 +46,11 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     specialties: 'Specialties',
     profile: 'My profile',
     logout: 'Log out',
+    httpErrors: {
+      rateLimited: 'Too many requests. Please try again in a few minutes.',
+      networkError: 'Could not connect to the server',
+      unexpectedError: 'An unexpected error occurred',
+    },
     descriptions: {
       dashboard: 'Activity summary',
       board: 'Confirm or cancel pending appointments',
@@ -52,7 +61,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       staff: 'Clinic doctors and assistants',
       specialties: 'Specialties catalog',
     },
-    // Dentro de nav: { ... }
     openMenu: 'Open menu',
     greetings: {
       morning: 'Good morning',
