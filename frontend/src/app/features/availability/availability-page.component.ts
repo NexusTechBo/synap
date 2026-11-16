@@ -35,7 +35,7 @@ import { ExceptionFormDialogComponent } from './components/exception-form-dialog
   ],
   providers: [AvailabilityService],
   templateUrl: './availability-page.component.html',
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AvailabilityPageComponent {

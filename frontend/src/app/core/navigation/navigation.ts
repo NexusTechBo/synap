@@ -1,3 +1,4 @@
+import type { ActivatedRouteSnapshot } from '@angular/router';
 import { ROLES } from '../auth/roles';
 import { Role } from '../models/api.models';
 
@@ -18,6 +19,18 @@ export const HOME_URL = '/dashboard';
 export const GUEST_BOOKING_PATH = 'clinic/guest/appointment/clinic';
 
 export const SESSION_ACCESS = 'sessionAccess';
+
+export const FULL_HEIGHT = 'fullHeight';
+
+export function isFullHeightRoute(root: ActivatedRouteSnapshot): boolean {
+  let route: ActivatedRouteSnapshot | null = root;
+  let fullHeight = false;
+  while (route) {
+    fullHeight = (route.data[FULL_HEIGHT] as boolean | undefined) ?? fullHeight;
+    route = route.firstChild;
+  }
+  return fullHeight;
+}
 
 export const PAGE_TITLES = {
   dashboard: 'nav.dashboard',

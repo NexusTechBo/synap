@@ -44,7 +44,7 @@ import { PatientsService } from './patients.service';
   ],
   providers: [PatientsService],
   templateUrl: './patients-page.component.html',
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientsPageComponent {

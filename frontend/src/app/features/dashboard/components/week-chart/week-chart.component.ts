@@ -19,6 +19,7 @@ import {
   ChartOptions,
   Legend,
   LinearScale,
+  ScriptableContext,
   Tooltip,
 } from 'chart.js';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -30,6 +31,18 @@ Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, L
 const GRAY = '#9ca3af';
 const TEXT = '#6b7280';
 const GRID = 'rgba(17, 24, 39, 0.06)';
+const RADIUS = 6;
+
+function stackRadius(ctx: ScriptableContext<'bar'>) {
+  const { chart, dataIndex, datasetIndex } = ctx;
+  const filled = chart.data.datasets
+    .map((dataset, index) => ({ index, value: Number(dataset.data[dataIndex] ?? 0) }))
+    .filter(({ index, value }) => value > 0 && chart.isDatasetVisible(index))
+    .map(({ index }) => index);
+  const top = datasetIndex === filled.at(-1) ? RADIUS : 0;
+  const bottom = datasetIndex === filled[0] ? RADIUS : 0;
+  return { topLeft: top, topRight: top, bottomLeft: bottom, bottomRight: bottom };
+}
 
 function themeColors() {
   const style = getComputedStyle(document.documentElement);
@@ -94,7 +107,7 @@ export class WeekChartComponent {
       label,
       data: days.map(value),
       backgroundColor: color,
-      borderRadius: 6,
+      borderRadius: stackRadius,
       borderSkipped: false,
       maxBarThickness: 44,
       stack: 'week',

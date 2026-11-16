@@ -12,7 +12,7 @@ import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component
   templateUrl: './sidebar-nav.component.html',
   host: {
     class:
-      'glass-panel z-40 m-4 flex w-72 shrink-0 flex-col rounded-3xl !border-white/70 transition-transform duration-300 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:max-w-[calc(100vw-2rem)] lg:relative lg:z-10',
+      'glass-panel z-40 m-4 flex w-72 shrink-0 flex-col rounded-3xl !border-white/70 transition-transform duration-300 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:max-w-[calc(100vw-2rem)] lg:sticky lg:top-4 lg:z-10 lg:h-[calc(100vh-2rem)] lg:self-start',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,7 +1,12 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 import { ROLES } from './core/auth/roles';
-import { GUEST_BOOKING_PATH, PAGE_TITLES, SESSION_ACCESS } from './core/navigation/navigation';
+import {
+  FULL_HEIGHT,
+  GUEST_BOOKING_PATH,
+  PAGE_TITLES,
+  SESSION_ACCESS,
+} from './core/navigation/navigation';
 
 export const routes: Routes = [
   {
@@ -28,6 +33,7 @@ export const routes: Routes = [
       {
         path: 'board',
         title: PAGE_TITLES.board,
+        data: { [FULL_HEIGHT]: true },
         loadComponent: () =>
           import('./features/board/board-page.component').then((m) => m.BoardPageComponent),
       },

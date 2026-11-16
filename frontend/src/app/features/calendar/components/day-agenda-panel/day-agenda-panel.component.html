@@ -19,7 +19,7 @@
   }
 </div>
 
-<div class="-m-2 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-2 pt-3.5">
+<div class="-m-2 flex flex-1 flex-col gap-3 p-2 pt-3.5 xl:max-h-144 xl:overflow-y-auto">
   @if (appointments(); as list) {
     @for (appointment of list; track appointment.id ?? $index) {
       <app-appointment-list-item [appointment]="appointment" (click)="open.emit(appointment)" />

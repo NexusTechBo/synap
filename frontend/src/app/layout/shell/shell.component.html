@@ -1,35 +1,49 @@
-<app-glass-background class="flex h-screen justify-center">
-  <div class="relative z-10 flex h-full w-full min-w-0 max-w-[1680px]">
-    <app-sidebar-nav
-      id="app-sidebar"
-      [class]="
-        navOpen()
-          ? ''
-          : 'max-lg:invisible max-lg:-translate-x-[calc(100%+2rem)] max-lg:transition-[transform,visibility]'
-      "
-      [cdkTrapFocus]="navOpen()"
-      [navItems]="navItems()"
-      [clinicName]="clinicName()"
-      [roleLabel]="roleLabel()"
-      (logout)="logout()"
-      (click)="onNavClick($event)"
-    />
-
-    @if (navOpen()) {
-      <div class="glass-backdrop fixed inset-0 z-30 lg:hidden" (click)="closeNav()"></div>
-    }
-
-    <div class="flex min-w-0 flex-1 flex-col">
-      <app-topbar
-        [userName]="userName()"
+<app-glass-background class="block h-screen">
+  <div
+    class="relative z-10 h-full"
+    [class.overflow-y-auto]="!fullHeight()"
+    [class.overflow-hidden]="fullHeight()"
+  >
+    <div
+      class="mx-auto flex w-full min-w-0 max-w-[1680px]"
+      [class.min-h-full]="!fullHeight()"
+      [class.h-full]="fullHeight()"
+    >
+      <app-sidebar-nav
+        id="app-sidebar"
+        [class]="
+          navOpen()
+            ? ''
+            : 'max-lg:invisible max-lg:-translate-x-[calc(100%+2rem)] max-lg:transition-[transform,visibility]'
+        "
+        [cdkTrapFocus]="navOpen()"
+        [navItems]="navItems()"
+        [clinicName]="clinicName()"
         [roleLabel]="roleLabel()"
-        [menuOpen]="navOpen()"
-        (menu)="openNav()"
+        (logout)="logout()"
+        (click)="onNavClick($event)"
       />
 
-      <main class="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 sm:px-6 lg:px-8 lg:pb-8">
-        <router-outlet />
-      </main>
+      @if (navOpen()) {
+        <div class="glass-backdrop fixed inset-0 z-30 lg:hidden" (click)="closeNav()"></div>
+      }
+
+      <div class="flex min-w-0 flex-1 flex-col">
+        <app-topbar
+          [userName]="userName()"
+          [roleLabel]="roleLabel()"
+          [menuOpen]="navOpen()"
+          (menu)="openNav()"
+        />
+
+        <main
+          class="flex flex-1 flex-col px-4 pb-4 sm:px-6 lg:px-8 lg:pb-8"
+          [class.min-h-0]="fullHeight()"
+          [class.overflow-hidden]="fullHeight()"
+        >
+          <router-outlet />
+        </main>
+      </div>
     </div>
   </div>
 </app-glass-background>
