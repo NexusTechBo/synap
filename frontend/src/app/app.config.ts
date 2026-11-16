@@ -9,9 +9,10 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { TitleStrategy, provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { apiUrlInterceptor, authInterceptor } from './core/http/api.interceptors';
+import { I18nTitleStrategy } from './core/i18n/i18n-title.strategy';
 import { I18nService } from './core/i18n/i18n.service';
 
 registerLocaleData(localeEs);
@@ -20,6 +21,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    { provide: TitleStrategy, useExisting: I18nTitleStrategy },
     provideHttpClient(withXhr(), withInterceptors([apiUrlInterceptor, authInterceptor])),
     provideAppInitializer(() => inject(I18nService).init()),
     { provide: LOCALE_ID, useValue: 'es' },
