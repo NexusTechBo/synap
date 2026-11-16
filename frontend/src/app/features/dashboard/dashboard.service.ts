@@ -2,6 +2,7 @@ import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
 import { appointmentStartDateTime } from '../../core/utils/appointment.util';
 import {
@@ -20,8 +21,11 @@ const PENDING_LIMIT = 6;
 export class DashboardService {
   private readonly appointmentsApi = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
+  private readonly i18n = inject(I18nService);
   private readonly today = toIso(new Date());
   private readonly weekStart = startOfWeek(new Date());
+
+  private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
 
   private readonly weekResource = rxResource({
     stream: () =>
@@ -32,7 +36,10 @@ export class DashboardService {
   });
 
   readonly isWeekLoading = this.weekResource.isLoading;
-  readonly weekErrorMessage = resourceError(this.weekResource, 'No se pudo cargar la agenda');
+  readonly weekErrorMessage = resourceError(
+    this.weekResource,
+    this.i18n.translate('dashboard.errorLoad'),
+  );
 
   readonly todayAppointments = computed<AppointmentSummaryItem[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
@@ -52,19 +59,21 @@ export class DashboardService {
     );
   });
   readonly pendingCount = computed(() => this.upcomingPending().length);
-  readonly pendingToConfirm = computed(() =>
-    this.upcomingPending()
+  readonly pendingToConfirm = computed(() => {
+    const locale = this.locale();
+    return this.upcomingPending()
       .slice(0, PENDING_LIMIT)
       .map((appointment) => ({
         appointment,
         dayLabel:
           appointment.appointmentDate === this.today
-            ? 'Hoy'
-            : formatShortDate(appointment.appointmentDate),
-      })),
-  );
+            ? this.i18n.translate('dashboard.todayLabel')
+            : formatShortDate(appointment.appointmentDate, locale),
+      }));
+  });
 
   readonly weekDays = computed<WeekDayStats[]>(() => {
+    const locale = this.locale();
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
     return Array.from({ length: 7 }, (_, i) => {
       const date = addDays(this.weekStart, i);
@@ -76,7 +85,7 @@ export class DashboardService {
       const cancelled = count(board?.CANCELLED);
       return {
         iso,
-        weekday: formatWeekdayShort(date),
+        weekday: formatWeekdayShort(date, locale),
         day: date.getDate(),
         isToday: iso === this.today,
         confirmed,
@@ -89,34 +98,34 @@ export class DashboardService {
   readonly weekTotal = computed(() => this.weekDays().reduce((sum, day) => sum + day.total, 0));
 
   readonly kpis = computed<Kpi[]>(() => {
+    this.i18n.currentLang();
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
-    const kpis: Kpi[] = [
+    return [
       {
-        label: 'Citas hoy',
+        label: this.i18n.translate('dashboard.kpis.todayAppointments'),
         value: board ? this.todayAppointments().length : null,
         icon: 'calendar',
         tone: 'bg-primary/10 text-primary',
       },
       {
-        label: 'Pendientes (semana)',
+        label: this.i18n.translate('dashboard.kpis.pendingWeek'),
         value: board?.PENDING.length ?? null,
         icon: 'clock',
         tone: 'bg-tertiary/10 text-tertiary',
       },
       {
-        label: 'Confirmadas (semana)',
+        label: this.i18n.translate('dashboard.kpis.confirmedWeek'),
         value: board?.CONFIRMED.length ?? null,
         icon: 'check',
         tone: 'bg-secondary/10 text-secondary',
       },
       {
-        label: 'Canceladas (semana)',
+        label: this.i18n.translate('dashboard.kpis.cancelledWeek'),
         value: board?.CANCELLED.length ?? null,
         icon: 'block',
         tone: 'bg-gray-900/[0.06] text-gray-500',
       },
     ];
-    return kpis;
   });
 
   reload(): void {

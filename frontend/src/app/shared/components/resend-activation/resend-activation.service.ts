@@ -3,23 +3,16 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ClinicsApi } from '../../../core/api/clinics.api';
 import { apiErrorMessage, retryAfterSeconds } from '../../../core/http/api-error';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { createCooldown } from '../../../core/utils/cooldown.util';
-import { INVALID_EMAIL_MESSAGE } from '../../utils/validation-messages.util';
+import { INVALID_EMAIL_KEY } from '../../utils/validation-messages.util';
 
 const RESEND_COOLDOWN_SECONDS = 60;
-
-const RESEND_FALLBACK = 'No se pudo reenviar el correo, intenta de nuevo';
-
-function resendErrorMessage(error: unknown, emailEditable: boolean): string {
-  if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
-    return emailEditable ? INVALID_EMAIL_MESSAGE : RESEND_FALLBACK;
-  }
-  return apiErrorMessage(error, RESEND_FALLBACK);
-}
 
 @Injectable()
 export class ResendActivationService {
   private readonly clinicsApi = inject(ClinicsApi);
+  private readonly i18n = inject(I18nService);
   private readonly cooldown = createCooldown();
 
   private readonly _sending = signal(false);
@@ -45,7 +38,12 @@ export class ResendActivationService {
           this.startCooldown();
         },
         error: (error) => {
-          this._error.set(resendErrorMessage(error, emailEditable));
+          const fallback = this.i18n.translate('resendActivation.resendError');
+          if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
+            this._error.set(emailEditable ? this.i18n.translate(INVALID_EMAIL_KEY) : fallback);
+          } else {
+            this._error.set(apiErrorMessage(error, fallback));
+          }
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter, () => this._error.set(null));
         },

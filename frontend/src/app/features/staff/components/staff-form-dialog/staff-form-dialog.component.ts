@@ -5,16 +5,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, finalize, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../../core/http/api-error';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Role, Staff } from '../../../../core/models/api.models';
-import { ROLE_LABEL } from '../../../../core/utils/labels.util';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import {
-  CI_ERRORS,
-  PHONE_ERRORS,
-  USERNAME_ERRORS,
   ciValidator,
   notBlank,
   phoneValidator,
@@ -42,21 +40,48 @@ function initialRole(staff: Staff | undefined): Role {
     FormFieldComponent,
     ReactiveFormsModule,
     SelectComponent,
+    TranslatePipe,
   ],
   templateUrl: './staff-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffFormDialogComponent {
   private readonly staffService = inject(StaffService);
+  private readonly i18n = inject(I18nService);
   protected readonly ref = inject(DialogRef);
   protected readonly staff = inject<StaffFormData>(DIALOG_DATA).staff;
 
   private readonly clinic = inject(AuthService).clinic;
   protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
-  protected readonly roles = EDITABLE_ROLES.map((role) => ({ id: role, label: ROLE_LABEL[role] }));
-  protected readonly usernameErrors = USERNAME_ERRORS;
-  protected readonly ciErrors = CI_ERRORS;
-  protected readonly phoneErrors = PHONE_ERRORS;
+
+  protected readonly roles = computed(() => {
+    this.i18n.currentLang();
+    return EDITABLE_ROLES.map((role) => ({
+      id: role,
+      label: this.i18n.translate(`roles.${role}`),
+    }));
+  });
+
+  protected readonly usernameErrors = computed(() => {
+    this.i18n.currentLang();
+    return { pattern: this.i18n.translate('validation.usernamePattern') };
+  });
+
+  protected readonly ciErrors = computed(() => {
+    this.i18n.currentLang();
+    return { pattern: this.i18n.translate('validation.ciPattern') };
+  });
+
+  protected readonly phoneErrors = computed(() => {
+    this.i18n.currentLang();
+    return { pattern: this.i18n.translate('validation.phonePattern') };
+  });
+
+  protected readonly specialtyErrors = computed(() => {
+    this.i18n.currentLang();
+    return { required: this.i18n.translate('staff.formDialog.specialtyRequired') };
+  });
+
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -65,7 +90,7 @@ export class StaffFormDialogComponent {
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
-    ci: ['', this.staff ? [] : [notBlank, ciValidator]],
+    ci: ['', this.staff ? [] : [ciValidator]],
     username: ['', this.staff ? [] : [Validators.required, usernameValidator]],
     password: [
       '',
@@ -111,7 +136,7 @@ export class StaffFormDialogComponent {
       ? this.staffService.update(this.staff.id, { ...common, password: value.password || null })
       : this.staffService.create({
           ...common,
-          ci: value.ci.trim(),
+          ci: value.ci.trim() || null,
           username: value.username,
           password: value.password,
         });
@@ -119,7 +144,8 @@ export class StaffFormDialogComponent {
     this.saving.set(true);
     request.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: () => this.ref.close(),
-      error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo guardar')),
+      error: (error) =>
+        this.error.set(apiErrorMessage(error, this.i18n.translate('staff.errors.save'))),
     });
   }
 }

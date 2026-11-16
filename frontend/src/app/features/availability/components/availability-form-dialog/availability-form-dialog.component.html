@@ -1,13 +1,13 @@
 <app-dialog-frame
-  title="Agregar horario"
-  subtitle="Bloque semanal en el que atiendes"
+  [title]="'availability.formDialog.title' | translate"
+  [subtitle]="'availability.formDialog.subtitle' | translate"
   (closed)="ref.close()"
 >
   <form id="availability-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-5">
     <div>
-      <p class="field-label">Días</p>
+      <p class="field-label">{{ 'availability.formDialog.daysLabel' | translate }}</p>
       <div class="flex flex-wrap gap-1.5">
-        @for (day of days; track day.value) {
+        @for (day of days(); track day.value) {
           <button
             type="button"
             class="chip cursor-pointer px-3 py-1.5 text-sm transition-colors"
@@ -24,28 +24,35 @@
         }
       </div>
       @if (!selectedDays().size) {
-        <p class="field-error">Selecciona al menos un día</p>
+        <p class="field-error">{{ 'availability.formDialog.selectAtLeastOneDay' | translate }}</p>
       }
     </div>
 
     <div class="grid grid-cols-2 gap-4">
       <app-form-field
-        label="Desde"
+        [label]="'availability.formDialog.fromLabel' | translate"
         fieldId="av-start"
         [linkedErrorId]="rangeInvalid() ? 'av-end-error' : null"
       >
         <app-time-picker id="av-start" formControlName="startTime" />
       </app-form-field>
-      <app-form-field label="Hasta" fieldId="av-end" [errorMessages]="endErrors">
+      <app-form-field
+        [label]="'availability.formDialog.toLabel' | translate"
+        fieldId="av-end"
+        [errorMessages]="endErrors()"
+      >
         <app-time-picker id="av-end" formControlName="endTime" [min]="endMin()" />
       </app-form-field>
     </div>
 
-    <app-form-field label="Duración de cada cita" fieldId="av-duration">
+    <app-form-field
+      [label]="'availability.formDialog.durationLabel' | translate"
+      fieldId="av-duration"
+    >
       <app-select
         id="av-duration"
         formControlName="slotDurationMinutes"
-        [options]="durationOptions"
+        [options]="durationOptions()"
       />
     </app-form-field>
 
@@ -55,9 +62,13 @@
   </form>
 
   <ng-container ngProjectAs="[dialogFooter]">
-    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cancelar</button>
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">
+      {{ 'common.cancel' | translate }}
+    </button>
     <button type="submit" form="availability-form" class="btn btn-primary" [disabled]="saving()">
-      {{ saving() ? 'Guardando…' : 'Agregar' }}
+      {{
+        (saving() ? 'availability.formDialog.saving' : 'availability.formDialog.add') | translate
+      }}
     </button>
   </ng-container>
 </app-dialog-frame>

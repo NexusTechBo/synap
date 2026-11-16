@@ -62,19 +62,19 @@ export function buildMonthMatrix(year: number, month: number): CalendarDay[][] {
   return weeks;
 }
 
-export function formatMonthLabel(date: Date): string {
-  return capitalize(date.toLocaleDateString(LOCALE, { month: 'long', year: 'numeric' }));
+export function formatMonthLabel(date: Date, locale: string = LOCALE): string {
+  return capitalize(date.toLocaleDateString(locale, { month: 'long', year: 'numeric' }));
 }
 
-export function formatDayLabel(iso: string): string {
+export function formatDayLabel(iso: string, locale: string = LOCALE): string {
   return capitalize(
-    parseIso(iso).toLocaleDateString(LOCALE, { weekday: 'short', month: 'short', day: 'numeric' }),
+    parseIso(iso).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' }),
   );
 }
 
-export function formatLongDate(iso: string): string {
+export function formatLongDate(iso: string, locale: string = LOCALE): string {
   return capitalize(
-    parseIso(iso).toLocaleDateString(LOCALE, {
+    parseIso(iso).toLocaleDateString(locale, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -83,22 +83,22 @@ export function formatLongDate(iso: string): string {
   );
 }
 
-export function formatWeekdayShort(date: Date): string {
-  return date.toLocaleDateString(LOCALE, { weekday: 'short' }).replace('.', '');
+export function formatWeekdayShort(date: Date, locale: string = LOCALE): string {
+  return date.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '');
 }
 
-export function formatMonthShort(date: Date): string {
-  return date.toLocaleDateString(LOCALE, { month: 'short' }).replace('.', '');
+export function formatMonthShort(date: Date, locale: string = LOCALE): string {
+  return date.toLocaleDateString(locale, { month: 'short' }).replace('.', '');
 }
 
-export function formatToday(): string {
+export function formatToday(locale: string = LOCALE): string {
   return capitalize(
-    new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' }),
+    new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }),
   );
 }
 
-export function formatShortDate(iso: string): string {
-  return parseIso(iso).toLocaleDateString(LOCALE, { month: 'short', day: 'numeric' });
+export function formatShortDate(iso: string, locale: string = LOCALE): string {
+  return parseIso(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 export function formatTime(value: string): string {

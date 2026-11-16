@@ -1,10 +1,11 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { ChangeDetectionStrategy, Component, Injector, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Injector, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
-import { Staff } from '../../core/models/api.models';
-import { ROLE_LABEL } from '../../core/utils/labels.util';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { Role, Staff } from '../../core/models/api.models';
 import { InitialsPipe } from '../../shared/pipes/initials.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.component';
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
@@ -28,6 +29,7 @@ import { StaffService } from './staff.service';
   selector: 'app-staff-page',
   imports: [
     InitialsPipe,
+    TranslatePipe,
     LoadErrorComponent,
     SkeletonComponent,
     FormsModule,
@@ -39,22 +41,35 @@ import { StaffService } from './staff.service';
   ],
   providers: [StaffService],
   templateUrl: './staff-page.component.html',
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffPageComponent {
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
+  private readonly i18n = inject(I18nService);
   protected readonly staffService = inject(StaffService);
   private readonly focusRow = focusAfterLoad(this.staffService.isLoading);
 
-  protected readonly roleLabel = ROLE_LABEL;
+  protected readonly roleLabel = computed<Record<Role, string>>(() => {
+    this.i18n.currentLang();
+    return {
+      ADMINISTRATOR: this.i18n.translate('roles.ADMINISTRATOR'),
+      DOCTOR: this.i18n.translate('roles.DOCTOR'),
+      ASSISTANT: this.i18n.translate('roles.ASSISTANT'),
+    };
+  });
+
   protected readonly myId = inject(AuthService).userId();
-  protected readonly tabs: SegmentedTabItem[] = [
-    { id: 'all', label: 'Todos' },
-    { id: 'DOCTOR', label: 'Doctores' },
-    { id: 'ASSISTANT', label: 'Asistentes' },
-  ];
+
+  protected readonly tabs = computed<SegmentedTabItem[]>(() => {
+    this.i18n.currentLang();
+    return [
+      { id: 'all', label: this.i18n.translate('staff.tabs.all') },
+      { id: 'DOCTOR', label: this.i18n.translate('staff.tabs.doctors') },
+      { id: 'ASSISTANT', label: this.i18n.translate('staff.tabs.assistants') },
+    ];
+  });
 
   protected setRole(role: string): void {
     this.staffService.setRole(role as StaffRoleFilter);

@@ -6,6 +6,7 @@
   --color-tertiary: #973c00;
   --color-neutral: #f8f9fa;
   --font-sans: 'Inter', sans-serif;
+  --font-brand: 'Outfit', 'Inter', sans-serif;
 }
 
 .cdk-drag-preview {
@@ -30,12 +31,22 @@
 }
 
 .glass-panel {
-  background: rgb(255 255 255 / 46%);
-  backdrop-filter: blur(20px) saturate(160%);
+  isolation: isolate;
   border: 1px solid rgb(255 255 255 / 70%);
   box-shadow:
     0 12px 32px -10px rgb(15 23 42 / 10%),
     inset 0 1px 0 rgb(255 255 255 / 60%);
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 46%);
+  backdrop-filter: blur(20px) saturate(160%);
+  pointer-events: none;
 }
 
 .glass-card {
@@ -95,6 +106,10 @@ app-board-card:nth-of-type(3n + 3) {
 }
 
 @layer components {
+  .glass-panel {
+    position: relative;
+  }
+
   .btn {
     @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold whitespace-nowrap transition-colors aria-disabled:opacity-50;
   }

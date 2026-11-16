@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 @Component({
   selector: 'app-pagination',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, TranslatePipe],
   templateUrl: './pagination.component.html',
   host: { class: 'flex items-center justify-between gap-4 empty:hidden' },
   changeDetection: ChangeDetectionStrategy.OnPush,

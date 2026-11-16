@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, filter, merge } from 'rxjs';
 import { SpecialtyLabelPipe } from '../../pipes/specialty-label.pipe';
 import { TimeRangePipe } from '../../pipes/time-range.pipe';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
 import { LoadErrorComponent } from '../../ui/load-error/load-error.component';
 import { SkeletonComponent } from '../../ui/skeleton/skeleton.component';
@@ -32,6 +33,7 @@ export interface AppointmentDetailData {
     UiIconComponent,
     TimeRangePipe,
     SpecialtyLabelPipe,
+    TranslatePipe,
   ],
   providers: [AppointmentDetailService],
   templateUrl: './appointment-detail-dialog.component.html',

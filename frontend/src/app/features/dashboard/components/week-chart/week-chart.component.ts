@@ -19,10 +19,11 @@ import {
   ChartOptions,
   Legend,
   LinearScale,
+  ScriptableContext,
   Tooltip,
 } from 'chart.js';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { capitalize } from '../../../../core/utils/calendar.util';
-import { STATUS_PLURAL_LABEL } from '../../../../core/utils/labels.util';
 import { WeekDayStats } from '../../dashboard.model';
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -30,6 +31,18 @@ Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, L
 const GRAY = '#9ca3af';
 const TEXT = '#6b7280';
 const GRID = 'rgba(17, 24, 39, 0.06)';
+const RADIUS = 6;
+
+function stackRadius(ctx: ScriptableContext<'bar'>) {
+  const { chart, dataIndex, datasetIndex } = ctx;
+  const filled = chart.data.datasets
+    .map((dataset, index) => ({ index, value: Number(dataset.data[dataIndex] ?? 0) }))
+    .filter(({ index, value }) => value > 0 && chart.isDatasetVisible(index))
+    .map(({ index }) => index);
+  const top = datasetIndex === filled.at(-1) ? RADIUS : 0;
+  const bottom = datasetIndex === filled[0] ? RADIUS : 0;
+  return { topLeft: top, topRight: top, bottomLeft: bottom, bottomRight: bottom };
+}
 
 function themeColors() {
   const style = getComputedStyle(document.documentElement);
@@ -48,21 +61,27 @@ function themeColors() {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WeekChartComponent {
+  private readonly i18n = inject(I18nService);
   days = input.required<WeekDayStats[]>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private chart?: Chart<'bar'>;
 
-  protected readonly summary = computed(
-    () =>
-      'Citas de la semana. ' +
+  protected readonly summary = computed(() => {
+    this.i18n.currentLang();
+    const confirmedLabel = this.i18n.translate('dashboard.weekChart.confirmedLower');
+    const pendingLabel = this.i18n.translate('dashboard.weekChart.pendingLower');
+    const cancelledLabel = this.i18n.translate('dashboard.weekChart.cancelledLower');
+    return (
+      `${this.i18n.translate('dashboard.weekChart.ariaPrefix')} ` +
       this.days()
         .map(
           (day) =>
-            `${day.weekday} ${day.day}: ${day.confirmed} confirmadas, ${day.pending} pendientes, ${day.cancelled} canceladas`,
+            `${day.weekday} ${day.day}: ${day.confirmed} ${confirmedLabel}, ${day.pending} ${pendingLabel}, ${day.cancelled} ${cancelledLabel}`,
         )
-        .join('. '),
-  );
+        .join('. ')
+    );
+  });
 
   constructor() {
     afterNextRender(() => {
@@ -73,6 +92,7 @@ export class WeekChartComponent {
       });
     });
     effect(() => {
+      this.i18n.currentLang();
       const data = this.toData(this.days());
       if (!this.chart) return;
       this.chart.data = data;
@@ -87,7 +107,7 @@ export class WeekChartComponent {
       label,
       data: days.map(value),
       backgroundColor: color,
-      borderRadius: 6,
+      borderRadius: stackRadius,
       borderSkipped: false,
       maxBarThickness: 44,
       stack: 'week',
@@ -95,9 +115,21 @@ export class WeekChartComponent {
     return {
       labels: days.map((day) => `${capitalize(day.weekday)} ${day.day}`),
       datasets: [
-        dataset(STATUS_PLURAL_LABEL.CONFIRMED, colors.primary, (day) => day.confirmed),
-        dataset(STATUS_PLURAL_LABEL.PENDING, colors.tertiary, (day) => day.pending),
-        dataset(STATUS_PLURAL_LABEL.CANCELLED, GRAY, (day) => day.cancelled),
+        dataset(
+          this.i18n.translate('dashboard.weekChart.confirmedPlural'),
+          colors.primary,
+          (day) => day.confirmed,
+        ),
+        dataset(
+          this.i18n.translate('dashboard.weekChart.pendingPlural'),
+          colors.tertiary,
+          (day) => day.pending,
+        ),
+        dataset(
+          this.i18n.translate('dashboard.weekChart.cancelledPlural'),
+          GRAY,
+          (day) => day.cancelled,
+        ),
       ],
     };
   }
@@ -120,7 +152,7 @@ export class WeekChartComponent {
           bodyFont: { ...font, weight: 500 },
           callbacks: {
             footer: (items: { parsed: { y: number | null } }[]) =>
-              `Total: ${items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0)}`,
+              `${this.i18n.translate('dashboard.weekChart.totalLabel')}: ${items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0)}`,
           },
         },
       },

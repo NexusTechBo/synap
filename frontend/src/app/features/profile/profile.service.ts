@@ -11,6 +11,7 @@ import {
   doctorModeAppointmentsConflict,
   resourceError,
 } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { DoctorModeRequest, ProfileUpdateRequest, Staff } from '../../core/models/api.models';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -21,13 +22,6 @@ import {
   DoctorModeAppointmentsResult,
 } from './components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component';
 
-function disabledMessage(cancelled: number): string {
-  if (cancelled === 0) return 'Ya no atiendes como doctor';
-  return cancelled === 1
-    ? 'Ya no atiendes como doctor. Se canceló la cita y se notificó al paciente'
-    : 'Ya no atiendes como doctor. Se cancelaron las citas y se notificó a los pacientes';
-}
-
 @Injectable()
 export class ProfileService {
   private readonly staffApi = inject(StaffApi);
@@ -37,6 +31,7 @@ export class ProfileService {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
 
   readonly me = this.auth.profile;
   readonly isLoading = this.auth.profileLoading;
@@ -46,7 +41,7 @@ export class ProfileService {
 
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
-    'No se pudo cargar tu perfil',
+    this.i18n.translate('profile.errors.load'),
   );
   readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
   readonly doctorMode = computed(() => this.auth.hasRole('DOCTOR'));
@@ -66,7 +61,7 @@ export class ProfileService {
   update(request: ProfileUpdateRequest): Observable<Staff> {
     return this.staffApi.updateSelf(request).pipe(
       tap((profile) => {
-        this.notifications.success('Perfil actualizado');
+        this.notifications.success(this.i18n.translate('profile.notifications.updated'));
         this.auth.setProfile(profile);
         if (this.doctorMode()) this.doctorsStore.invalidate();
       }),
@@ -75,28 +70,38 @@ export class ProfileService {
 
   enableDoctorMode(specialtyId: number): Observable<unknown> {
     return this.changeDoctorMode({ enabled: true, specialtyId }).pipe(
-      tap(() => this.notifications.success('Ahora también atiendes como doctor')),
+      tap(() =>
+        this.notifications.success(this.i18n.translate('profile.notifications.doctorModeEnabled')),
+      ),
     );
   }
 
   disableDoctorMode(): Observable<unknown> {
     return this.confirm
       .ask({
-        title: 'Dejar de atender como doctor',
-        message:
-          'Ya no aparecerás como doctor para nuevas citas. Tus horarios de atención se conservan y volverán a estar disponibles si reactivas el modo doctor.',
-        confirmLabel: 'Dejar de atender',
+        title: this.i18n.translate('profile.doctorMode.disableConfirmTitle'),
+        message: this.i18n.translate('profile.doctorMode.disableConfirmMessage'),
+        confirmLabel: this.i18n.translate('profile.doctorMode.disableConfirmLabel'),
         danger: true,
       })
       .pipe(
         filter(Boolean),
         switchMap(() => this.disableCountingCancelled()),
-        tap((cancelled) => this.notifications.success(disabledMessage(cancelled))),
+        tap((cancelled) => this.notifications.success(this.disabledMessage(cancelled))),
         catchError((error) => {
-          this.notifications.error(apiErrorMessage(error, 'No se pudo desactivar el modo doctor'));
+          this.notifications.error(
+            apiErrorMessage(error, this.i18n.translate('profile.errors.disableDoctorMode')),
+          );
           return EMPTY;
         }),
       );
+  }
+
+  private disabledMessage(cancelled: number): string {
+    if (cancelled === 0) return this.i18n.translate('profile.notifications.doctorModeDisabledNone');
+    return cancelled === 1
+      ? this.i18n.translate('profile.notifications.doctorModeDisabledOne')
+      : this.i18n.translate('profile.notifications.doctorModeDisabledMany');
   }
 
   /** Emits how many appointments were cancelled (0 when none). */

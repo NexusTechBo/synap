@@ -2,17 +2,7 @@
   <div
     class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 py-10 sm:flex-row sm:px-6"
   >
-    <div class="flex flex-col items-center gap-3 sm:items-start">
-      <span class="text-xs font-semibold uppercase tracking-wider text-gray-500"
-        >Desarrollado por</span
-      >
-      <img
-        class="w-34 h-19"
-        src="images/logo/nexus-tech-logo.webp"
-        alt="Nexus Tech"
-        decoding="async"
-      />
-    </div>
+    <app-pulso-logo variant="dark" [size]="36" />
 
     <div class="flex flex-col items-center gap-2 sm:items-end">
       <a href="tel:+59178411225" class="font-semibold text-gray-200 hover:text-white"
@@ -25,8 +15,14 @@
   </div>
 
   <div class="border-t border-white/10">
-    <p class="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-gray-500 sm:px-6">
-      © {{ year }} ClinicFlow · Nexus Tech. Todos los derechos reservados.
-    </p>
+    <div class="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-6 sm:px-6">
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-gray-400">Designed by</span>
+        <app-moonshine-logo color="#FFFFFF" [size]="24" />
+      </div>
+      <p class="text-center text-xs text-gray-500">
+        © {{ year }} Moonshine Technologies. {{ 'landing.footer.rights' | translate }}
+      </p>
+    </div>
   </div>
 </footer>

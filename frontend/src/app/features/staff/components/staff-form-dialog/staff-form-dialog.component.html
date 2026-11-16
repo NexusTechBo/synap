@@ -1,14 +1,14 @@
 <app-dialog-frame
-  [title]="staff ? 'Editar personal' : 'Nuevo miembro del personal'"
-  [subtitle]="staff ? staff.username : 'Doctor o asistente de la clínica'"
+  [title]="(staff ? 'staff.formDialog.editTitle' : 'staff.formDialog.createTitle') | translate"
+  [subtitle]="staff ? staff.username : ('staff.formDialog.createSubtitle' | translate)"
   (closed)="ref.close()"
 >
   <form id="staff-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
     @if (canChangeRole) {
       <fieldset>
-        <legend class="field-label">Rol</legend>
+        <legend class="field-label">{{ 'staff.formDialog.roleLabel' | translate }}</legend>
         <div class="grid grid-cols-2 gap-2">
-          @for (role of roles; track role.id) {
+          @for (role of roles(); track role.id) {
             <label
               class="flex cursor-pointer items-center justify-center rounded-2xl border-2 py-2.5 text-sm font-bold transition-colors"
               [class]="
@@ -25,18 +25,18 @@
       </fieldset>
     }
 
-    <app-form-field label="Nombre completo" fieldId="staff-name">
+    <app-form-field [label]="'staff.formDialog.fullNameLabel' | translate" fieldId="staff-name">
       <input
         id="staff-name"
         class="field-input"
         formControlName="name"
-        placeholder="Dr. Juan Pérez"
+        [placeholder]="'staff.formDialog.fullNamePlaceholder' | translate"
         autocomplete="off"
       />
     </app-form-field>
 
     <div class="grid gap-4 sm:grid-cols-2">
-      <app-form-field label="Email" fieldId="staff-email">
+      <app-form-field [label]="'staff.formDialog.emailLabel' | translate" fieldId="staff-email">
         <input
           id="staff-email"
           type="email"
@@ -46,9 +46,9 @@
         />
       </app-form-field>
       <app-form-field
-        label="Teléfono (opcional)"
+        [label]="'staff.formDialog.phoneLabel' | translate"
         fieldId="staff-phone"
-        [errorMessages]="phoneErrors"
+        [errorMessages]="phoneErrors()"
       >
         <input
           id="staff-phone"
@@ -62,14 +62,14 @@
 
     @if (isDoctor()) {
       <app-form-field
-        label="Especialidad"
+        [label]="'staff.formDialog.specialtyLabel' | translate"
         fieldId="staff-specialty"
-        [errorMessages]="{ required: 'Selecciona la especialidad del doctor' }"
+        [errorMessages]="specialtyErrors()"
       >
         <app-select
           id="staff-specialty"
           icon="tag"
-          placeholder="Selecciona una especialidad"
+          [placeholder]="'staff.formDialog.specialtyPlaceholder' | translate"
           formControlName="specialtyId"
           [options]="specialtyOptions()"
         />
@@ -78,7 +78,11 @@
 
     @if (!staff) {
       <div class="grid gap-4">
-        <app-form-field label="CI" fieldId="staff-ci" [errorMessages]="ciErrors">
+        <app-form-field
+          [label]="'staff.formDialog.ciLabel' | translate"
+          fieldId="staff-ci"
+          [errorMessages]="ciErrors()"
+        >
           <input
             id="staff-ci"
             class="field-input"
@@ -88,7 +92,11 @@
             autocomplete="off"
           />
         </app-form-field>
-        <app-form-field label="Usuario" fieldId="staff-username" [errorMessages]="usernameErrors">
+        <app-form-field
+          [label]="'staff.formDialog.usernameLabel' | translate"
+          fieldId="staff-username"
+          [errorMessages]="usernameErrors()"
+        >
           <div class="flex items-center gap-1.5">
             <input
               id="staff-username"
@@ -98,7 +106,7 @@
               autocapitalize="none"
               autocorrect="off"
               spellcheck="false"
-              placeholder="juan.perez"
+              [placeholder]="'staff.formDialog.usernamePlaceholder' | translate"
             />
             <span class="min-w-0 truncate text-sm font-semibold text-gray-500">{{
               clinicSuffix()
@@ -109,9 +117,12 @@
     }
 
     <app-form-field
-      [label]="staff ? 'Nueva contraseña (opcional)' : 'Contraseña inicial'"
+      [label]="
+        (staff ? 'staff.formDialog.newPasswordLabel' : 'staff.formDialog.initialPasswordLabel')
+          | translate
+      "
       fieldId="staff-password"
-      [hint]="staff ? 'Déjala vacía para mantener la actual' : ''"
+      [hint]="staff ? ('staff.formDialog.passwordHint' | translate) : ''"
     >
       <input
         id="staff-password"
@@ -119,7 +130,7 @@
         class="field-input"
         formControlName="password"
         autocomplete="new-password"
-        placeholder="Mínimo 8 caracteres"
+        [placeholder]="'staff.formDialog.passwordPlaceholder' | translate"
       />
     </app-form-field>
 
@@ -129,9 +140,18 @@
   </form>
 
   <ng-container ngProjectAs="[dialogFooter]">
-    <button type="button" class="btn btn-secondary" (click)="ref.close()">Cancelar</button>
+    <button type="button" class="btn btn-secondary" (click)="ref.close()">
+      {{ 'common.cancel' | translate }}
+    </button>
     <button type="submit" form="staff-form" class="btn btn-primary" [disabled]="saving()">
-      {{ saving() ? 'Guardando…' : staff ? 'Guardar cambios' : 'Crear miembro' }}
+      {{
+        (saving()
+          ? 'staff.formDialog.saving'
+          : staff
+            ? 'staff.formDialog.saveChanges'
+            : 'staff.formDialog.createMember'
+        ) | translate
+      }}
     </button>
   </ng-container>
 </app-dialog-frame>

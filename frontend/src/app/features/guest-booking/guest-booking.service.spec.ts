@@ -23,7 +23,7 @@ const IN_TWO_DAYS = toIso(addDays(new Date(), 2));
 const LAST_STRIP_DAY = toIso(addDays(new Date(), DATE_STRIP_DAYS - 1));
 const BEYOND_STRIP = toIso(addDays(new Date(), DATE_STRIP_DAYS + 5));
 
-const PATIENT: GuestBookingPatient = { ci: '1234567', phoneNumber: '70000000' };
+const PATIENT: GuestBookingPatient = { phoneNumber: '70000000' };
 
 function guestDoctor(overrides: Partial<GuestDoctor> = {}): GuestDoctor {
   return { id: 10, name: 'Dr. Gómez', specialtyId: 1, specialtyName: 'Cardiología', ...overrides };
@@ -144,7 +144,7 @@ describe('GuestBookingService', () => {
       guestApi.clinic.mockReturnValue(throwError(() => new Error('x')));
       service.reloadClinic();
       await settle();
-      expect(service.clinicErrorMessage()).toBe('No se pudo cargar la clínica');
+      expect(service.clinicErrorMessage()).toBe('No se pudo cargar el espacio de trabajo');
     });
   });
 

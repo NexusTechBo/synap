@@ -8,20 +8,24 @@ import {
   input,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { FormFieldComponent } from '../../ui/forms/form-field/form-field.component';
 import { ResendActivationService } from './resend-activation.service';
 
 @Component({
   selector: 'app-resend-activation',
-  imports: [ReactiveFormsModule, FormFieldComponent],
+  imports: [ReactiveFormsModule, FormFieldComponent, TranslatePipe],
   providers: [ResendActivationService],
   templateUrl: './resend-activation.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResendActivationComponent implements OnInit {
+  private readonly i18n = inject(I18nService);
+
   readonly email = input<string>();
-  readonly label = input('Reenviar correo');
+  readonly label = input<string>();
   readonly fieldId = input('resend-activation-email');
   readonly startCooldown = input(false, { transform: booleanAttribute });
 
@@ -32,9 +36,11 @@ export class ResendActivationComponent implements OnInit {
   });
 
   protected readonly buttonLabel = computed(() => {
-    if (this.resend.sending()) return 'Enviando…';
+    this.i18n.currentLang();
+    if (this.resend.sending()) return this.i18n.translate('resendActivation.sending');
     const remaining = this.resend.remainingLabel();
-    return remaining ? `Reenviar en ${remaining}` : this.label();
+    if (remaining) return `${this.i18n.translate('resendActivation.resendIn')} ${remaining}`;
+    return this.label() ?? this.i18n.translate('resendActivation.defaultLabel');
   });
 
   ngOnInit(): void {

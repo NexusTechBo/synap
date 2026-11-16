@@ -107,13 +107,13 @@ describe('StaffFormDialogComponent', () => {
     });
 
     it('renders the CI field limited to 10 characters', () => {
-      expect(field('CI')?.getAttribute('maxlength')).toBe('10');
+      expect(field('CI (opcional)')?.getAttribute('maxlength')).toBe('10');
     });
 
     it.each(['1234', '12a45', '12 345', '12345678901'])(
       'shows the CI rule and blocks submit for "%s" (DEF-02)',
       async (ci) => {
-        await type('CI', ci);
+        await type('CI (opcional)', ci);
 
         expect(ciError()).toBe(CI_MESSAGE);
         await submit();
@@ -122,8 +122,23 @@ describe('StaffFormDialogComponent', () => {
       },
     );
 
+    it('is valid with an empty CI and sends null', async () => {
+      await submit();
+
+      expect(ciError()).toBeUndefined();
+      expect(staffService.create).toHaveBeenCalledWith(expect.objectContaining({ ci: null }));
+    });
+
+    it('treats a whitespace-only CI as invalid and does not send it', async () => {
+      await type('CI (opcional)', '   ');
+
+      expect(ciError()).toBe(CI_MESSAGE);
+      await submit();
+      expect(staffService.create).not.toHaveBeenCalled();
+    });
+
     it('creates the member with a valid CI and closes', async () => {
-      await type('CI', '1234567890');
+      await type('CI (opcional)', '1234567890');
 
       await submit();
 
@@ -139,7 +154,7 @@ describe('StaffFormDialogComponent', () => {
     it('does not render nor validate the CI and saves without it', async () => {
       await setup({ staff: staff({ ci: '1234567-LP' }) });
 
-      expect(field('CI')).toBeNull();
+      expect(field('CI (opcional)')).toBeNull();
       expect(element.querySelector('#staff-ci')).toBeNull();
       await submit();
 

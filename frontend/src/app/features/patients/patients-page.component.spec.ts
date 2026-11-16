@@ -111,7 +111,7 @@ describe('PatientsPageComponent', () => {
     it('shows the empty state for a clinic without patients', async () => {
       await render();
       expect(element.textContent).toContain('No hay pacientes');
-      expect(element.textContent).toContain('Registra al primer paciente de la clínica.');
+      expect(element.textContent).toContain('Registra al primer paciente del espacio de trabajo.');
     });
 
     it('shows the no results state while searching', async () => {
@@ -145,6 +145,16 @@ describe('PatientsPageComponent', () => {
       expect(rows[1].querySelectorAll('td')[1].textContent?.trim()).toBe('7654321');
     });
 
+    it('shows a dash instead of the CI for a patient without CI', async () => {
+      patients.patients.set([patient({ id: 22, ci: null, name: 'Sin Carnet' })]);
+      await render();
+
+      const row = element.querySelector('tbody tr')!;
+      expect(row.querySelectorAll('td')[1].textContent?.trim()).toBe('—');
+      expect(row.querySelector('td')!.textContent).toContain('CI —');
+      expect(row.textContent).not.toContain('null');
+    });
+
     it('shows the CI under the name for small screens', () => {
       const firstCell = element.querySelector('tbody tr td')!;
       expect(firstCell.textContent).toContain('Ana Pérez');
@@ -159,18 +169,18 @@ describe('PatientsPageComponent', () => {
     });
 
     it('offers deactivate for active patients and reactivate for inactive ones', () => {
-      expect(buttonByLabel('Desactivar a Ana Pérez')).not.toBeNull();
-      expect(buttonByLabel('Reactivar a Luis Rojas')).not.toBeNull();
-      expect(buttonByLabel('Reactivar a Ana Pérez')).toBeNull();
+      expect(buttonByLabel('Desactivar: Ana Pérez')).not.toBeNull();
+      expect(buttonByLabel('Reactivar: Luis Rojas')).not.toBeNull();
+      expect(buttonByLabel('Reactivar: Ana Pérez')).toBeNull();
     });
 
     it('deactivates a patient through the service', () => {
-      buttonByLabel('Desactivar a Ana Pérez').click();
+      buttonByLabel('Desactivar: Ana Pérez').click();
       expect(patients.deactivate).toHaveBeenCalledWith(patient());
     });
 
     it('reactivates a patient through the service', () => {
-      buttonByLabel('Reactivar a Luis Rojas').click();
+      buttonByLabel('Reactivar: Luis Rojas').click();
       expect(patients.activate).toHaveBeenCalledWith(expect.objectContaining({ id: 21 }));
     });
 
@@ -225,7 +235,7 @@ describe('PatientsPageComponent', () => {
       patients.patients.set([patient()]);
       await render();
 
-      buttonByLabel('Editar a Ana Pérez').click();
+      buttonByLabel('Editar: Ana Pérez').click();
 
       expect(dialog.open).toHaveBeenCalledWith(
         PatientFormDialogComponent,

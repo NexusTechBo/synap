@@ -3,7 +3,9 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { apiErrorMessage } from '../../../core/http/api-error';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { Patient } from '../../../core/models/api.models';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { AlertComponent } from '../../ui/alert/alert.component';
 import { DialogFrameComponent } from '../../ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../ui/forms/form-field/form-field.component';
@@ -22,12 +24,19 @@ export interface PatientFormData {
 
 @Component({
   selector: 'app-patient-form-dialog',
-  imports: [AlertComponent, DialogFrameComponent, FormFieldComponent, ReactiveFormsModule],
+  imports: [
+    AlertComponent,
+    DialogFrameComponent,
+    FormFieldComponent,
+    ReactiveFormsModule,
+    TranslatePipe,
+  ],
   templateUrl: './patient-form-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PatientFormDialogComponent {
   private readonly patients = inject(PatientFormService);
+  private readonly i18n = inject(I18nService);
   protected readonly ref = inject<DialogRef<Patient>>(DialogRef);
   protected readonly patient = inject<PatientFormData>(DIALOG_DATA).patient;
 
@@ -40,7 +49,7 @@ export class PatientFormDialogComponent {
     name: [this.patient?.name ?? '', notBlank],
     phoneNumber: [this.patient?.phoneNumber ?? '', [notBlank, phoneValidator]],
     email: [this.patient?.email ?? '', Validators.email],
-    ci: [this.patient?.ci ?? '', [notBlank, ciValidator]],
+    ci: [this.patient?.ci ?? '', [ciValidator]],
   });
 
   protected save(): void {
@@ -55,14 +64,17 @@ export class PatientFormDialogComponent {
     this.patients
       .save(this.patient, {
         name: name.trim(),
-        ci: ci.trim(),
+        ci: ci.trim() || null,
         phoneNumber: phoneNumber.trim(),
         email: email.trim() || null,
       })
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         next: (saved) => this.ref.close(saved),
-        error: (error) => this.error.set(apiErrorMessage(error, 'No se pudo guardar el paciente')),
+        error: (error) =>
+          this.error.set(
+            apiErrorMessage(error, this.i18n.translate('patients.formDialog.saveError')),
+          ),
       });
   }
 }

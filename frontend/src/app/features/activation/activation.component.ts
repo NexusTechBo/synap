@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { BannerComponent } from '../../shared/components/banner/banner.component';
 import { ResendActivationComponent } from '../../shared/components/resend-activation/resend-activation.component';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { UiIconComponent } from '../../shared/ui/ui-icon/ui-icon.component';
 import { ActivationService } from './activation.service';
@@ -22,6 +23,7 @@ import { ActivationService } from './activation.service';
     GlassBackgroundComponent,
     ResendActivationComponent,
     UiIconComponent,
+    TranslatePipe,
   ],
   providers: [ActivationService],
   templateUrl: './activation.component.html',

@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
+import { I18nService } from '../../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
@@ -16,18 +18,25 @@ import { ProfileService } from '../../profile.service';
     LoadErrorComponent,
     ReactiveFormsModule,
     SelectComponent,
+    TranslatePipe,
   ],
   templateUrl: './doctor-mode-card.component.html',
   host: { class: 'glass-panel block min-w-0 rounded-3xl p-6' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DoctorModeCardComponent {
+  private readonly i18n = inject(I18nService);
   protected readonly profile = inject(ProfileService);
 
   private readonly enabling = signal(false);
   protected readonly enabled = this.profile.doctorMode;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  protected readonly specialtyErrors = computed(() => {
+    this.i18n.currentLang();
+    return { required: this.i18n.translate('profile.doctorMode.specialtyRequired') };
+  });
 
   protected readonly form = new FormGroup({
     specialtyId: new FormControl<number | null>(null, Validators.required),
@@ -69,7 +78,9 @@ export class DoctorModeCardComponent {
           this.form.reset();
         },
         error: (error) =>
-          this.error.set(apiErrorMessage(error, 'No se pudo activar el modo doctor')),
+          this.error.set(
+            apiErrorMessage(error, this.i18n.translate('profile.errors.enableDoctorMode')),
+          ),
       });
   }
 }

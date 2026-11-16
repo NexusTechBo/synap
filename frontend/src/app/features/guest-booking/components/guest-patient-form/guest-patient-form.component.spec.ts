@@ -57,20 +57,60 @@ describe('GuestPatientFormComponent', () => {
     return element.querySelector('#guest-ci-error')?.textContent?.trim();
   }
 
-  describe('CI validation (DEF-02)', () => {
+  const RETURNING = 'Ya me atendí en este espacio de trabajo';
+  const NEW = 'Es mi primera vez';
+
+  function hasField(label: string): boolean {
+    return [...element.querySelectorAll('label')].some((l) => l.textContent?.trim() === label);
+  }
+
+  describe('returning patient', () => {
+    beforeEach(() => chooseKind(RETURNING));
+
+    it('shows no CI field and explains that the phone is needed', () => {
+      expect(hasField('CI (opcional)')).toBe(false);
+      expect(element.textContent).toContain('Ingresa el teléfono con el que te registraste.');
+    });
+
+    it('emits only the phone number', async () => {
+      await type('Teléfono', ' 70000000 ');
+
+      await submit();
+
+      expect(submitted).toEqual([{ phoneNumber: '70000000' }]);
+    });
+
+    it('does not emit without a phone', async () => {
+      await submit();
+
+      expect(submitted).toEqual([]);
+    });
+  });
+
+  describe('new patient', () => {
     beforeEach(async () => {
-      await chooseKind('Ya me atendí en esta clínica');
+      await chooseKind(NEW);
+      await type('Nombre completo', ' Ana Rojas ');
       await type('Teléfono', '70000000');
     });
 
-    it('limits the CI input to 10 characters', () => {
-      expect(field('CI').getAttribute('maxlength')).toBe('10');
+    it('limits the optional CI input to 10 characters', () => {
+      expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
     });
 
-    it.each(['1234', '12a45', '12 345', '12345678901'])(
+    it('is valid without CI and emits null', async () => {
+      await submit();
+
+      expect(ciError()).toBeUndefined();
+      expect(submitted).toEqual([
+        { ci: null, phoneNumber: '70000000', name: 'Ana Rojas', email: null },
+      ]);
+    });
+
+    it.each(['1234', '12a45', '12 345', '12345678901', '   '])(
       'shows the CI rule and does not emit for "%s"',
       async (ci) => {
-        await type('CI', ci);
+        await type('CI (opcional)', ci);
 
         expect(ciError()).toBe(CI_MESSAGE);
         await submit();
@@ -78,13 +118,54 @@ describe('GuestPatientFormComponent', () => {
       },
     );
 
-    it('emits a returning patient with a valid CI', async () => {
-      await type('CI', '12345');
+    it('emits the CI when valid', async () => {
+      await type('CI (opcional)', '1234567890');
+      await type('Email (opcional)', 'ana@mail.test');
 
       await submit();
 
       expect(ciError()).toBeUndefined();
-      expect(submitted).toEqual([{ ci: '12345', phoneNumber: '70000000' }]);
+      expect(submitted).toEqual([
+        { ci: '1234567890', phoneNumber: '70000000', name: 'Ana Rojas', email: 'ana@mail.test' },
+      ]);
+    });
+  });
+
+  describe('restoring with initial', () => {
+    async function restore(initial: GuestBookingPatient): Promise<void> {
+      fixture.componentRef.setInput('initial', initial);
+      fixture.componentInstance.ngOnInit();
+      await fixture.whenStable();
+    }
+
+    it('restores a returning patient (no name)', async () => {
+      await restore({ phoneNumber: '70000000' });
+
+      expect(hasField('CI (opcional)')).toBe(false);
+      expect(field('Teléfono').value).toBe('70000000');
+      await submit();
+      expect(submitted).toEqual([{ phoneNumber: '70000000' }]);
+    });
+
+    it('restores a new patient with CI', async () => {
+      await restore({ ci: '12345', phoneNumber: '70000000', name: 'Ana Rojas', email: null });
+
+      expect(field('CI (opcional)').value).toBe('12345');
+      expect(field('Nombre completo').value).toBe('Ana Rojas');
+      await submit();
+      expect(submitted).toEqual([
+        { ci: '12345', phoneNumber: '70000000', name: 'Ana Rojas', email: null },
+      ]);
+    });
+
+    it('restores a new patient without CI', async () => {
+      await restore({ ci: null, phoneNumber: '70000000', name: 'Ana Rojas' });
+
+      expect(field('CI (opcional)').value).toBe('');
+      await submit();
+      expect(submitted).toEqual([
+        { ci: null, phoneNumber: '70000000', name: 'Ana Rojas', email: null },
+      ]);
     });
   });
 });

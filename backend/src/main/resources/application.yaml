@@ -6,7 +6,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   application:
-    name: scheduler
+    name: pulso
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -123,7 +123,7 @@ app:
   frontend-url: ${APP_FRONTEND_URL:http://localhost:4200}
   mail:
     from: ${MAIL_FROM:}
-    from-name: ${MAIL_FROM_NAME:ClinicFlow}
+    from-name: ${MAIL_FROM_NAME:Pulso}
     base-url: ${BREVO_BASE_URL:https://api.brevo.com}
     api-key: ${BREVO_API_KEY:}
 
@@ -132,7 +132,7 @@ logging:
     format:
       console: ${LOG_FORMAT:ecs}
   level:
-    com.example.scheduler: ${LOG_LEVEL:INFO}
+    com.example.pulso: ${LOG_LEVEL:INFO}
 
 management:
   endpoints:

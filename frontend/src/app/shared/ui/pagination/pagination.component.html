@@ -1,7 +1,8 @@
 @if (totalPages() > 1) {
   <span class="text-sm font-medium text-gray-500">
-    Página <b class="text-gray-800">{{ page() + 1 }}</b> de {{ totalPages() }} ·
-    {{ totalElements() }} registros
+    {{ 'shared.pagination.page' | translate }} <b class="text-gray-800">{{ page() + 1 }}</b>
+    {{ 'shared.pagination.of' | translate }} {{ totalPages() }} · {{ totalElements() }}
+    {{ 'shared.pagination.records' | translate }}
   </span>
   <div class="flex items-center gap-1.5">
     <button
@@ -9,7 +10,7 @@
       class="btn-icon"
       [disabled]="page() === 0"
       (click)="pageChange.emit(page() - 1)"
-      aria-label="Página anterior"
+      [attr.aria-label]="'shared.pagination.previousAria' | translate"
     >
       <app-ui-icon name="chevronLeft" class="h-4 w-4" />
     </button>
@@ -18,7 +19,7 @@
       class="btn-icon"
       [disabled]="page() >= totalPages() - 1"
       (click)="pageChange.emit(page() + 1)"
-      aria-label="Página siguiente"
+      [attr.aria-label]="'shared.pagination.nextAria' | translate"
     >
       <app-ui-icon name="chevronRight" class="h-4 w-4" />
     </button>

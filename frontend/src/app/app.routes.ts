@@ -1,13 +1,18 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
 import { ROLES } from './core/auth/roles';
-import { GUEST_BOOKING_PATH, PAGE_TITLES, SESSION_ACCESS } from './core/navigation/navigation';
+import {
+  FULL_HEIGHT,
+  GUEST_BOOKING_PATH,
+  PAGE_TITLES,
+  SESSION_ACCESS,
+} from './core/navigation/navigation';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    title: 'ClinicFlow',
+    title: 'Pulso',
     loadComponent: () =>
       import('./features/landing/landing-page.component').then((m) => m.LandingPageComponent),
   },
@@ -28,6 +33,7 @@ export const routes: Routes = [
       {
         path: 'board',
         title: PAGE_TITLES.board,
+        data: { [FULL_HEIGHT]: true },
         loadComponent: () =>
           import('./features/board/board-page.component').then((m) => m.BoardPageComponent),
       },
@@ -96,14 +102,14 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    title: 'Iniciar sesión',
+    title: PAGE_TITLES.login,
     canActivate: [guestGuard],
     data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () => import('./features/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'register',
-    title: 'Registrar clínica',
+    title: PAGE_TITLES.register,
     canActivate: [guestGuard],
     data: { [SESSION_ACCESS]: 'guestOnly' },
     loadComponent: () =>
@@ -111,13 +117,13 @@ export const routes: Routes = [
   },
   {
     path: 'activar',
-    title: 'Activar clínica',
+    title: PAGE_TITLES.activation,
     loadComponent: () =>
       import('./features/activation/activation.component').then((m) => m.ActivationComponent),
   },
   {
     path: GUEST_BOOKING_PATH,
-    title: 'Reservar cita',
+    title: PAGE_TITLES.guestBooking,
     loadComponent: () =>
       import('./features/guest-booking/guest-booking.component').then(
         (m) => m.GuestBookingComponent,

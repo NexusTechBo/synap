@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } fro
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GuestBookingPatient } from '../../../../core/models/api.models';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,
@@ -15,7 +16,7 @@ type PatientKind = 'returning' | 'new';
 
 @Component({
   selector: 'app-guest-patient-form',
-  imports: [FormFieldComponent, ReactiveFormsModule],
+  imports: [FormFieldComponent, ReactiveFormsModule, TranslatePipe],
   templateUrl: './guest-patient-form.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,14 +28,14 @@ export class GuestPatientFormComponent implements OnInit {
 
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
-  protected readonly kinds: { id: PatientKind; label: string }[] = [
-    { id: 'returning', label: 'Ya me atendí en esta clínica' },
-    { id: 'new', label: 'Es mi primera vez' },
+  protected readonly kinds: { id: PatientKind; labelKey: string }[] = [
+    { id: 'returning', labelKey: 'guestBooking.patientForm.returningLabel' },
+    { id: 'new', labelKey: 'guestBooking.patientForm.newLabel' },
   ];
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     kind: [null as PatientKind | null, Validators.required],
-    ci: ['', [notBlank, ciValidator]],
+    ci: [{ value: '', disabled: true }, ciValidator],
     phoneNumber: ['', [notBlank, phoneValidator]],
     name: [{ value: '', disabled: true }, notBlank],
     email: [{ value: '', disabled: true }, Validators.email],
@@ -43,8 +44,8 @@ export class GuestPatientFormComponent implements OnInit {
 
   constructor() {
     this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed()).subscribe((kind) => {
-      const { name, email } = this.form.controls;
-      for (const control of [name, email]) {
+      const { ci, name, email } = this.form.controls;
+      for (const control of [ci, name, email]) {
         if (kind === 'new') control.enable();
         else control.disable();
       }
@@ -56,7 +57,7 @@ export class GuestPatientFormComponent implements OnInit {
     if (!initial) return;
     this.form.patchValue({
       kind: initial.name ? 'new' : 'returning',
-      ci: initial.ci,
+      ci: initial.ci ?? '',
       phoneNumber: initial.phoneNumber,
       name: initial.name ?? '',
       email: initial.email ?? '',
@@ -68,14 +69,13 @@ export class GuestPatientFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const ci = this.form.controls.ci.value.trim();
     const phoneNumber = this.form.controls.phoneNumber.value.trim();
     if (this.kind() === 'returning') {
-      this.submitted.emit({ ci, phoneNumber });
+      this.submitted.emit({ phoneNumber });
       return;
     }
     this.submitted.emit({
-      ci,
+      ci: this.form.controls.ci.value.trim() || null,
       phoneNumber,
       name: this.form.controls.name.value.trim(),
       email: this.form.controls.email.value.trim() || null,

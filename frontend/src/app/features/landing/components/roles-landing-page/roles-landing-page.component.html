@@ -1,51 +1,32 @@
 <section [id]="anchor" class="scroll-mt-20 py-24">
   <div class="mx-auto max-w-6xl px-4 sm:px-6">
     <div appReveal class="mx-auto max-w-2xl text-center">
-      <p class="text-sm font-bold uppercase tracking-wider text-primary">Para todo el equipo</p>
+      <p class="text-sm font-bold uppercase tracking-wider text-primary">
+        {{ 'landing.roles.eyebrow' | translate }}
+      </p>
       <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
-        Una vista para cada rol
+        {{ 'landing.roles.title' | translate }}
       </h2>
     </div>
 
-    <div
-      appReveal
-      class="mx-auto mt-10 flex w-fit flex-wrap justify-center gap-1 rounded-2xl border border-white/80 bg-white/70 p-1.5 shadow-sm backdrop-blur"
-      role="tablist"
-      aria-label="Roles"
-    >
-      @for (role of roles; track role.id) {
-        <button
-          type="button"
-          role="tab"
-          [id]="'role-tab-' + role.id"
-          [attr.aria-selected]="role.id === activeRoleId()"
-          aria-controls="role-panel"
-          class="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition"
-          [class]="
-            role.id === activeRoleId()
-              ? 'bg-primary text-white shadow-md shadow-primary/25'
-              : 'text-gray-600 hover:bg-white'
-          "
-          (click)="activeRoleId.set(role.id)"
+    <ul class="mt-14 grid gap-5 md:grid-cols-3">
+      @for (role of roles; track role.labelKey) {
+        <li
+          appReveal
+          class="rounded-3xl border border-white/80 bg-white/60 p-7 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
         >
-          <app-ui-icon [name]="role.icon" class="h-4 w-4" />
-          {{ role.label }}
-        </button>
+          <span
+            class="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/30 px-3 py-1 text-sm font-semibold text-primary"
+          >
+            <app-ui-icon [name]="role.icon" class="h-4 w-4" />
+            {{ role.labelKey | translate }}
+          </span>
+          <h3 class="text-lg font-bold">{{ role.titleKey | translate }}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-gray-600">
+            {{ role.descriptionKey | translate }}
+          </p>
+        </li>
       }
-    </div>
-
-    @let role = activeRole();
-    <div
-      id="role-panel"
-      role="tabpanel"
-      [attr.aria-labelledby]="'role-tab-' + role.id"
-      class="mt-10"
-    >
-      <div class="mx-auto max-w-2xl text-center">
-        <h3 class="text-xl font-bold">{{ role.title }}</h3>
-        <p class="mt-2 text-gray-600">{{ role.description }}</p>
-      </div>
-      <app-browser-frame class="mx-auto mt-8 max-w-5xl" [shot]="role.shot" />
-    </div>
+    </ul>
   </div>
 </section>
