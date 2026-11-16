@@ -734,4 +734,24 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       confirmLabel: 'Reschedule',
     },
   },
+
+  specialties: {
+    title: 'Specialties',
+    subtitle: 'Catalog used when registering doctors and booking appointments',
+    emptyTitle: 'No specialties',
+    emptyMessage: 'Create the first one to be able to register doctors.',
+    form: {
+      title: 'New specialty',
+      nameLabel: 'Name',
+      namePlaceholder: 'Cardiology',
+      createButton: 'Create',
+    },
+    notifications: {
+      createdPrefix: 'Specialty',
+      createdSuffix: 'created',
+    },
+    errors: {
+      create: 'Could not create specialty',
+    },
+  },
 };

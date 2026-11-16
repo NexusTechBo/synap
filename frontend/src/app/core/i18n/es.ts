@@ -732,4 +732,24 @@ export const ES_TRANSLATIONS = {
       confirmLabel: 'Reprogramar',
     },
   },
+
+  specialties: {
+    title: 'Especialidades',
+    subtitle: 'Catálogo usado al registrar doctores y al agendar citas',
+    emptyTitle: 'Sin especialidades',
+    emptyMessage: 'Crea la primera para poder registrar doctores.',
+    form: {
+      title: 'Nueva especialidad',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Cardiología',
+      createButton: 'Crear',
+    },
+    notifications: {
+      createdPrefix: 'Especialidad',
+      createdSuffix: 'creada',
+    },
+    errors: {
+      create: 'No se pudo crear la especialidad',
+    },
+  },
 };

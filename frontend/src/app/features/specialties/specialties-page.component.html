@@ -1,6 +1,6 @@
 <app-page-header
-  title="Especialidades"
-  subtitle="Catálogo usado al registrar doctores y al agendar citas"
+  [title]="'specialties.title' | translate"
+  [subtitle]="'specialties.subtitle' | translate"
 />
 
 <div class="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1fr_22rem]">
@@ -26,8 +26,8 @@
           <app-empty-state
             class="col-span-full"
             icon="tag"
-            title="Sin especialidades"
-            message="Crea la primera para poder registrar doctores."
+            [title]="'specialties.emptyTitle' | translate"
+            [message]="'specialties.emptyMessage' | translate"
           />
         }
       </div>
@@ -35,14 +35,16 @@
   </section>
 
   <section class="glass-panel self-start rounded-3xl p-6">
-    <h2 class="mb-4 text-lg font-extrabold text-gray-900">Nueva especialidad</h2>
+    <h2 class="mb-4 text-lg font-extrabold text-gray-900">
+      {{ 'specialties.form.title' | translate }}
+    </h2>
     <form (ngSubmit)="create()" class="space-y-3">
-      <app-form-field label="Nombre" fieldId="specialty-name">
+      <app-form-field [label]="'specialties.form.nameLabel' | translate" fieldId="specialty-name">
         <input
           id="specialty-name"
           name="name"
           class="field-input"
-          placeholder="Cardiología"
+          [placeholder]="'specialties.form.namePlaceholder' | translate"
           [ngModel]="name()"
           (ngModelChange)="name.set($event)"
           maxlength="255"
@@ -55,7 +57,7 @@
         [disabled]="!name().trim() || specialties.saving()"
       >
         <app-ui-icon name="plus" class="h-4 w-4" [strokeWidth]="2.4" />
-        Crear
+        {{ 'specialties.form.createButton' | translate }}
       </button>
     </form>
   </section>
