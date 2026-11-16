@@ -16,91 +16,89 @@ export const LANDING_ANCHORS = {
 } as const;
 
 export const LANDING_NAV = [
-  { label: 'Funciones', anchor: LANDING_ANCHORS.features },
-  { label: 'Producto', anchor: LANDING_ANCHORS.product },
-  { label: 'Roles', anchor: LANDING_ANCHORS.roles },
-  { label: 'Cómo funciona', anchor: LANDING_ANCHORS.howItWorks },
+  { labelKey: 'landing.nav.features', anchor: LANDING_ANCHORS.features },
+  { labelKey: 'landing.nav.product', anchor: LANDING_ANCHORS.product },
+  { labelKey: 'landing.nav.roles', anchor: LANDING_ANCHORS.roles },
+  { labelKey: 'landing.nav.howItWorks', anchor: LANDING_ANCHORS.howItWorks },
 ];
 
 export const HERO_SHOT: LandingShot = {
   src: SHOTS + '11-assistant-board.webp',
-  alt: 'Tablero de citas con columnas de pendientes, confirmadas y canceladas',
+  altKey: 'landing.hero.shotAlt',
 };
 
 export const HERO_MOBILE_SHOT: LandingShot = {
   src: SHOTS + '41-mobile-assistant-dashboard.webp',
-  alt: 'Inicio de ClinicFlow en un teléfono móvil',
+  altKey: 'landing.hero.mobileShotAlt',
 };
 
 export const LANDING_STATS = [
-  { value: '3', label: 'roles con permisos propios' },
-  { value: '24/7', label: 'agenda disponible en la nube' },
-  { value: '100%', label: 'responsive, también en móvil' },
-  { value: '0', label: 'instalaciones necesarias' },
+  { value: '3', labelKey: 'landing.stats.roles' },
+  { value: '24/7', labelKey: 'landing.stats.cloud' },
+  { value: '100%', labelKey: 'landing.stats.responsive' },
+  { value: '0', labelKey: 'landing.stats.installations' },
 ];
 
 export const LANDING_FEATURES: LandingFeature[] = [
   {
     icon: 'calendar',
-    title: 'Agenda y calendario',
-    description: 'Visualiza las citas del día, la semana o el mes de todos tus doctores.',
+    titleKey: 'landing.features.items.calendarTitle',
+    descriptionKey: 'landing.features.items.calendarDesc',
   },
   {
     icon: 'board',
-    title: 'Tablero de citas',
-    description: 'Confirma o cancela citas pendientes arrastrándolas entre columnas.',
+    titleKey: 'landing.features.items.boardTitle',
+    descriptionKey: 'landing.features.items.boardDesc',
   },
   {
     icon: 'clock',
-    title: 'Disponibilidad por doctor',
-    description: 'Cada doctor define su horario semanal y bloquea días u horas libres.',
+    titleKey: 'landing.features.items.availabilityTitle',
+    descriptionKey: 'landing.features.items.availabilityDesc',
   },
   {
     icon: 'patients',
-    title: 'Gestión de pacientes',
-    description: 'Registra pacientes y asígnalos a sus doctores en segundos.',
+    titleKey: 'landing.features.items.patientsTitle',
+    descriptionKey: 'landing.features.items.patientsDesc',
   },
   {
     icon: 'staff',
-    title: 'Roles y personal',
-    description: 'Administradores, doctores y asistentes, cada uno con sus permisos.',
+    titleKey: 'landing.features.items.staffTitle',
+    descriptionKey: 'landing.features.items.staffDesc',
   },
   {
     icon: 'alert',
-    title: 'Notificaciones por email',
-    description: 'Tus pacientes reciben un aviso al confirmar o cancelar su cita.',
+    titleKey: 'landing.features.items.notificationsTitle',
+    descriptionKey: 'landing.features.items.notificationsDesc',
   },
 ];
 
 export const LANDING_SHOWCASE: LandingShowcase[] = [
   {
-    eyebrow: 'Calendario',
-    title: 'Todo el mes de un vistazo',
-    description:
-      'Cada día muestra cuántas citas tiene y su estado. Haz clic en un día para ver la agenda completa y agendar al instante.',
-    points: [
-      'Citas pendientes, confirmadas y canceladas por color',
-      'Agenda del día al lado del calendario',
-      'Agendar una cita desde el mismo día',
+    eyebrowKey: 'landing.showcase.calendar.eyebrow',
+    titleKey: 'landing.showcase.calendar.title',
+    descriptionKey: 'landing.showcase.calendar.description',
+    pointKeys: [
+      'landing.showcase.calendar.point1',
+      'landing.showcase.calendar.point2',
+      'landing.showcase.calendar.point3',
     ],
     shot: {
       src: SHOTS + '12-assistant-calendar.webp',
-      alt: 'Calendario mensual con la agenda del día seleccionado',
+      altKey: 'landing.showcase.calendar.shotAlt',
     },
   },
   {
-    eyebrow: 'Agendar cita',
-    title: 'Reserva en tres pasos',
-    description:
-      'Elige al paciente, la especialidad y el doctor, y solo se muestran los horarios realmente libres. Sin dobles reservas.',
-    points: [
-      'Filtra doctores por especialidad',
-      'Horarios libres según la disponibilidad del doctor',
-      'Resumen claro antes de confirmar',
+    eyebrowKey: 'landing.showcase.booking.eyebrow',
+    titleKey: 'landing.showcase.booking.title',
+    descriptionKey: 'landing.showcase.booking.description',
+    pointKeys: [
+      'landing.showcase.booking.point1',
+      'landing.showcase.booking.point2',
+      'landing.showcase.booking.point3',
     ],
     shot: {
       src: SHOTS + '14-assistant-booking-ready.webp',
-      alt: 'Flujo para agendar una cita con doctor, fecha y horario seleccionados',
+      altKey: 'landing.showcase.booking.shotAlt',
     },
   },
 ];
@@ -108,53 +106,50 @@ export const LANDING_SHOWCASE: LandingShowcase[] = [
 export const LANDING_ROLES: LandingRole[] = [
   {
     id: 'assistant',
-    label: 'Asistente',
+    labelKey: 'landing.roles.assistant.label',
     icon: 'list',
-    title: 'Controla todas las citas de la clínica',
-    description:
-      'Filtra por estado, confirma o cancela con un clic y revisa el historial completo con paginación.',
+    titleKey: 'landing.roles.assistant.title',
+    descriptionKey: 'landing.roles.assistant.description',
     shot: {
       src: SHOTS + '13-assistant-appointments.webp',
-      alt: 'Listado de citas con estados y acciones de confirmar o cancelar',
+      altKey: 'landing.roles.assistant.shotAlt',
     },
   },
   {
     id: 'doctor',
-    label: 'Doctor',
+    labelKey: 'landing.roles.doctor.label',
     icon: 'stethoscope',
-    title: 'Tu horario, tus reglas',
-    description:
-      'Define tus bloques de atención por día, bloquea vacaciones o congresos y previsualiza los horarios que verán tus pacientes.',
+    titleKey: 'landing.roles.doctor.title',
+    descriptionKey: 'landing.roles.doctor.description',
     shot: {
       src: SHOTS + '21-doctor-availability.webp',
-      alt: 'Horario semanal de un doctor con bloques de mañana y tarde',
+      altKey: 'landing.roles.doctor.shotAlt',
     },
   },
   {
     id: 'admin',
-    label: 'Administrador',
+    labelKey: 'landing.roles.admin.label',
     icon: 'staff',
-    title: 'Gestiona a tu equipo',
-    description:
-      'Da de alta doctores y asistentes, asigna especialidades y activa o desactiva accesos cuando lo necesites.',
+    titleKey: 'landing.roles.admin.title',
+    descriptionKey: 'landing.roles.admin.description',
     shot: {
       src: SHOTS + '31-admin-staff.webp',
-      alt: 'Listado del personal de la clínica con roles y especialidades',
+      altKey: 'landing.roles.admin.shotAlt',
     },
   },
 ];
 
 export const LANDING_STEPS: LandingStep[] = [
   {
-    title: 'Registra tu clínica',
-    description: 'Crea la cuenta de tu clínica y activa el acceso desde tu correo.',
+    titleKey: 'landing.steps.step1Title',
+    descriptionKey: 'landing.steps.step1Desc',
   },
   {
-    title: 'Configura tu equipo',
-    description: 'Agrega doctores, asistentes, especialidades y horarios de atención.',
+    titleKey: 'landing.steps.step2Title',
+    descriptionKey: 'landing.steps.step2Desc',
   },
   {
-    title: 'Empieza a agendar',
-    description: 'Registra pacientes y gestiona todas las citas desde un solo lugar.',
+    titleKey: 'landing.steps.step3Title',
+    descriptionKey: 'landing.steps.step3Desc',
   },
 ];

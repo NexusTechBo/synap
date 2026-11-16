@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 import { HERO_MOBILE_SHOT, HERO_SHOT, LANDING_ANCHORS } from '../../constants/landing.content';
 import { RevealDirective } from '../../directives/reveal.directive';
@@ -7,7 +8,7 @@ import { BrowserFrameComponent } from '../browser-frame/browser-frame.component'
 
 @Component({
   selector: 'app-hero-landing-page',
-  imports: [RouterLink, UiIconComponent, BrowserFrameComponent, RevealDirective],
+  imports: [RouterLink, UiIconComponent, BrowserFrameComponent, RevealDirective, TranslatePipe],
   templateUrl: './hero-landing-page.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

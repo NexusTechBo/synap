@@ -859,4 +859,122 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       bookingFailed: 'Could not register booking',
     },
   },
+
+  landing: {
+    nav: {
+      features: 'Features',
+      product: 'Product',
+      roles: 'Roles',
+      howItWorks: 'How it works',
+      goToDashboard: 'Go to dashboard',
+      login: 'Sign in',
+      registerClinic: 'Register clinic',
+    },
+    hero: {
+      badge: 'Appointment management for clinics',
+      titlePrefix: 'Your clinic schedule,',
+      titleHighlight: 'simple and organized',
+      subtitle:
+        'Appointments, doctors, patients, and schedules in one place. Fewer calls, fewer no-shows, and more time for your patients.',
+      ctaPrimary: 'Start for free',
+      ctaSecondary: 'See the product',
+      shotAlt: 'Appointment board with pending, confirmed, and cancelled columns',
+      mobileShotAlt: 'ClinicFlow home screen on a mobile phone',
+      floatingCardTitle: 'Appointment confirmed',
+      floatingCardSubtitle: 'Natalia Herrera · 10:00',
+    },
+    stats: {
+      roles: 'roles with custom permissions',
+      cloud: 'cloud-available schedule',
+      responsive: 'responsive, mobile-ready too',
+      installations: 'installations required',
+    },
+    features: {
+      eyebrow: 'Features',
+      title: 'Everything your clinic needs',
+      subtitle: 'Tools designed for administrators, doctors, and assistants.',
+      items: {
+        calendarTitle: 'Schedule & calendar',
+        calendarDesc: 'View daily, weekly, or monthly appointments for all your doctors.',
+        boardTitle: 'Appointment board',
+        boardDesc: 'Confirm or cancel pending appointments by dragging them across columns.',
+        availabilityTitle: 'Doctor availability',
+        availabilityDesc: 'Each doctor defines their weekly schedule and blocks off days or hours.',
+        patientsTitle: 'Patient management',
+        patientsDesc: 'Register patients and assign them to their doctors in seconds.',
+        staffTitle: 'Roles & staff',
+        staffDesc: 'Administrators, doctors, and assistants, each with their own permissions.',
+        notificationsTitle: 'Email notifications',
+        notificationsDesc:
+          'Your patients receive a notification when their appointment is confirmed or cancelled.',
+      },
+    },
+    showcase: {
+      calendar: {
+        eyebrow: 'Calendar',
+        title: 'The entire month at a glance',
+        description:
+          'Each day shows how many appointments it has and their status. Click any day to see the full schedule and book instantly.',
+        point1: 'Pending, confirmed, and cancelled appointments color-coded',
+        point2: 'Daily agenda right alongside the calendar',
+        point3: 'Book an appointment directly from the selected day',
+        shotAlt: 'Monthly calendar with the selected day agenda',
+      },
+      booking: {
+        eyebrow: 'Book appointment',
+        title: 'Booking in three steps',
+        description:
+          'Choose the patient, specialty, and doctor, and only truly available slots are shown. No double bookings.',
+        point1: 'Filter doctors by specialty',
+        point2: 'Available time slots based on doctor availability',
+        point3: 'Clear summary before confirming',
+        shotAlt: 'Appointment booking flow with doctor, date, and time selected',
+      },
+    },
+    roles: {
+      eyebrow: 'For the whole team',
+      title: 'A tailored view for every role',
+      tablistAriaLabel: 'Roles',
+      assistant: {
+        label: 'Assistant',
+        title: 'Control all clinic appointments',
+        description:
+          'Filter by status, confirm or cancel with one click, and browse full appointment history with pagination.',
+        shotAlt: 'Appointment list with statuses and confirm or cancel actions',
+      },
+      doctor: {
+        label: 'Doctor',
+        title: 'Your schedule, your rules',
+        description:
+          'Set your daily working blocks, block off vacations or conferences, and preview the slots your patients will see.',
+        shotAlt: 'Weekly doctor schedule with morning and afternoon blocks',
+      },
+      admin: {
+        label: 'Administrator',
+        title: 'Manage your team',
+        description:
+          'Onboard doctors and assistants, assign specialties, and enable or disable access whenever needed.',
+        shotAlt: 'Clinic staff list with roles and specialties',
+      },
+    },
+    steps: {
+      eyebrow: 'How it works',
+      title: 'Get started in three steps',
+      step1Title: 'Register your clinic',
+      step1Desc: 'Create your clinic account and activate access from your email.',
+      step2Title: 'Set up your team',
+      step2Desc: 'Add doctors, assistants, specialties, and working hours.',
+      step3Title: 'Start scheduling',
+      step3Desc: 'Register patients and manage all appointments from one place.',
+    },
+    cta: {
+      title: 'Ready to organize your schedule?',
+      subtitle: 'Register your clinic today and start managing appointments in minutes.',
+      button: 'Register my clinic',
+    },
+    footer: {
+      developedBy: 'Developed by',
+      rights: 'All rights reserved.',
+    },
+  },
 };

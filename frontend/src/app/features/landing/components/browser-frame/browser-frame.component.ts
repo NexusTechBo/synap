@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { LandingShot } from '../../landing.model';
 
 @Component({
   selector: 'app-browser-frame',
+  imports: [TranslatePipe],
   template: `
     <div
       class="overflow-hidden rounded-2xl border border-white/70 bg-white/70 shadow-2xl shadow-primary/15 ring-1 ring-gray-900/5 backdrop-blur"
@@ -19,7 +21,7 @@ import { LandingShot } from '../../landing.model';
       <img
         class="block h-auto w-full"
         [src]="shot().src"
-        [alt]="shot().alt"
+        [alt]="shot().altKey | translate"
         width="1600"
         height="1000"
         [attr.loading]="eager() ? 'eager' : 'lazy'"

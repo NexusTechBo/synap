@@ -857,4 +857,121 @@ export const ES_TRANSLATIONS = {
       bookingFailed: 'No se pudo registrar la reserva',
     },
   },
+
+  landing: {
+    nav: {
+      features: 'Funciones',
+      product: 'Producto',
+      roles: 'Roles',
+      howItWorks: 'Cómo funciona',
+      goToDashboard: 'Ir al panel',
+      login: 'Iniciar sesión',
+      registerClinic: 'Registrar clínica',
+    },
+    hero: {
+      badge: 'Gestión de citas para clínicas',
+      titlePrefix: 'La agenda de tu clínica,',
+      titleHighlight: 'simple y en orden',
+      subtitle:
+        'Citas, doctores, pacientes y horarios en un solo lugar. Menos llamadas, menos inasistencias y más tiempo para tus pacientes.',
+      ctaPrimary: 'Empieza gratis',
+      ctaSecondary: 'Ver el producto',
+      shotAlt: 'Tablero de citas con columnas de pendientes, confirmadas y canceladas',
+      mobileShotAlt: 'Inicio de ClinicFlow en un teléfono móvil',
+      floatingCardTitle: 'Cita confirmada',
+      floatingCardSubtitle: 'Natalia Herrera · 10:00',
+    },
+    stats: {
+      roles: 'roles con permisos propios',
+      cloud: 'agenda disponible en la nube',
+      responsive: 'responsive, también en móvil',
+      installations: 'instalaciones necesarias',
+    },
+    features: {
+      eyebrow: 'Funciones',
+      title: 'Todo lo que tu clínica necesita',
+      subtitle: 'Herramientas pensadas para administradores, doctores y asistentes.',
+      items: {
+        calendarTitle: 'Agenda y calendario',
+        calendarDesc: 'Visualiza las citas del día, la semana o el mes de todos tus doctores.',
+        boardTitle: 'Tablero de citas',
+        boardDesc: 'Confirma o cancela citas pendientes arrastrándolas entre columnas.',
+        availabilityTitle: 'Disponibilidad por doctor',
+        availabilityDesc: 'Cada doctor define su horario semanal y bloquea días u horas libres.',
+        patientsTitle: 'Gestión de pacientes',
+        patientsDesc: 'Registra pacientes y asígnalos a sus doctores en segundos.',
+        staffTitle: 'Roles y personal',
+        staffDesc: 'Administradores, doctores y asistentes, cada uno con sus permisos.',
+        notificationsTitle: 'Notificaciones por email',
+        notificationsDesc: 'Tus pacientes reciben un aviso al confirmar o cancelar su cita.',
+      },
+    },
+    showcase: {
+      calendar: {
+        eyebrow: 'Calendario',
+        title: 'Todo el mes de un vistazo',
+        description:
+          'Cada día muestra cuántas citas tiene y su estado. Haz clic en un día para ver la agenda completa y agendar al instante.',
+        point1: 'Citas pendientes, confirmadas y canceladas por color',
+        point2: 'Agenda del día al lado del calendario',
+        point3: 'Agendar una cita desde el mismo día',
+        shotAlt: 'Calendario mensual con la agenda del día seleccionado',
+      },
+      booking: {
+        eyebrow: 'Agendar cita',
+        title: 'Reserva en tres pasos',
+        description:
+          'Elige al paciente, la especialidad y el doctor, y solo se muestran los horarios realmente libres. Sin dobles reservas.',
+        point1: 'Filtra doctores por especialidad',
+        point2: 'Horarios libres según la disponibilidad del doctor',
+        point3: 'Resumen claro antes de confirmar',
+        shotAlt: 'Flujo para agendar una cita con doctor, fecha y horario seleccionados',
+      },
+    },
+    roles: {
+      eyebrow: 'Para todo el equipo',
+      title: 'Una vista para cada rol',
+      tablistAriaLabel: 'Roles',
+      assistant: {
+        label: 'Asistente',
+        title: 'Controla todas las citas de la clínica',
+        description:
+          'Filtra por estado, confirma o cancela con un clic y revisa el historial completo con paginación.',
+        shotAlt: 'Listado de citas con estados y acciones de confirmar o cancelar',
+      },
+      doctor: {
+        label: 'Doctor',
+        title: 'Tu horario, tus reglas',
+        description:
+          'Define tus bloques de atención por día, bloquea vacaciones o congresos y previsualiza los horarios que verán tus pacientes.',
+        shotAlt: 'Horario semanal de un doctor con bloques de mañana y tarde',
+      },
+      admin: {
+        label: 'Administrador',
+        title: 'Gestiona a tu equipo',
+        description:
+          'Da de alta doctores y asistentes, asigna especialidades y activa o desactiva accesos cuando lo necesites.',
+        shotAlt: 'Listado del personal de la clínica con roles y especialidades',
+      },
+    },
+    steps: {
+      eyebrow: 'Cómo funciona',
+      title: 'Empieza en tres pasos',
+      step1Title: 'Registra tu clínica',
+      step1Desc: 'Crea la cuenta de tu clínica y activa el acceso desde tu correo.',
+      step2Title: 'Configura tu equipo',
+      step2Desc: 'Agrega doctores, asistentes, especialidades y horarios de atención.',
+      step3Title: 'Empieza a agendar',
+      step3Desc: 'Registra pacientes y gestiona todas las citas desde un solo lugar.',
+    },
+    cta: {
+      title: '¿Listo para ordenar tu agenda?',
+      subtitle: 'Registra tu clínica hoy y empieza a gestionar tus citas en minutos.',
+      button: 'Registrar mi clínica',
+    },
+    footer: {
+      developedBy: 'Desarrollado por',
+      rights: 'Todos los derechos reservados.',
+    },
+  },
 };
