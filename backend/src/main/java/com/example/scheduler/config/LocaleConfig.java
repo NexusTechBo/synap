@@ -1,5 +1,6 @@
 package com.example.scheduler.config;
 
+import java.util.List;
 import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -7,15 +8,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.FixedLocaleResolver;
+import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
 @Configuration
 public class LocaleConfig {
     public static final Locale SPANISH = Locale.forLanguageTag("es");
+    public static final Locale ENGLISH = Locale.ENGLISH;
 
     @Bean
     public LocaleResolver localeResolver() {
-        return new FixedLocaleResolver(SPANISH);
+        AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
+        resolver.setSupportedLocales(List.of(SPANISH, ENGLISH));
+        resolver.setDefaultLocale(SPANISH);
+        return resolver;
     }
 
     @Bean
