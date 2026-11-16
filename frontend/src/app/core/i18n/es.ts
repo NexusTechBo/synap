@@ -26,6 +26,7 @@ export const ES_TRANSLATIONS = {
     notUsingClinicFlow: '¿Tu clínica aún no usa ClinicFlow?',
     registerClinic: 'Registrar clínica',
     staffDisclaimer: 'El personal es creado por el administrador de la clínica.',
+    loginError: 'No se pudo iniciar sesión',
   },
   nav: {
     dashboard: 'Inicio',
@@ -87,11 +88,34 @@ export const ES_TRANSLATIONS = {
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
     alreadyHaveAccount: '¿Ya tienes cuenta?',
     loginLink: 'Iniciar sesión',
+    slugPatternError: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
+    registerError: 'Ocurrió un error al registrar, intenta de nuevo',
     // --- Llaves de register-success ---
     successTitle: '¡Clínica registrada!',
     successSentTo: 'Te enviamos un correo a',
     successSentToSuffix: 'para activar tu cuenta. El enlace vence en 48 horas.',
     successSpamHelp: '¿No te llegó? Revisa tu carpeta de spam o solicita uno nuevo.',
+    goToLogin: 'Ir a iniciar sesión',
+  },
+
+  activation: {
+    loadingTitle: 'Activando tu clínica…',
+    loadingMessage: 'Esto solo tomará un momento.',
+    successTitlePrefix: '¡Tu clínica',
+    successTitleSuffix: 'está activa!',
+    successMessage: 'Ya puedes iniciar sesión con tu usuario de administrador:',
+    activeSessionWarning:
+      'Tienes una sesión abierta. Al continuar se cerrará para que entres con tu nueva clínica.',
+    loginButton: 'Iniciar sesión',
+    errorTitle: 'No pudimos activar tu clínica',
+    defaultError: 'No se pudo activar la clínica, intenta de nuevo',
+    retryButton: 'Reintentar',
+    retryIn: 'Reintenta en',
+    cooldownFinished: 'Ya puedes intentarlo de nuevo',
+    invalidTitle: 'Enlace no válido',
+    invalidMessage: 'El enlace de activación no es válido o ya venció.',
+    resendHelp: 'Ingresa el correo del administrador y te enviaremos un nuevo enlace.',
+    resendButton: 'Enviar nuevo enlace',
     goToLogin: 'Ir a iniciar sesión',
   },
 

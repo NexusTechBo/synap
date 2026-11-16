@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { HOME_URL } from '../../core/navigation/navigation';
 import { createCooldown } from '../../core/utils/cooldown.util';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -13,6 +14,7 @@ export class LoginService {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
   private readonly cooldown = createCooldown();
 
   private readonly _submitting = signal(false);
@@ -40,7 +42,7 @@ export class LoginService {
           }
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter);
-          this.notifications.error(apiErrorMessage(error, 'No se pudo iniciar sesión'));
+          this.notifications.error(apiErrorMessage(error, this.i18n.translate('login.loginError')));
         },
       });
   }

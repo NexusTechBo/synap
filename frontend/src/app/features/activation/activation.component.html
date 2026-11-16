@@ -17,7 +17,7 @@
       @switch (activation.status()) {
         @case ('loading') {
           <h1 id="activation-title" class="text-2xl font-extrabold tracking-tight text-gray-900">
-            Activando tu clínica…
+            {{ 'activation.loadingTitle' | translate }}
           </h1>
         }
         @case ('success') {
@@ -27,7 +27,9 @@
             tabindex="-1"
             class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
           >
-            ¡Tu clínica {{ activation.result()?.clinicName }} está activa!
+            {{ 'activation.successTitlePrefix' | translate }}
+            {{ activation.result()?.clinicName }}
+            {{ 'activation.successTitleSuffix' | translate }}
           </h1>
         }
         @case ('error') {
@@ -37,7 +39,7 @@
             tabindex="-1"
             class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
           >
-            No pudimos activar tu clínica
+            {{ 'activation.errorTitle' | translate }}
           </h1>
         }
         @case ('invalid') {
@@ -47,7 +49,7 @@
             tabindex="-1"
             class="text-2xl font-extrabold tracking-tight text-gray-900 outline-none"
           >
-            Enlace no válido
+            {{ 'activation.invalidTitle' | translate }}
           </h1>
         }
       }
@@ -60,16 +62,16 @@
       >
         @switch (activation.status()) {
           @case ('loading') {
-            Esto solo tomará un momento.
+            {{ 'activation.loadingMessage' | translate }}
           }
           @case ('success') {
-            Ya puedes iniciar sesión con tu usuario de administrador:
+            {{ 'activation.successMessage' | translate }}
           }
           @case ('error') {
             {{ activation.errorMessage() }}
           }
           @case ('invalid') {
-            El enlace de activación no es válido o ya venció.
+            {{ 'activation.invalidMessage' | translate }}
           }
         }
       </p>
@@ -83,22 +85,21 @@
           </p>
           @if (activation.hasSession()) {
             <p class="mt-6 rounded-2xl bg-amber-50 p-3 text-xs font-medium text-amber-800">
-              Tienes una sesión abierta. Al continuar se cerrará para que entres con tu nueva
-              clínica.
+              {{ 'activation.activeSessionWarning' | translate }}
             </p>
             <button
               type="button"
               class="btn btn-primary mt-3 w-full"
               (click)="activation.continueToLogin()"
             >
-              Iniciar sesión
+              {{ 'activation.loginButton' | translate }}
             </button>
           } @else {
             <a
               routerLink="/login"
               [state]="{ username: activation.result()?.adminUsername }"
               class="btn btn-primary mt-6 w-full"
-              >Iniciar sesión</a
+              >{{ 'activation.loginButton' | translate }}</a
             >
           }
         }
@@ -113,18 +114,23 @@
           </button>
           <span class="sr-only" aria-live="polite">
             @if (activation.cooldownFinished()) {
-              Ya puedes intentarlo de nuevo
+              {{ 'activation.cooldownFinished' | translate }}
             }
           </span>
         }
         @case ('invalid') {
           <div class="mt-6">
             <p class="mb-3 text-sm font-medium text-gray-600">
-              Ingresa el correo del administrador y te enviaremos un nuevo enlace.
+              {{ 'activation.resendHelp' | translate }}
             </p>
-            <app-resend-activation label="Enviar nuevo enlace" fieldId="activation-resend-email" />
+            <app-resend-activation
+              [label]="'activation.resendButton' | translate"
+              fieldId="activation-resend-email"
+            />
           </div>
-          <a routerLink="/login" class="btn btn-ghost mt-4 w-full">Ir a iniciar sesión</a>
+          <a routerLink="/login" class="btn btn-ghost mt-4 w-full">{{
+            'activation.goToLogin' | translate
+          }}</a>
         }
       }
     </section>

@@ -40,7 +40,7 @@ export class RegisterFormComponent {
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly slugErrors = {
-    pattern: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
+    pattern: 'register.slugPatternError',
   };
   protected readonly usernameErrors = USERNAME_ERRORS;
   protected readonly suffix = toSignal(

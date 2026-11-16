@@ -28,6 +28,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     notUsingClinicFlow: 'Does your clinic not use ClinicFlow yet?',
     registerClinic: 'Register clinic',
     staffDisclaimer: 'Staff members are created by the clinic administrator.',
+    loginError: 'Could not sign in',
   },
   nav: {
     dashboard: 'Home',
@@ -89,11 +90,34 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     cooldownFinished: 'You can try again now',
     alreadyHaveAccount: 'Already have an account?',
     loginLink: 'Sign in',
+    slugPatternError: '3 to 50 characters: lowercase letters and numbers only (no "@" or ".com")',
+    registerError: 'An error occurred during registration, please try again',
     // --- Llaves de register-success ---
     successTitle: 'Clinic registered!',
     successSentTo: 'We sent an email to',
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
     successSpamHelp: "Didn't receive it? Check your spam folder or request a new one.",
+    goToLogin: 'Go to sign in',
+  },
+
+  activation: {
+    loadingTitle: 'Activating your clinic…',
+    loadingMessage: 'This will only take a moment.',
+    successTitlePrefix: 'Your clinic',
+    successTitleSuffix: 'is active!',
+    successMessage: 'You can now sign in with your administrator username:',
+    activeSessionWarning:
+      'You currently have an active session. Continuing will sign you out so you can log in to your new clinic.',
+    loginButton: 'Sign in',
+    errorTitle: 'We could not activate your clinic',
+    defaultError: 'Could not activate clinic, please try again',
+    retryButton: 'Try again',
+    retryIn: 'Retry in',
+    cooldownFinished: 'You can try again now',
+    invalidTitle: 'Invalid link',
+    invalidMessage: 'The activation link is invalid or has expired.',
+    resendHelp: 'Enter the administrator email and we will send you a new link.',
+    resendButton: 'Send new link',
     goToLogin: 'Go to sign in',
   },
 
