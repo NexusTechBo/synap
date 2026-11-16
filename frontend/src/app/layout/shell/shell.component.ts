@@ -13,11 +13,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, fromEvent } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { Role } from '../../core/models/api.models';
 import { navItemsFor } from '../../core/navigation/navigation';
-import { rolesLabel } from '../../core/utils/labels.util';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { SidebarNavComponent } from './components/sidebar-nav/sidebar-nav.component';
 import { TopbarComponent } from './components/topbar/topbar.component';
+
+const ROLE_ORDER: readonly Role[] = ['ADMINISTRATOR', 'DOCTOR', 'ASSISTANT'];
 
 @Component({
   selector: 'app-shell',
@@ -36,13 +39,20 @@ export class ShellComponent {
   private readonly drawerTrap = viewChild.required(CdkTrapFocus);
 
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
 
   protected readonly navOpen = signal(false);
   private focusBeforeOpen: HTMLElement | null = null;
 
   protected readonly navItems = computed(() => navItemsFor(this.auth.roles()));
   protected readonly userName = this.auth.displayName;
-  protected readonly roleLabel = computed(() => rolesLabel(this.auth.roles()));
+  protected readonly roleLabel = computed(() => {
+    this.i18n.currentLang();
+    const userRoles = this.auth.roles();
+    return ROLE_ORDER.filter((role) => userRoles.includes(role))
+      .map((role) => this.i18n.translate(`roles.${role}`))
+      .join(' · ');
+  });
   protected readonly clinicName = computed(() => this.auth.clinic()?.name ?? '');
 
   constructor() {
