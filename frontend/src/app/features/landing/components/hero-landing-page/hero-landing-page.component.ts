@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
-import { HERO_MOBILE_SHOT, HERO_SHOT, LANDING_ANCHORS } from '../../constants/landing.content';
+import { HERO_SHOT, LANDING_ANCHORS } from '../../constants/landing.content';
 import { RevealDirective } from '../../directives/reveal.directive';
 import { BrowserFrameComponent } from '../browser-frame/browser-frame.component';
 
@@ -14,7 +14,6 @@ import { BrowserFrameComponent } from '../browser-frame/browser-frame.component'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeroLandingPageComponent {
-  protected readonly productHref = '#' + LANDING_ANCHORS.product;
+  protected readonly productHref = '#' + LANDING_ANCHORS.features;
   protected readonly heroShot = HERO_SHOT;
-  protected readonly heroMobileShot = HERO_MOBILE_SHOT;
 }

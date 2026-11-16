@@ -130,7 +130,8 @@ export class GuestSessionService {
     const unavailable =
       error instanceof HttpErrorResponse &&
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);
-    if (unavailable) this.setStatus('unavailable');
+    if (unavailable)
+      this.setStatus('unavailable', this.i18n.translate('guestBooking.unavailableMessage'));
     else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
   }
 

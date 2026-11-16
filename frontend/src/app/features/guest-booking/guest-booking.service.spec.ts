@@ -144,7 +144,7 @@ describe('GuestBookingService', () => {
       guestApi.clinic.mockReturnValue(throwError(() => new Error('x')));
       service.reloadClinic();
       await settle();
-      expect(service.clinicErrorMessage()).toBe('No se pudo cargar la clínica');
+      expect(service.clinicErrorMessage()).toBe('No se pudo cargar el espacio de trabajo');
     });
   });
 

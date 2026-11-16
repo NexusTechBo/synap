@@ -7,7 +7,7 @@ import { GuestSessionService } from './guest-session.service';
 
 const GUEST_TOKEN_KEY = 'scheduler.guestToken';
 const SLUG = 'clinicacentral';
-const UNAVAILABLE_MESSAGE = 'Esta clínica no está disponible para reservas en línea.';
+const UNAVAILABLE_MESSAGE = 'Este espacio de trabajo no está disponible para reservas en línea.';
 const FALLBACK_MESSAGE = 'No se pudo iniciar la reserva';
 const RATE_LIMIT_MESSAGE =
   'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.';

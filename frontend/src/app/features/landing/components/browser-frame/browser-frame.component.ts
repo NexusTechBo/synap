@@ -15,7 +15,7 @@ import { LandingShot } from '../../landing.model';
         <span class="h-2.5 w-2.5 rounded-full bg-emerald-400/80"></span>
         <span
           class="ml-3 hidden flex-1 truncate rounded-md bg-gray-900/4 px-3 py-1 text-[11px] font-medium text-gray-400 sm:block"
-          >app.clinicflow.com</span
+          >app.pulso.com</span
         >
       </div>
       <img

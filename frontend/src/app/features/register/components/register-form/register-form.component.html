@@ -13,32 +13,16 @@
       {{ 'register.sectionClinic' | translate }}
     </p>
     <div class="space-y-4">
-      <div class="grid gap-4 sm:grid-cols-2">
-        <app-form-field [label]="'register.clinicNameLabel' | translate" fieldId="register-name">
-          <input
-            id="register-name"
-            type="text"
-            class="field-input"
-            formControlName="name"
-            autocomplete="organization"
-            [placeholder]="'register.clinicNamePlaceholder' | translate"
-          />
-        </app-form-field>
-        <app-form-field
-          [label]="'register.clinicPhoneLabel' | translate"
-          fieldId="register-phone"
-          [errorMessages]="phoneErrors"
-        >
-          <input
-            id="register-phone"
-            type="tel"
-            class="field-input"
-            formControlName="phoneNumber"
-            autocomplete="tel"
-            [placeholder]="'register.clinicPhonePlaceholder' | translate"
-          />
-        </app-form-field>
-      </div>
+      <app-form-field [label]="'register.clinicNameLabel' | translate" fieldId="register-name">
+        <input
+          id="register-name"
+          type="text"
+          class="field-input"
+          formControlName="name"
+          autocomplete="organization"
+          [placeholder]="'register.clinicNamePlaceholder' | translate"
+        />
+      </app-form-field>
       <app-form-field
         [label]="'register.clinicSlugLabel' | translate"
         fieldId="register-slug"
@@ -117,19 +101,35 @@
           >
         </div>
       </app-form-field>
-      <app-form-field
-        [label]="'register.adminEmailLabel' | translate"
-        fieldId="register-admin-email"
-      >
-        <input
-          id="register-admin-email"
-          type="email"
-          class="field-input"
-          formControlName="adminEmail"
-          autocomplete="email"
-          [placeholder]="'register.adminEmailPlaceholder' | translate"
-        />
-      </app-form-field>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <app-form-field
+          [label]="'register.adminEmailLabel' | translate"
+          fieldId="register-admin-email"
+        >
+          <input
+            id="register-admin-email"
+            type="email"
+            class="field-input"
+            formControlName="adminEmail"
+            autocomplete="email"
+            [placeholder]="'register.adminEmailPlaceholder' | translate"
+          />
+        </app-form-field>
+        <app-form-field
+          [label]="'register.clinicPhoneLabel' | translate"
+          fieldId="register-phone"
+          [errorMessages]="phoneErrors"
+        >
+          <input
+            id="register-phone"
+            type="tel"
+            class="field-input"
+            formControlName="phoneNumber"
+            autocomplete="tel"
+            [placeholder]="'register.clinicPhonePlaceholder' | translate"
+          />
+        </app-form-field>
+      </div>
       <app-form-field
         [label]="'register.adminPasswordLabel' | translate"
         fieldId="register-admin-password"

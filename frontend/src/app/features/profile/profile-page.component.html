@@ -3,7 +3,7 @@
   [subtitle]="'profile.subtitle' | translate"
 />
 
-<div class="min-h-0 flex-1 overflow-y-auto">
+<div>
   @if (profile.errorMessage(); as message) {
     <div class="glass-panel max-w-5xl rounded-3xl p-6">
       <app-load-error [message]="message" (retry)="profile.reload()" />

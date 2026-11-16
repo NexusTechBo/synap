@@ -3,14 +3,14 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { HOME_URL } from '../../../../core/navigation/navigation';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
+import { PulsoLogoComponent } from '../../../../shared/ui/pulso-logo/pulso-logo.component';
 import { LANDING_NAV } from '../../constants/landing.content';
 
 @Component({
   selector: 'app-header-landing-page',
   templateUrl: './header-landing-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UiIconComponent, RouterLink, TranslatePipe],
+  imports: [PulsoLogoComponent, RouterLink, TranslatePipe],
 })
 export class HeaderLandingPageComponent {
   private readonly auth = inject(AuthService);

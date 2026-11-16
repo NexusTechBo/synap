@@ -9,13 +9,13 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter, fromEvent } from 'rxjs';
+import { filter, fromEvent, map } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { Role } from '../../core/models/api.models';
-import { navItemsFor } from '../../core/navigation/navigation';
+import { isFullHeightRoute, navItemsFor } from '../../core/navigation/navigation';
 import { GlassBackgroundComponent } from '../../shared/ui/glass-background/glass-background.component';
 import { SidebarNavComponent } from './components/sidebar-nav/sidebar-nav.component';
 import { TopbarComponent } from './components/topbar/topbar.component';
@@ -40,6 +40,15 @@ export class ShellComponent {
 
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
+
+  protected readonly fullHeight = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => isFullHeightRoute(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: isFullHeightRoute(this.router.routerState.snapshot.root) },
+  );
 
   protected readonly navOpen = signal(false);
   private focusBeforeOpen: HTMLElement | null = null;
@@ -56,13 +65,12 @@ export class ShellComponent {
   protected readonly clinicName = computed(() => this.auth.clinic()?.name ?? '');
 
   constructor() {
-    const router = inject(Router);
-
     effect(() => {
-      if (!this.auth.session()) untracked(() => router.navigate(['/login']).finally()).finally();
+      if (!this.auth.session())
+        untracked(() => this.router.navigate(['/login']).finally()).finally();
     });
 
-    router.events
+    this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
         takeUntilDestroyed(),

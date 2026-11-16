@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
@@ -6,7 +7,7 @@ import { RevealDirective } from '../../directives/reveal.directive';
 
 @Component({
   selector: 'app-features-landing-page',
-  imports: [UiIconComponent, RevealDirective, TranslatePipe],
+  imports: [UiIconComponent, RevealDirective, TranslatePipe, DecimalPipe],
   templateUrl: './features-landing-page.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,

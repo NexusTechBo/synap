@@ -1,0 +1,30 @@
+<section [id]="anchor" class="scroll-mt-20 py-24">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6">
+    <div appReveal class="mx-auto max-w-2xl text-center">
+      <p class="text-sm font-bold uppercase tracking-wider text-primary">
+        {{ 'landing.audience.eyebrow' | translate }}
+      </p>
+      <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">
+        {{ 'landing.audience.title' | translate }}
+      </h2>
+    </div>
+    <ul class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      @for (audience of audiences; track audience.titleKey) {
+        <li
+          appReveal
+          class="group rounded-3xl border border-white/80 bg-white/60 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/10"
+        >
+          <span
+            class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/15 to-secondary/15 text-primary transition group-hover:scale-110"
+          >
+            <app-ui-icon [name]="audience.icon" class="h-6 w-6" />
+          </span>
+          <h3 class="text-lg font-bold">{{ audience.titleKey | translate }}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-gray-600">
+            {{ audience.descriptionKey | translate }}
+          </p>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

@@ -1,4 +1,6 @@
+import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { CI_ERRORS, ciValidator, getValidationErrorMessage } from './validation-messages.util';
 
 function ciErrors(value: string) {
@@ -29,23 +31,34 @@ describe('validation-messages util', () => {
 
   describe('CI_ERRORS', () => {
     it('describes the CI rule in Spanish', () => {
-      expect(CI_ERRORS.pattern).toBe('Solo números, de 5 a 10 dígitos');
+      expect(TestBed.inject(I18nService).translate(CI_ERRORS.pattern)).toBe(
+        'Solo números, de 5 a 10 dígitos',
+      );
     });
   });
 
   describe('getValidationErrorMessage', () => {
+    it('returns the message key when no i18n service is given', () => {
+      expect(getValidationErrorMessage({ pattern: {} })).toBe('validation.pattern');
+    });
+
     it('returns null without errors', () => {
       expect(getValidationErrorMessage(null)).toBeNull();
     });
 
     it('uses the generic pattern message when no override is given', () => {
-      expect(getValidationErrorMessage({ pattern: {} })).toBe('El formato ingresado no es válido');
+      expect(getValidationErrorMessage({ pattern: {} }, TestBed.inject(I18nService))).toBe(
+        'El formato ingresado no es válido',
+      );
     });
 
     it('includes the required length for maxlength', () => {
-      expect(getValidationErrorMessage({ maxlength: { requiredLength: 10 } })).toBe(
-        'Debe tener como máximo 10 caracteres',
-      );
+      expect(
+        getValidationErrorMessage(
+          { maxlength: { requiredLength: 10 } },
+          TestBed.inject(I18nService),
+        ),
+      ).toBe('Debe tener como máximo 10 caracteres');
     });
   });
 });

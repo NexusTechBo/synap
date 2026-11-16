@@ -46,7 +46,7 @@ import { BookingService } from './booking.service';
   ],
   providers: [BookingService],
   templateUrl: './booking-page.component.html',
-  host: { class: 'flex min-h-0 flex-1 flex-col' },
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookingPageComponent {

@@ -13,25 +13,26 @@ export const ES_TRANSLATIONS = {
     title: 'Inicia sesión',
     subtitle: 'Ingresa tus credenciales para acceder a tu cuenta',
     usernameLabel: 'Usuario',
-    usernamePlaceholder: 'usuario@clinica.com',
+    usernamePlaceholder: 'usuario@miconsultorio.com',
     passwordLabel: 'Contraseña',
     passwordPlaceholder: 'Ingresa tu contraseña',
     submit: 'Ingresar',
     submitting: 'Ingresando…',
     retryIn: 'Reintenta en',
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
-    activationPendingTitle: 'Tu clínica aún no está activada. Revisa tu correo para activarla.',
+    activationPendingTitle:
+      'Tu espacio de trabajo aún no está activado. Revisa tu correo para activarlo.',
     activationPendingHelp: '¿No encuentras el correo? Podemos enviarte un nuevo enlace.',
     resendActivation: 'Reenviar correo',
-    notUsingClinicFlow: '¿Tu clínica aún no usa ClinicFlow?',
-    registerClinic: 'Registrar clínica',
-    staffDisclaimer: 'El personal es creado por el administrador de la clínica.',
+    notUsingPulso: '¿Aún no tienes tu espacio de trabajo en Pulso?',
+    registerClinic: 'Crear espacio de trabajo',
+    staffDisclaimer: 'El personal es creado por el administrador del espacio de trabajo.',
     loginError: 'No se pudo iniciar sesión',
   },
   nav: {
     login: 'Iniciar sesión',
-    register: 'Registrar clínica',
-    activation: 'Activar clínica',
+    register: 'Crear espacio de trabajo',
+    activation: 'Activar espacio de trabajo',
     guestBooking: 'Reservar cita',
     dashboard: 'Inicio',
     board: 'Tablero',
@@ -56,7 +57,7 @@ export const ES_TRANSLATIONS = {
       appointments: 'Historial y próximas citas',
       patients: 'Registra y asigna pacientes',
       availability: 'Horario semanal y bloqueos',
-      staff: 'Doctores y asistentes de la clínica',
+      staff: 'Doctores y asistentes del espacio de trabajo',
       specialties: 'Catálogo de especialidades',
     },
     openMenu: 'Abrir menú',
@@ -68,16 +69,16 @@ export const ES_TRANSLATIONS = {
   },
 
   register: {
-    title: 'Registra tu clínica',
-    subtitle: 'Crea el espacio de tu clínica y la cuenta de su administrador',
-    sectionClinic: 'Clínica',
-    clinicNameLabel: 'Nombre',
-    clinicNamePlaceholder: 'Clínica Central',
+    title: 'Crea tu espacio de trabajo',
+    subtitle: 'Crea tu espacio de trabajo y la cuenta de su administrador',
+    sectionClinic: 'Espacio de trabajo',
+    clinicNameLabel: 'Nombre del espacio de trabajo',
+    clinicNamePlaceholder: 'Mi consultorio',
     clinicPhoneLabel: 'Teléfono',
     clinicPhonePlaceholder: '+591 700 00000',
-    clinicSlugLabel: 'Identificador de la clínica',
-    clinicSlugPlaceholder: 'clinicacentral',
-    slugHintPrefix: 'Los usuarios de tu clínica terminarán en @',
+    clinicSlugLabel: 'Identificador del espacio de trabajo',
+    clinicSlugPlaceholder: 'miconsultorio',
+    slugHintPrefix: 'Los usuarios de tu espacio de trabajo terminarán en @',
     slugDefault: 'identificador',
     sectionAdmin: 'Administrador',
     adminNameLabel: 'Nombre completo',
@@ -90,7 +91,7 @@ export const ES_TRANSLATIONS = {
     adminEmailPlaceholder: 'admin@email.com',
     adminPasswordLabel: 'Contraseña',
     adminPasswordPlaceholder: 'Mínimo 8 caracteres',
-    submit: 'Registrar clínica',
+    submit: 'Crear mi espacio de trabajo',
     submitting: 'Registrando…',
     retryIn: 'Reintenta en',
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
@@ -99,7 +100,7 @@ export const ES_TRANSLATIONS = {
     slugPatternError: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
     registerError: 'Ocurrió un error al registrar, intenta de nuevo',
     // --- Llaves de register-success ---
-    successTitle: '¡Clínica registrada!',
+    successTitle: '¡Espacio de trabajo creado!',
     successSentTo: 'Te enviamos un correo a',
     successSentToSuffix: 'para activar tu cuenta. El enlace vence en 48 horas.',
     successSpamHelp: '¿No te llegó? Revisa tu carpeta de spam o solicita uno nuevo.',
@@ -107,16 +108,16 @@ export const ES_TRANSLATIONS = {
   },
 
   activation: {
-    loadingTitle: 'Activando tu clínica…',
+    loadingTitle: 'Activando tu espacio de trabajo…',
     loadingMessage: 'Esto solo tomará un momento.',
-    successTitlePrefix: '¡Tu clínica',
-    successTitleSuffix: 'está activa!',
+    successTitlePrefix: '¡Tu espacio de trabajo',
+    successTitleSuffix: 'está activo!',
     successMessage: 'Ya puedes iniciar sesión con tu usuario de administrador:',
     activeSessionWarning:
-      'Tienes una sesión abierta. Al continuar se cerrará para que entres con tu nueva clínica.',
+      'Tienes una sesión abierta. Al continuar se cerrará para que entres con tu nuevo espacio de trabajo.',
     loginButton: 'Iniciar sesión',
-    errorTitle: 'No pudimos activar tu clínica',
-    defaultError: 'No se pudo activar la clínica, intenta de nuevo',
+    errorTitle: 'No pudimos activar tu espacio de trabajo',
+    defaultError: 'No se pudo activar el espacio de trabajo, intenta de nuevo',
     retryButton: 'Reintentar',
     retryIn: 'Reintenta en',
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
@@ -166,7 +167,7 @@ export const ES_TRANSLATIONS = {
     },
     subtitles: {
       own: 'Tus citas',
-      all: 'Todas las citas de la clínica',
+      all: 'Todas las citas del espacio de trabajo',
     },
     tabs: {
       all: 'Todas',
@@ -195,7 +196,7 @@ export const ES_TRANSLATIONS = {
     title: 'Pacientes',
     subtitles: {
       mine: 'Pacientes que tienes asignados',
-      all: 'Pacientes registrados en la clínica',
+      all: 'Pacientes registrados en el espacio de trabajo',
     },
     tabs: {
       all: 'Todos',
@@ -209,7 +210,7 @@ export const ES_TRANSLATIONS = {
     emptyTitle: 'No hay pacientes',
     emptySearchMessage: 'No hay pacientes que coincidan con la búsqueda.',
     emptyMineMessage: 'Asígnate pacientes desde la pestaña Todos o registra uno nuevo.',
-    emptyAllMessage: 'Registra al primer paciente de la clínica.',
+    emptyAllMessage: 'Registra al primer paciente del espacio de trabajo.',
     table: {
       patient: 'Paciente',
       ci: 'CI',
@@ -303,6 +304,7 @@ export const ES_TRANSLATIONS = {
     ciPattern: 'Solo números, de 5 a 10 dígitos',
     phonePattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
     usernamePattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
+    rangeRequired: 'Indica el rango de horas',
     endBeforeStart: 'La hora de fin debe ser posterior a la de inicio',
     invalidField: 'Campo inválido',
   },
@@ -318,7 +320,8 @@ export const ES_TRANSLATIONS = {
     defaultLabel: 'Reenviar correo',
     sending: 'Enviando…',
     resendIn: 'Reenviar en',
-    sentMessage: 'Si el correo corresponde a una clínica pendiente, te enviamos un nuevo enlace.',
+    sentMessage:
+      'Si el correo corresponde a un espacio de trabajo pendiente, te enviamos un nuevo enlace.',
     resendError: 'No se pudo reenviar el correo, intenta de nuevo',
   },
 
@@ -426,7 +429,7 @@ export const ES_TRANSLATIONS = {
   },
 
   calendar: {
-    scopeAll: 'Toda la clínica',
+    scopeAll: 'Todo el espacio de trabajo',
     scopeMine: 'Mi agenda',
     errorLoad: 'No se pudo cargar el calendario',
     previousMonthAria: 'Mes anterior',
@@ -446,7 +449,7 @@ export const ES_TRANSLATIONS = {
 
   staff: {
     title: 'Personal',
-    subtitle: 'Doctores y asistentes de la clínica',
+    subtitle: 'Doctores y asistentes del espacio de trabajo',
     newMember: 'Nuevo miembro',
     onlyActive: 'Solo activos',
     tabs: {
@@ -499,7 +502,7 @@ export const ES_TRANSLATIONS = {
     formDialog: {
       editTitle: 'Editar personal',
       createTitle: 'Nuevo miembro del personal',
-      createSubtitle: 'Doctor o asistente de la clínica',
+      createSubtitle: 'Doctor o asistente del espacio de trabajo',
       roleLabel: 'Rol',
       fullNameLabel: 'Nombre completo',
       fullNamePlaceholder: 'Dr. Juan Pérez',
@@ -523,13 +526,13 @@ export const ES_TRANSLATIONS = {
 
   profile: {
     title: 'Mi perfil',
-    subtitle: 'Tus datos de contacto en la clínica',
+    subtitle: 'Tus datos de contacto en el espacio de trabajo',
     info: {
       username: 'Usuario',
       ci: 'CI',
       specialty: 'Especialidad',
-      clinic: 'Clínica',
-      clinicWhatsapp: 'WhatsApp de la clínica',
+      clinic: 'Espacio de trabajo',
+      clinicWhatsapp: 'WhatsApp del espacio de trabajo',
     },
     form: {
       personalDataTitle: 'Datos personales',
@@ -596,7 +599,7 @@ export const ES_TRANSLATIONS = {
         'Las confirmaciones y cancelaciones de citas se envían a tus pacientes desde el WhatsApp vinculado.',
       reconnectingDescription:
         'Se perdió la conexión con WhatsApp. Estamos intentando reconectar, espera unos segundos.',
-      clinicPhoneTip: 'Te recomendamos escanearlo con el número de la clínica:',
+      clinicPhoneTip: 'Te recomendamos escanearlo con el número del espacio de trabajo:',
       step1: 'Abre WhatsApp en el teléfono que enviará los avisos a tus pacientes.',
       step2Prefix: 'Ve a',
       step2LinkedDevices: 'Dispositivos vinculados',
@@ -636,7 +639,7 @@ export const ES_TRANSLATIONS = {
 
   shared: {
     noSpecialty: 'Sin especialidad',
-    defaultClinicName: 'Mi clínica',
+    defaultClinicName: 'Mi espacio de trabajo',
     closeNotificationAria: 'Cerrar notificación',
     pagination: {
       page: 'Página',
@@ -664,7 +667,7 @@ export const ES_TRANSLATIONS = {
         patientRequested: 'Solicitado por el paciente',
         medicalEmergency: 'Emergencia médica',
         reschedule: 'Se reprogramará la cita',
-        scheduleChange: 'Cambio de horario de la clínica',
+        scheduleChange: 'Cambio de horario del espacio de trabajo',
       },
       reasonLabel: 'Mensaje para el paciente',
       reasonRequiredTag: '(obligatorio)',
@@ -812,7 +815,7 @@ export const ES_TRANSLATIONS = {
 
   guestBooking: {
     unavailableTitle: 'Reservas no disponibles',
-    unavailableMessage: 'Esta clínica no está disponible para reservas en línea.',
+    unavailableMessage: 'Este espacio de trabajo no está disponible para reservas en línea.',
     sessionErrorTitle: 'No pudimos iniciar tu reserva',
     defaultUnexpectedError: 'Ocurrió un error inesperado',
     retryButton: 'Reintentar',
@@ -820,8 +823,8 @@ export const ES_TRANSLATIONS = {
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
     loadingSessionTitle: 'Preparando tu reserva…',
     headerPrefix: 'Reserva tu cita en',
-    loadingClinicSr: 'Cargando clínica…',
-    clinicLoadError: 'No se pudo cargar la clínica',
+    loadingClinicSr: 'Cargando espacio de trabajo…',
+    clinicLoadError: 'No se pudo cargar el espacio de trabajo',
     stepPrefix: 'Paso',
     stepOf: 'de',
     steps: {
@@ -839,8 +842,8 @@ export const ES_TRANSLATIONS = {
     backButton: 'Atrás',
     continueButton: 'Continuar',
     patientForm: {
-      legend: '¿Ya te atendiste en esta clínica?',
-      returningLabel: 'Ya me atendí en esta clínica',
+      legend: '¿Ya te atendiste en este espacio de trabajo?',
+      returningLabel: 'Ya me atendí en este espacio de trabajo',
       newLabel: 'Es mi primera vez',
       kindRequiredError: 'Elige una opción',
       returningHint: 'Ingresa el teléfono con el que te registraste.',
@@ -858,7 +861,7 @@ export const ES_TRANSLATIONS = {
       confirmButton: 'Confirmar reserva',
     },
     done: {
-      pendingNotice: 'Tu cita quedó pendiente de confirmación por la clínica.',
+      pendingNotice: 'Tu cita quedó pendiente de confirmación por el espacio de trabajo.',
       bookAnotherButton: 'Reservar otra cita',
     },
     errors: {
@@ -868,36 +871,43 @@ export const ES_TRANSLATIONS = {
 
   landing: {
     nav: {
+      audience: 'Para quién',
       features: 'Funciones',
-      product: 'Producto',
       roles: 'Roles',
       howItWorks: 'Cómo funciona',
       goToDashboard: 'Ir al panel',
       login: 'Iniciar sesión',
-      registerClinic: 'Registrar clínica',
+      register: 'Empieza gratis',
     },
     hero: {
-      badge: 'Gestión de citas para clínicas',
-      titlePrefix: 'La agenda de tu clínica,',
-      titleHighlight: 'simple y en orden',
+      badge: 'Agenda médica en la nube',
+      titlePrefix: 'Tu consulta,',
+      titleHighlight: 'simple y en orden.',
       subtitle:
-        'Citas, doctores, pacientes y horarios en un solo lugar. Menos llamadas, menos inasistencias y más tiempo para tus pacientes.',
+        'Para médicos independientes, consultorios, policonsultorios y clínicas. Citas, pacientes y horarios en un solo lugar, desde una agenda hasta todo un equipo.',
       ctaPrimary: 'Empieza gratis',
       ctaSecondary: 'Ver el producto',
       shotAlt: 'Tablero de citas con columnas de pendientes, confirmadas y canceladas',
-      mobileShotAlt: 'Inicio de ClinicFlow en un teléfono móvil',
       floatingCardTitle: 'Cita confirmada',
       floatingCardSubtitle: 'Natalia Herrera · 10:00',
     },
-    stats: {
-      roles: 'roles con permisos propios',
-      cloud: 'agenda disponible en la nube',
-      responsive: 'responsive, también en móvil',
-      installations: 'instalaciones necesarias',
+    audience: {
+      eyebrow: '01 — Para quién',
+      title: 'Para cada forma de atender.',
+      items: {
+        independentTitle: 'Médico independiente',
+        independentDesc: 'Tu agenda y tus pacientes, sin complicaciones.',
+        officeTitle: 'Consultorio',
+        officeDesc: 'Comparte la agenda con un asistente o colega.',
+        multiOfficeTitle: 'Policonsultorio',
+        multiOfficeDesc: 'Varias especialidades, una sola recepción.',
+        clinicTitle: 'Clínica',
+        clinicDesc: 'Equipos grandes con roles y permisos.',
+      },
     },
     features: {
-      eyebrow: 'Funciones',
-      title: 'Todo lo que tu clínica necesita',
+      eyebrow: '02 — Funciones',
+      title: 'Todo lo que tu recepción hace a mano, en una sola agenda.',
       subtitle: 'Herramientas pensadas para administradores, doctores y asistentes.',
       items: {
         calendarTitle: 'Agenda y calendario',
@@ -914,71 +924,44 @@ export const ES_TRANSLATIONS = {
         notificationsDesc: 'Tus pacientes reciben un aviso al confirmar o cancelar su cita.',
       },
     },
-    showcase: {
-      calendar: {
-        eyebrow: 'Calendario',
-        title: 'Todo el mes de un vistazo',
-        description:
-          'Cada día muestra cuántas citas tiene y su estado. Haz clic en un día para ver la agenda completa y agendar al instante.',
-        point1: 'Citas pendientes, confirmadas y canceladas por color',
-        point2: 'Agenda del día al lado del calendario',
-        point3: 'Agendar una cita desde el mismo día',
-        shotAlt: 'Calendario mensual con la agenda del día seleccionado',
-      },
-      booking: {
-        eyebrow: 'Agendar cita',
-        title: 'Reserva en tres pasos',
-        description:
-          'Elige al paciente, la especialidad y el doctor, y solo se muestran los horarios realmente libres. Sin dobles reservas.',
-        point1: 'Filtra doctores por especialidad',
-        point2: 'Horarios libres según la disponibilidad del doctor',
-        point3: 'Resumen claro antes de confirmar',
-        shotAlt: 'Flujo para agendar una cita con doctor, fecha y horario seleccionados',
-      },
-    },
     roles: {
-      eyebrow: 'Para todo el equipo',
-      title: 'Una vista para cada rol',
-      tablistAriaLabel: 'Roles',
+      eyebrow: '03 — Roles',
+      title: 'Cada persona ve lo que necesita.',
       assistant: {
         label: 'Asistente',
-        title: 'Controla todas las citas de la clínica',
+        title: 'Controla todas las citas del espacio de trabajo',
         description:
-          'Filtra por estado, confirma o cancela con un clic y revisa el historial completo con paginación.',
-        shotAlt: 'Listado de citas con estados y acciones de confirmar o cancelar',
+          'Filtra por estado, confirma o cancela con un clic y revisa el historial completo.',
       },
       doctor: {
         label: 'Doctor',
         title: 'Tu horario, tus reglas',
         description:
-          'Define tus bloques de atención por día, bloquea vacaciones o congresos y previsualiza los horarios que verán tus pacientes.',
-        shotAlt: 'Horario semanal de un doctor con bloques de mañana y tarde',
+          'Define tus bloques de atención, bloquea vacaciones o congresos y previsualiza tus horarios libres.',
       },
       admin: {
         label: 'Administrador',
         title: 'Gestiona a tu equipo',
         description:
-          'Da de alta doctores y asistentes, asigna especialidades y activa o desactiva accesos cuando lo necesites.',
-        shotAlt: 'Listado del personal de la clínica con roles y especialidades',
+          'Da de alta doctores y asistentes, asigna especialidades y activa o desactiva accesos.',
       },
     },
     steps: {
-      eyebrow: 'Cómo funciona',
-      title: 'Empieza en tres pasos',
-      step1Title: 'Registra tu clínica',
-      step1Desc: 'Crea la cuenta de tu clínica y activa el acceso desde tu correo.',
-      step2Title: 'Configura tu equipo',
-      step2Desc: 'Agrega doctores, asistentes, especialidades y horarios de atención.',
+      eyebrow: '04 — Cómo funciona',
+      title: 'En marcha el mismo día.',
+      step1Title: 'Crea tu espacio de trabajo',
+      step1Desc: 'Elige cómo atiendes y actívalo desde tu correo.',
+      step2Title: 'Configura tu agenda',
+      step2Desc: 'Define tus horarios; si tienes equipo, suma doctores y asistentes.',
       step3Title: 'Empieza a agendar',
       step3Desc: 'Registra pacientes y gestiona todas las citas desde un solo lugar.',
     },
     cta: {
-      title: '¿Listo para ordenar tu agenda?',
-      subtitle: 'Registra tu clínica hoy y empieza a gestionar tus citas en minutos.',
-      button: 'Registrar mi clínica',
+      title: 'Empieza a agendar hoy.',
+      subtitle: 'Crea tu espacio de trabajo y actívalo desde tu correo. Sin instalaciones.',
+      button: 'Crear mi espacio de trabajo',
     },
     footer: {
-      developedBy: 'Desarrollado por',
       rights: 'Todos los derechos reservados.',
     },
   },

@@ -57,7 +57,7 @@ describe('GuestPatientFormComponent', () => {
     return element.querySelector('#guest-ci-error')?.textContent?.trim();
   }
 
-  const RETURNING = 'Ya me atendí en esta clínica';
+  const RETURNING = 'Ya me atendí en este espacio de trabajo';
   const NEW = 'Es mi primera vez';
 
   function hasField(label: string): boolean {
