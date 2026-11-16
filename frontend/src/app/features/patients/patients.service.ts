@@ -5,9 +5,9 @@ import { PatientsApi } from '../../core/api/patients.api';
 import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient } from '../../core/models/api.models';
 import { PATIENT_ASSIGNMENT_ENABLED } from '../../core/utils/feature-flags.util';
-import { ACTION_LABEL, LOAD_ERROR } from '../../core/utils/messages.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { PatientRow, PatientScope } from './patients.model';
@@ -21,6 +21,7 @@ export class PatientsService {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
   private readonly userId = this.auth.userId()!;
 
   readonly ownListEnabled = PATIENT_ASSIGNMENT_ENABLED && this.auth.hasRole('DOCTOR');
@@ -114,7 +115,7 @@ export class PatientsService {
   readonly isLoading = computed(() => this.activeResource().isLoading());
   readonly errorMessage = resourceError(
     { error: () => this.activeResource().error() },
-    LOAD_ERROR.patients,
+    this.i18n.translate('patients.errors.load'),
   );
 
   reload(): void {
@@ -148,14 +149,14 @@ export class PatientsService {
     return this.confirm
       .confirmThen(
         {
-          title: 'Desactivar paciente',
-          message: `${patient.name} ya no podrá agendar nuevas citas. Sus citas futuras se cancelarán y se le notificará por WhatsApp.`,
-          confirmLabel: ACTION_LABEL.deactivate,
+          title: this.i18n.translate('patients.deactivateConfirm.title'),
+          message: `${patient.name} ${this.i18n.translate('patients.deactivateConfirm.messageSuffix')}`,
+          confirmLabel: this.i18n.translate('patients.deactivateConfirm.confirmLabel'),
           danger: true,
         },
         () => this.patientsApi.deactivate(patient.id),
-        'Paciente desactivado',
-        'No se pudo desactivar el paciente',
+        this.i18n.translate('patients.deactivateConfirm.success'),
+        this.i18n.translate('patients.deactivateConfirm.error'),
       )
       .pipe(tap(() => this.reload()));
   }
@@ -164,13 +165,13 @@ export class PatientsService {
     return this.confirm
       .confirmThen(
         {
-          title: 'Reactivar paciente',
-          message: `¿Reactivar a ${patient.name}?`,
-          confirmLabel: ACTION_LABEL.reactivate,
+          title: this.i18n.translate('patients.reactivateConfirm.title'),
+          message: `${this.i18n.translate('patients.reactivateConfirm.messagePrefix')} ${patient.name}?`,
+          confirmLabel: this.i18n.translate('patients.reactivateConfirm.confirmLabel'),
         },
         () => this.patientsApi.activate(patient.id),
-        'Paciente reactivado',
-        'No se pudo reactivar el paciente',
+        this.i18n.translate('patients.reactivateConfirm.success'),
+        this.i18n.translate('patients.reactivateConfirm.error'),
       )
       .pipe(tap(() => this.reload()));
   }
@@ -183,7 +184,11 @@ export class PatientsService {
     ).pipe(
       tap(() => {
         this.notifications.success(
-          mine ? 'Paciente quitado de tu lista' : 'Paciente agregado a tu lista',
+          this.i18n.translate(
+            mine
+              ? 'patients.notifications.removedFromMine'
+              : 'patients.notifications.assignedToMine',
+          ),
         );
         this.reload();
       }),

@@ -96,10 +96,10 @@
                     >{{ patient.name | initials }}</span
                   >
                   <div class="min-w-0">
+                    <p class="font-bold wrap-break-word text-gray-900">{{ patient.name }}</p>
                     <p class="text-xs text-gray-500 md:hidden">
                       {{ 'patients.table.ci' | translate }} {{ patient.ci || '—' }}
                     </p>
-                    <p class="text-xs text-gray-500 md:hidden">CI {{ patient.ci || '—' }}</p>
                     @if (patient.email) {
                       <p class="text-xs break-all text-gray-500">{{ patient.email }}</p>
                     }
