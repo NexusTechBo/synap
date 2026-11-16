@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } fro
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GuestBookingPatient } from '../../../../core/models/api.models';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import {
   CI_ERRORS,
@@ -15,7 +16,7 @@ type PatientKind = 'returning' | 'new';
 
 @Component({
   selector: 'app-guest-patient-form',
-  imports: [FormFieldComponent, ReactiveFormsModule],
+  imports: [FormFieldComponent, ReactiveFormsModule, TranslatePipe],
   templateUrl: './guest-patient-form.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,9 +28,9 @@ export class GuestPatientFormComponent implements OnInit {
 
   protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
-  protected readonly kinds: { id: PatientKind; label: string }[] = [
-    { id: 'returning', label: 'Ya me atendí en esta clínica' },
-    { id: 'new', label: 'Es mi primera vez' },
+  protected readonly kinds: { id: PatientKind; labelKey: string }[] = [
+    { id: 'returning', labelKey: 'guestBooking.patientForm.returningLabel' },
+    { id: 'new', labelKey: 'guestBooking.patientForm.newLabel' },
   ];
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
