@@ -19,7 +19,7 @@ import {
   Specialty,
   Staff,
 } from '../../core/models/api.models';
-import { addDays, toIso } from '../../core/utils/calendar.util';
+import { addDays, formatLongDate, toIso } from '../../core/utils/calendar.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { BookingService } from './booking.service';
@@ -556,6 +556,37 @@ describe('BookingService', () => {
       expect(options.message).toContain('a las 08:00');
       expect(options.message).toContain('a las 09:00?');
       expect(notifications.error).not.toHaveBeenCalled();
+    });
+
+    it('builds the full reschedule confirmation with lowercase long dates', async () => {
+      await bookWithConflict();
+
+      const current = formatLongDate(TODAY).toLowerCase();
+      const next = formatLongDate(TOMORROW).toLowerCase();
+      expect(confirm.ask.mock.calls[0][0]).toEqual({
+        title: 'Paciente con cita activa',
+        confirmLabel: 'Reprogramar',
+        message:
+          `Ana Pérez ya tiene una cita confirmada con Dr. Gómez el ${current} a las 08:00. ` +
+          `¿Deseas reprogramarla al ${next} a las 09:00?`,
+      });
+    });
+
+    it('uses the pending label for a pending conflict', async () => {
+      setup();
+      await fillForm();
+      confirm.ask.mockReturnValue(new Subject<boolean>());
+      appointmentsApi.book.mockReturnValue(
+        throwError(() =>
+          apiError(409, {
+            code: API_ERROR_CODES.patientHasActive,
+            details: { appointmentId: 7, startTime: `${TODAY}T08:00:00`, status: 'PENDING' },
+          }),
+        ),
+      );
+      service.book();
+
+      expect(confirm.ask.mock.calls[0][0].message).toContain('ya tiene una cita pendiente con');
     });
 
     it('re-enables submitting while the confirmation is open', async () => {

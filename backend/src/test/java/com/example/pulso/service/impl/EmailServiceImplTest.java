@@ -220,7 +220,6 @@ class EmailServiceImplTest {
 
         @Test
         void shouldNotCallTransportNorPropagateWhenTemplateRenderingFails() {
-            // A null start time makes the appointment template fail while rendering.
             var event = new AppointmentNotificationEvent(
                     AppointmentNotificationType.CONFIRMED,
                     AppointmentStatus.CONFIRMED,

@@ -43,6 +43,7 @@ import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PatientRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
 import java.time.Clock;

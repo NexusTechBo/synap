@@ -1,7 +1,13 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { Observable, finalize, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { apiErrorMessage } from '../../../../core/http/api-error';
@@ -16,13 +22,18 @@ import {
   ciValidator,
   notBlank,
   phoneValidator,
-  specialtyForDoctor,
   usernameValidator,
-} from '../../../../shared/utils/validation-messages.util';
+} from '../../../../shared/utils/validators.util';
 import { StaffService } from '../../staff.service';
 
 export interface StaffFormData {
   staff?: Staff;
+}
+
+function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('role')?.value === 'DOCTOR' && !control.value
+    ? { required: true }
+    : null;
 }
 
 const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];

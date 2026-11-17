@@ -74,8 +74,8 @@ export const ES_TRANSLATIONS = {
     sectionClinic: 'Espacio de trabajo',
     clinicNameLabel: 'Nombre del espacio de trabajo',
     clinicNamePlaceholder: 'Mi consultorio',
+    clinicPhoneGenericPlaceholder: 'Incluye el código de país',
     clinicPhoneLabel: 'Teléfono',
-    clinicPhonePlaceholder: '+591 700 00000',
     clinicSlugLabel: 'Identificador del espacio de trabajo',
     clinicSlugPlaceholder: 'miconsultorio',
     slugHintPrefix: 'Los usuarios de tu espacio de trabajo terminarán en @',
@@ -99,7 +99,6 @@ export const ES_TRANSLATIONS = {
     loginLink: 'Iniciar sesión',
     slugPatternError: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
     registerError: 'Ocurrió un error al registrar, intenta de nuevo',
-    // --- Llaves de register-success ---
     successTitle: '¡Espacio de trabajo creado!',
     successSentTo: 'Te enviamos un correo a',
     successSentToSuffix: 'para activar tu cuenta. El enlace vence en 48 horas.',
@@ -293,6 +292,26 @@ export const ES_TRANSLATIONS = {
     FRIDAY: { label: 'Viernes', short: 'Vie' },
     SATURDAY: { label: 'Sábado', short: 'Sáb' },
     SUNDAY: { label: 'Domingo', short: 'Dom' },
+  },
+
+  regional: {
+    countryLabel: 'País',
+    timezoneLabel: 'Zona horaria',
+    languageLabel: 'Idioma por defecto',
+    placeholder: 'Seleccionar',
+    countries: { BO: 'Bolivia', BR: 'Brasil' },
+    languages: { es: 'Español', en: 'English', 'pt-BR': 'Português (Brasil)' },
+    title: 'Configuración regional',
+    description: 'País, zona horaria e idioma por defecto del espacio de trabajo.',
+    save: 'Guardar configuración',
+    saving: 'Guardando…',
+    loadError: 'No se pudo cargar el catálogo regional',
+    saveError: 'No se pudo guardar la configuración regional',
+    saved: 'Configuración regional actualizada',
+    confirmTitle: 'Cambiar zona horaria',
+    confirmMessage:
+      'Vas a cambiar la zona horaria del espacio de trabajo. Verifica que sea la correcta antes de continuar.',
+    confirmLabel: 'Cambiar zona horaria',
   },
 
   validation: {

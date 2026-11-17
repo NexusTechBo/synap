@@ -24,6 +24,7 @@ import {
 import { I18nService } from '../../core/i18n/i18n.service';
 import {
   Availability,
+  AvailabilityRequest,
   DayOfWeek,
   ScheduleException,
   ScheduleExceptionRequest,
@@ -32,7 +33,13 @@ import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.uti
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { AddAvailabilityResult, AvailabilityBlock } from './availability.model';
+
+type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
+
+export interface AddAvailabilityResult {
+  saved: DayOfWeek[];
+  failed: { day: DayOfWeek; message: string }[];
+}
 
 @Injectable()
 export class AvailabilityService {

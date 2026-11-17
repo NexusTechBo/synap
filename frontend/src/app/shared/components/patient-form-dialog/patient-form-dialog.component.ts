@@ -15,7 +15,7 @@ import {
   ciValidator,
   notBlank,
   phoneValidator,
-} from '../../utils/validation-messages.util';
+} from '../../utils/validators.util';
 import { PatientFormService } from './patient-form.service';
 
 export interface PatientFormData {

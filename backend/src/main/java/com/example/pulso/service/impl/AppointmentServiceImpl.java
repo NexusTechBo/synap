@@ -21,6 +21,7 @@ import com.example.pulso.notification.event.AppointmentNotificationEvent;
 import com.example.pulso.notification.event.AppointmentNotificationType;
 import com.example.pulso.repository.*;
 import com.example.pulso.service.AppointmentService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.DateTimeUtils;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;

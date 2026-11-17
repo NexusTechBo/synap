@@ -21,6 +21,7 @@ import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.DoctorAvailabilityService;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.PatientService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.Utils;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,8 +47,7 @@ public class GuestServiceImpl implements GuestService {
 
     @Override
     public GuestClinicResponse findCurrentClinic() {
-        var clinic = currentClinicProvider.getCurrentClinic();
-        return new GuestClinicResponse(clinic.getName(), clinic.getSlug());
+        return guestMapper.toClinicResponse(currentClinicProvider.getCurrentClinic());
     }
 
     @Override

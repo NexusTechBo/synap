@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-/** Proporciones del logotipo original (palabra a 84px). */
 const BASE_WORD = 84;
 
 @Component({

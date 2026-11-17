@@ -9,6 +9,7 @@ import com.example.pulso.exchange.WhatsappExchange;
 import com.example.pulso.exchange.contract.whatsapp.MessageRequest;
 import com.example.pulso.exchange.contract.whatsapp.SessionStatus;
 import com.example.pulso.service.WhatsappExchangeService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.Utils;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

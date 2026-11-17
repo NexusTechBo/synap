@@ -16,6 +16,9 @@ public final class MessageKeys {
     public static final String CLINIC_ALREADY_EXISTS = "clinic.alreadyExists";
     public static final String CLINIC_SLUG_TAKEN = "clinic.slugTaken";
     public static final String CLINIC_ACTIVATION_LINK_INVALID = "clinic.activationLinkInvalid";
+    public static final String REGION_COUNTRY_UNSUPPORTED = "region.countryUnsupported";
+    public static final String REGION_TIMEZONE_INVALID = "region.timezoneInvalid";
+    public static final String REGION_LANGUAGE_UNSUPPORTED = "region.languageUnsupported";
 
     public static final String PERSONAL_NOT_FOUND = "personal.notFound";
     public static final String PERSONAL_DOCTOR_NOT_FOUND = "personal.doctorNotFound";

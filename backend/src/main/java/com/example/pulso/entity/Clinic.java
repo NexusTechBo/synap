@@ -1,6 +1,9 @@
 package com.example.pulso.entity;
 
+import com.example.pulso.converter.ClinicLanguageConverter;
+import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ClinicStatus;
+import com.example.pulso.enums.SupportedCountry;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -33,4 +36,15 @@ public class Clinic {
     private ClinicStatus status = ClinicStatus.PENDING_ACTIVATION;
 
     private LocalDateTime activatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 2)
+    private SupportedCountry country;
+
+    @Column(nullable = false, length = 64)
+    private String timezone;
+
+    @Convert(converter = ClinicLanguageConverter.class)
+    @Column(name = "default_language", nullable = false, length = 10)
+    private ClinicLanguage defaultLanguage;
 }

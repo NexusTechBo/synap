@@ -1,7 +1,13 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
@@ -16,20 +22,22 @@ import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import {
-  currentPasswordWhenChanging,
-  notBlank,
-  phoneValidator,
-} from '../../shared/utils/validation-messages.util';
+import { notBlank, phoneValidator } from '../../shared/utils/validators.util';
 import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
+import { RegionalSettingsCardComponent } from './components/regional-settings-card/regional-settings-card.component';
 import { WhatsappQrComponent } from './components/whatsapp-qr/whatsapp-qr.component';
 import { ProfileService } from './profile.service';
+
+function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
+}
 
 @Component({
   selector: 'app-profile-page',
   imports: [
     AlertComponent,
     DoctorModeCardComponent,
+    RegionalSettingsCardComponent,
     SkeletonComponent,
     ReactiveFormsModule,
     FormFieldComponent,
@@ -79,7 +87,7 @@ export class ProfilePageComponent {
     return roles.map((role) => this.i18n.translate(`roles.${role}`)).join(' · ');
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
-  protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
+  protected readonly isAdmin = computed(() => this.auth.hasRole(...ROLES.admin));
 
   constructor() {
     toObservable(this.me)

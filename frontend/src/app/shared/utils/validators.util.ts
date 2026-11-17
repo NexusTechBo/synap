@@ -33,10 +33,6 @@ export const USERNAME_ERRORS = {
   pattern: 'validation.usernamePattern',
 };
 
-export const TIME_RANGE_ERRORS = {
-  endBeforeStart: 'validation.endBeforeStart',
-};
-
 export function translateValidationKey(
   i18n: I18nService,
   keyOrMessage: string,
@@ -66,14 +62,4 @@ export function getValidationErrorMessage(
 
 export function notBlank(control: AbstractControl): ValidationErrors | null {
   return String(control.value ?? '').trim() ? null : { required: true };
-}
-
-export function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
-  return control.parent?.get('role')?.value === 'DOCTOR' && !control.value
-    ? { required: true }
-    : null;
-}
-
-export function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
-  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
 }

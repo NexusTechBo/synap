@@ -14,6 +14,8 @@ import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
+import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
+import com.example.pulso.service.component.resolver.RegionalSettingsResolver.RegionalSettings;
 import com.example.pulso.service.SchemaProvisioningService;
 import com.example.pulso.util.Utils;
 import java.time.Clock;
@@ -41,9 +43,15 @@ public class ClinicServiceImpl implements ClinicService {
     private final ClinicActivationService clinicActivationService;
     private final ClinicActivationTokenRepository tokenRepository;
     private final Clock clock;
+    private final RegionalSettingsResolver regionalSettingsResolver;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
+        var regional = regionalSettingsResolver.resolveWithDefaults(
+                request.country(),
+                request.timezone(),
+                request.defaultLanguage()
+        );
         var slug = request.slug();
         var tx = new TransactionTemplate(transactionManager);
         removeAbandonedClinics(request.name(), slug, tx);
@@ -53,7 +61,7 @@ public class ClinicServiceImpl implements ClinicService {
             throw new BusinessException(MessageKeys.CLINIC_SLUG_TAKEN, slug);
         var encodedPassword = passwordEncoder.encode(request.adminPassword());
         var adminEmail = Utils.normalizeEmail(request.adminEmail());
-        var clinic = saveNewClinic(request, slug, tx);
+        var clinic = saveNewClinic(request, slug, regional, tx);
         try {
             schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
             TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
@@ -87,13 +95,16 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    private Clinic saveNewClinic(ClinicRequest request, String slug, TransactionTemplate tx) {
+    private Clinic saveNewClinic(ClinicRequest request, String slug, RegionalSettings regional, TransactionTemplate tx) {
         try {
             return tx.execute(_ -> clinicRepository.saveAndFlush(Clinic.builder()
                     .name(request.name())
                     .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
                     .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
+                    .country(regional.country())
+                    .timezone(regional.timezone())
+                    .defaultLanguage(regional.language())
                     .build()
             ));
         } catch (DataIntegrityViolationException e) {

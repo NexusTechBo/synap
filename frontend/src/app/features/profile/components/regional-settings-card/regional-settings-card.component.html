@@ -1,0 +1,27 @@
+<h2 id="regional-settings-title" class="text-xl font-extrabold text-gray-900">
+  {{ 'regional.title' | translate }}
+</h2>
+<p class="mt-1 text-sm text-gray-500">{{ 'regional.description' | translate }}</p>
+
+@if (hasError()) {
+  <app-load-error class="mt-4" [message]="'regional.loadError' | translate" (retry)="retry()" />
+} @else if (loading()) {
+  <div class="mt-4" role="status" [attr.aria-label]="'common.loading' | translate">
+    <app-skeleton heightClass="h-14" />
+  </div>
+} @else {
+  <form
+    class="mt-4 space-y-4"
+    [formGroup]="form"
+    aria-labelledby="regional-settings-title"
+    (ngSubmit)="save()"
+  >
+    <app-regional-fields class="max-w-md" idPrefix="profile-regional" [form]="form" />
+
+    <div class="flex justify-end">
+      <button type="submit" class="btn btn-primary" [disabled]="saving() || !changed()">
+        {{ (saving() ? 'regional.saving' : 'regional.save') | translate }}
+      </button>
+    </div>
+  </form>
+}

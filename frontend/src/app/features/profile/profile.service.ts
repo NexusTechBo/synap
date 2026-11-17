@@ -104,7 +104,6 @@ export class ProfileService {
       : this.i18n.translate('profile.notifications.doctorModeDisabledMany');
   }
 
-  /** Emits how many appointments were cancelled (0 when none). */
   private disableCountingCancelled(): Observable<number> {
     return this.changeDoctorMode({ enabled: false, specialtyId: null }).pipe(
       map(() => 0),

@@ -75,8 +75,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     sectionClinic: 'Workspace',
     clinicNameLabel: 'Workspace name',
     clinicNamePlaceholder: 'My office',
+    clinicPhoneGenericPlaceholder: 'Include the country code',
     clinicPhoneLabel: 'Phone',
-    clinicPhonePlaceholder: '+591 700 00000',
     clinicSlugLabel: 'Workspace identifier',
     clinicSlugPlaceholder: 'myoffice',
     slugHintPrefix: 'Your workspace users will end in @',
@@ -100,7 +100,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loginLink: 'Sign in',
     slugPatternError: '3 to 50 characters: lowercase letters and numbers only (no "@" or ".com")',
     registerError: 'An error occurred during registration, please try again',
-    // --- Llaves de register-success ---
     successTitle: 'Workspace created!',
     successSentTo: 'We sent an email to',
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
@@ -294,6 +293,26 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     FRIDAY: { label: 'Friday', short: 'Fri' },
     SATURDAY: { label: 'Saturday', short: 'Sat' },
     SUNDAY: { label: 'Sunday', short: 'Sun' },
+  },
+
+  regional: {
+    countryLabel: 'Country',
+    timezoneLabel: 'Time zone',
+    languageLabel: 'Default language',
+    placeholder: 'Select',
+    countries: { BO: 'Bolivia', BR: 'Brazil' },
+    languages: { es: 'Español', en: 'English', 'pt-BR': 'Português (Brasil)' },
+    title: 'Regional settings',
+    description: 'Country, time zone and default language of the workspace.',
+    save: 'Save settings',
+    saving: 'Saving…',
+    loadError: 'Could not load the regional catalog',
+    saveError: 'Could not save the regional settings',
+    saved: 'Regional settings updated',
+    confirmTitle: 'Change time zone',
+    confirmMessage:
+      'You are about to change the workspace time zone. Make sure it is correct before continuing.',
+    confirmLabel: 'Change time zone',
   },
 
   validation: {

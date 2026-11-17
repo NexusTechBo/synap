@@ -1,24 +1,6 @@
-import { AppointmentStatus, DayOfWeek, Role } from '../models/api.models';
-
-export const ROLE_LABEL: Record<Role, string> = {
-  ADMINISTRATOR: 'Administrador',
-  DOCTOR: 'Doctor',
-  ASSISTANT: 'Asistente',
-};
+import { AppointmentStatus, DayOfWeek } from '../models/api.models';
 
 export const APPOINTMENT_STATUSES: AppointmentStatus[] = ['PENDING', 'CONFIRMED', 'CANCELLED'];
-
-export const STATUS_LABEL: Record<AppointmentStatus, string> = {
-  PENDING: 'Pendiente',
-  CONFIRMED: 'Confirmada',
-  CANCELLED: 'Cancelada',
-};
-
-export const STATUS_PLURAL_LABEL: Record<AppointmentStatus, string> = {
-  PENDING: 'Pendientes',
-  CONFIRMED: 'Confirmadas',
-  CANCELLED: 'Canceladas',
-};
 
 export const STATUS_STYLE: Record<AppointmentStatus, { dot: string; badge: string }> = {
   PENDING: { dot: 'bg-tertiary', badge: 'bg-tertiary/10 text-tertiary' },
@@ -35,13 +17,6 @@ export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] 
   { value: 'SATURDAY', label: 'Sábado', short: 'Sáb' },
   { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
 ];
-
-export function rolesLabel(roles: readonly Role[]): string {
-  return (Object.keys(ROLE_LABEL) as Role[])
-    .filter((role) => roles.includes(role))
-    .map((role) => ROLE_LABEL[role])
-    .join(' · ');
-}
 
 export function specialtyLabel(name: string | null | undefined): string {
   return name ?? 'Sin especialidad';

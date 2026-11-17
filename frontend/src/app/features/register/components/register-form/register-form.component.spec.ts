@@ -1,6 +1,7 @@
 import { provideZoneChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { RegionsStore } from '../../../../core/clinic/regions.store';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { RegisterService } from '../../register.service';
 import { RegisterFormComponent } from './register-form.component';
@@ -19,6 +20,10 @@ describe('RegisterFormComponent', () => {
       providers: [
         provideZoneChangeDetection(),
         provideRouter([]),
+        {
+          provide: RegionsStore,
+          useValue: { available: signal(false), countries: signal([]), country: () => undefined },
+        },
         {
           provide: RegisterService,
           useValue: {

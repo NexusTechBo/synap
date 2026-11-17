@@ -16,6 +16,7 @@ import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.security.jwt.JwtUtil;
 import com.example.pulso.service.AuthService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.LogUtils;
 import com.example.pulso.util.Utils;
 import java.util.Locale;

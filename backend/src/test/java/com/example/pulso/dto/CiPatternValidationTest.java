@@ -62,7 +62,10 @@ class CiPatternValidationTest {
                             "admin",
                             "admin@mail.test",
                             "secret123",
-                            ci
+                            ci,
+                            null,
+                            null,
+                            null
                     )
             )
     );

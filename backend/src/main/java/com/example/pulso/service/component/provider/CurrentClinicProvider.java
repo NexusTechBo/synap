@@ -1,4 +1,4 @@
-package com.example.pulso.service.impl;
+package com.example.pulso.service.component.provider;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.entity.Clinic;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 public class CurrentClinicProvider {
     private final ClinicRepository clinicRepository;
 
-    Clinic getCurrentClinic() {
+    public Clinic getCurrentClinic() {
         var clinicId = TenantContext.getCurrentClinicId();
         return clinicRepository
                 .findById(clinicId)

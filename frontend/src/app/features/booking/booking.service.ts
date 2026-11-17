@@ -26,14 +26,34 @@ import {
   staffActiveAppointmentConflict,
 } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
-import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import {
+  Patient,
+  PatientActiveAppointmentConflict,
+  Staff,
+  TimeSlot,
+} from '../../core/models/api.models';
+import {
+  datePart,
+  formatLongDate,
+  formatTime,
+  isIsoDate,
+  toIso,
+  toLocalDateTime,
+} from '../../core/utils/calendar.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { BookingAttempt, DoctorOption } from './booking.model';
-import { rescheduleConfirmOptions } from './booking.util';
+import { ConfirmOptions } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
 
 const PATIENT_RESULTS = 20;
+
+type DoctorOption = Pick<Staff, 'id' | 'name' | 'specialtyId' | 'specialtyName'>;
+
+interface BookingAttempt {
+  doctor: DoctorOption;
+  patient: Patient;
+  date: string;
+  startDateTime: string;
+}
 
 @Injectable()
 export class BookingService {
@@ -235,6 +255,28 @@ export class BookingService {
       });
   }
 
+  private rescheduleConfirmOptions(
+    conflict: PatientActiveAppointmentConflict,
+    attempt: BookingAttempt,
+  ): ConfirmOptions {
+    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const status = this.i18n.translate(`statuses.${conflict.status}`).toLowerCase();
+    const currentDate = formatLongDate(datePart(conflict.startTime), locale).toLowerCase();
+    const newDate = formatLongDate(attempt.date, locale).toLowerCase();
+
+    return {
+      title: this.i18n.translate('booking.rescheduleConfirm.title'),
+      message:
+        `${attempt.patient.name} ${this.i18n.translate('booking.rescheduleConfirm.alreadyHas')} ${status} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.withDoctor')} ${attempt.doctor.name} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.onDate')} ${currentDate} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.atTime')} ${formatTime(conflict.startTime)}. ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.questionPrefix')} ${newDate} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.atTime')} ${formatTime(attempt.startDateTime)}?`,
+      confirmLabel: this.i18n.translate('booking.rescheduleConfirm.confirmLabel'),
+    };
+  }
+
   private recoverFromBookingError(error: unknown, attempt: BookingAttempt): Observable<string> {
     const conflict = staffActiveAppointmentConflict(error);
     if (!conflict) {
@@ -242,7 +284,7 @@ export class BookingService {
       return EMPTY;
     }
     this._submitting.set(false);
-    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt, this.i18n)).pipe(
+    return this.confirm.ask(this.rescheduleConfirmOptions(conflict, attempt)).pipe(
       filter(Boolean),
       tap(() => this._submitting.set(true)),
       switchMap(() =>

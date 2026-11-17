@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { CI_ERRORS, ciValidator, getValidationErrorMessage } from './validation-messages.util';
+import { CI_ERRORS, ciValidator, getValidationErrorMessage } from './validators.util';
 
 function ciErrors(value: string) {
   return ciValidator(new FormControl(value));
 }
 
-describe('validation-messages util', () => {
+describe('validators util', () => {
   describe('ciValidator (DEF-02)', () => {
     it.each(['12345', '1234567', '1234567890'])('accepts "%s"', (value) => {
       expect(ciErrors(value)).toBeNull();
