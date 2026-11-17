@@ -3,7 +3,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RegionCatalog } from '../models/api.models';
-import { LOAD_ERROR } from '../utils/messages.util';
 import { RegionsStore } from './regions.store';
 
 const CATALOG: RegionCatalog = {
@@ -65,7 +64,7 @@ describe('RegionsStore', () => {
     expect(store.country('BR')?.defaultTimezone).toBe('America/Sao_Paulo');
     expect(store.country('XX')).toBeUndefined();
     expect(store.country(null)).toBeUndefined();
-    expect(store.errorMessage()).toBeNull();
+    expect(store.hasError()).toBe(false);
   });
 
   it('requests the catalog once even if read many times', async () => {
@@ -85,12 +84,12 @@ describe('RegionsStore', () => {
     http.expectNone('regions');
   });
 
-  it('reports the load error message and stays unavailable on failure', async () => {
+  it('flags the load error and stays unavailable on failure', async () => {
     TestBed.tick();
     http.expectOne('regions').flush(null, { status: 500, statusText: 'Server Error' });
     await settle();
 
-    expect(store.errorMessage()).toBe(LOAD_ERROR.regions);
+    expect(store.hasError()).toBe(true);
     expect(store.available()).toBe(false);
   });
 
@@ -104,7 +103,7 @@ describe('RegionsStore', () => {
     http.expectOne('regions').flush(CATALOG);
     await settle();
 
-    expect(store.errorMessage()).toBeNull();
+    expect(store.hasError()).toBe(false);
     expect(store.available()).toBe(true);
   });
 });

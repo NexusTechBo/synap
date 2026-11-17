@@ -11,6 +11,7 @@ import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.MessageKeys;
+import com.example.pulso.mapper.ClinicLanguageMapperImpl;
 import com.example.pulso.mapper.ClinicSettingsMapperImpl;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
@@ -36,7 +37,7 @@ class ClinicSettingsServiceImplTest {
         service = new ClinicSettingsServiceImpl(
                 new CurrentClinicProvider(clinicRepository),
                 new RegionalSettingsResolver(),
-                new ClinicSettingsMapperImpl());
+                new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl()));
         TenantContext.setCurrentTenant(7L, "demo");
         clinic = Clinic.builder()
                 .id(7L)

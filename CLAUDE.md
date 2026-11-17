@@ -11,7 +11,7 @@ Los agentes de `.claude/agents/` no tienen detalles del proyecto: leen esta secc
 # Parte 1 — Contexto del proyecto
 
 ## Descripción
-**Synap** (marca visible: *ClinicFlow*) es un SaaS multitenant de agenda para clínicas: gestión de citas, disponibilidad de doctores, excepciones de horario, pacientes, especialidades, personal, tablero en tiempo real y reserva pública para invitados (guest booking). Notificaciones por email (Brevo) y WhatsApp (servicio externo).
+**Synap** (marca visible: *Pulso*) es un SaaS multitenant de agenda para clínicas: gestión de citas, disponibilidad de doctores, excepciones de horario, pacientes, especialidades, personal, tablero en tiempo real, reserva pública para invitados (guest booking) y configuración regional por clínica (país, zona horaria e idioma por defecto; países soportados: BO y BR). Notificaciones por email (Brevo) y WhatsApp (servicio externo).
 
 ## Stack y versiones
 | Capa | Tecnologías |
@@ -21,7 +21,12 @@ Los agentes de `.claude/agents/` no tienen detalles del proyecto: leen esta secc
 | Infra | Docker / `docker-compose.yml`, despliegue en Railway (`railway.json`) |
 
 ## Backend
-- **Paquete raíz**: `com.example.scheduler`. Capas: `controller/` → `service/` (interfaces) → `service/impl/` → `repository/`. Además: `dto/<dominio>/` (records `*Request`/`*Response`), `entity/`, `enums/`, `mapper/` (MapStruct, `componentModel = "spring"`), `exception/`, `config/`, `security/`, `middleware/` (filtros JWT, rate limit, access log), `notification/` (eventos + listeners email/WhatsApp), `exchange/` (clientes HTTP a Brevo/WhatsApp).
+- **Paquete raíz**: `com.example.pulso`. Capas: `controller/` → `service/` (interfaces) → `service/impl/` → `repository/`. Además:
+  - `service/component/` — componentes de apoyo a los servicios, agrupados por tipo: `provider/` (p. ej. `CurrentClinicProvider`, clínica del tenant actual) y `resolver/` (p. ej. `RegionalSettingsResolver`, defaults y validación de país/zona/idioma).
+  - `dto/<dominio>/` (records `*Request`/`*Response`), `entity/`, `enums/`, `converter/` (`AttributeConverter` JPA), `validator/` (constraints de Bean Validation propias), `util/`.
+  - `mapper/` — MapStruct con `componentModel = "spring"` e inyección por constructor (configurada globalmente con `mapstruct.defaultInjectionStrategy=constructor`). Las conversiones reutilizables van en mappers pequeños referenciados con `uses` (p. ej. `ClinicLanguageMapper`).
+  - `exception/`, `config/`, `security/`, `middleware/` (filtros JWT, rate limit, access log), `websocket/` (tablero STOMP), `notification/` (eventos + listeners email/WhatsApp), `exchange/` (clientes HTTP a Brevo/WhatsApp).
+- **Configuración regional**: `public.clinics` guarda `country`, `timezone` y `default_language`. El catálogo vive en `enums/SupportedCountry` y `enums/ClinicLanguage` (`es`, `en`, `pt-BR`) y se expone en `GET /api/regions` (público). La clínica actual se lee/edita en `/api/clinic/regional-settings` y viaja en los claims del JWT (`country`, `timezone`, `defaultLanguage`). Por ahora la zona horaria **no** se aplica a los cálculos (el `Clock` global sigue usando `app.zone`).
 - **Multitenancy por schema**: schema `public` (datos globales: clínicas, activación) y un schema `clinic_<slug>` por clínica. El tenant actual vive en `config/tenant/TenantContext` (ThreadLocal) y lo resuelve `CustomTenantResolver`. Toda lectura/escritura de datos de clínica debe ocurrir con el tenant correcto; nunca filtrar datos entre clínicas.
 - **Migraciones Flyway**: `src/main/resources/db/migration/public/` y `.../tenant/` (las de tenant se aplican a cada schema de clínica).
 - **Roles** (`enums/ERole`): `ADMINISTRATOR`, `DOCTOR`, `ASSISTANT`, `GUEST`. Autorización con `@PreAuthorize(RoleExpressions.X)` (constantes en `security/RoleExpressions`: `STAFF`, `ADMINISTRATOR`, `ADMINISTRATOR_OR_ASSISTANT`, `DOCTOR`, `GUEST`).
@@ -36,15 +41,21 @@ Los agentes de `.claude/agents/` no tienen detalles del proyecto: leen esta secc
   - `core/auth/` — `auth.service`, guards (`authGuard`, `guestGuard`, `roleGuard`), `roles.ts`, sesión de invitado.
   - `core/http/` — interceptores (`apiUrlInterceptor`, `authInterceptor`) y `api-error` (parseo de `ErrorResponse`).
   - `core/catalogs/` — stores con signals (doctores, especialidades), `clinic-scoped-resource`.
-  - `core/models/`, `core/navigation/` (títulos de página, paths), `core/utils/`.
-  - `features/<feature>/` — páginas `*-page.component.ts` lazy-loaded, con `components/`, `*.service.ts` y `*.model.ts` propios.
-  - `shared/` — `components/`, `ui/`, `pipes/`, `services/`, `utils/` reutilizables.
+  - `core/clinic/` — stores de la clínica actual: catálogo regional (`RegionsStore`) y configuración regional (`ClinicRegionalSettingsStore`, semilla desde el JWT y refresco desde el endpoint).
+  - `core/i18n/` — `I18nService` (signals, idiomas `es`/`en`), diccionarios `es.ts`/`en.ts`, `TranslatePipe` en `shared/pipes`.
+  - `core/models/`, `core/navigation/` (títulos de página, paths), `core/utils/` (utilidades genéricas usadas por varios features).
+  - `features/<feature>/` — páginas `*-page.component.ts` lazy-loaded, con `components/` y `*.service.ts` propios. `*.model.ts`/`*.util.ts` solo si sus tipos o funciones los usan 2 o más archivos del feature; si los usa uno solo, van dentro de ese archivo.
+  - `shared/` — `components/`, `ui/`, `pipes/`, `services/`, `utils/` (`validators.util.ts`: validadores y mensajes de formulario) reutilizables por 2 o más features; lo que usa un solo feature vive en ese feature.
   - `layout/shell/` — layout autenticado.
 - **Rutas**: `app.routes.ts` con `loadComponent` y guards; títulos en `PAGE_TITLES`.
 - **Change detection**: con zone.js (`provideZoneChangeDetection({ eventCoalescing: true })`), componentes `OnPush`.
-- **Idioma**: UI en español, `LOCALE_ID = 'es'`.
+- **Idioma**: UI traducida con `I18nService` (`es` por defecto, `en`); todo texto visible va en `es.ts` y `en.ts`. `LOCALE_ID = 'es'`.
 - **Proxy de desarrollo** (`proxy.conf.js`): `/api` y `/ws` → `BACKEND_URL` (por defecto `http://localhost:8080`).
 - **Formato**: Prettier (`printWidth: 100`, comillas simples).
+
+## Convenciones generales
+- **Sin comentarios en el código** (`//`, `/** */`, `<!-- -->`, `--` en SQL), ni en backend ni en frontend, incluidos los tests. El código debe explicarse con nombres claros.
+- **Sin código muerto**: no dejar métodos, atributos, constantes, exports ni imports sin uso.
 
 ## Testing
 - **Backend**: JUnit 5 + Mockito.

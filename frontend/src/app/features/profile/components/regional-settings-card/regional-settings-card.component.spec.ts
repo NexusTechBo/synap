@@ -39,9 +39,9 @@ describe('RegionalSettingsCardComponent', () => {
 
   let settings: ReturnType<typeof signal<ClinicRegionalSettings | null>>;
   let storeLoading: ReturnType<typeof signal<boolean>>;
-  let storeError: ReturnType<typeof signal<string | null>>;
+  let storeError: ReturnType<typeof signal<boolean>>;
   let regionsLoading: ReturnType<typeof signal<boolean>>;
-  let regionsError: ReturnType<typeof signal<string | null>>;
+  let regionsError: ReturnType<typeof signal<boolean>>;
   let store: {
     load: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
@@ -53,9 +53,9 @@ describe('RegionalSettingsCardComponent', () => {
   beforeEach(async () => {
     settings = signal<ClinicRegionalSettings | null>(SAVED);
     storeLoading = signal(false);
-    storeError = signal<string | null>(null);
+    storeError = signal(false);
     regionsLoading = signal(false);
-    regionsError = signal<string | null>(null);
+    regionsError = signal(false);
     store = {
       load: vi.fn(),
       update: vi.fn((value: ClinicRegionalSettings): Observable<ClinicRegionalSettings> =>
@@ -75,7 +75,7 @@ describe('RegionalSettingsCardComponent', () => {
           useValue: {
             settings,
             isLoading: storeLoading,
-            errorMessage: storeError,
+            hasError: storeError,
             load: store.load,
             update: store.update,
           },
@@ -87,7 +87,7 @@ describe('RegionalSettingsCardComponent', () => {
             languages: signal(['es', 'en', 'pt-BR']),
             country: (code: string) => COUNTRIES.find((c) => c.code === code),
             isLoading: regionsLoading,
-            errorMessage: regionsError,
+            hasError: regionsError,
             reload: regions.reload,
           },
         },
@@ -243,7 +243,7 @@ describe('RegionalSettingsCardComponent', () => {
     });
 
     it('shows the load error and retries the settings through the store', async () => {
-      storeError.set('No se pudo cargar la configuración regional');
+      storeError.set(true);
       await fixture.whenStable();
 
       expect(element.querySelector('app-load-error')).not.toBeNull();
@@ -255,7 +255,7 @@ describe('RegionalSettingsCardComponent', () => {
     });
 
     it('retries the catalog when it is the one that failed', async () => {
-      regionsError.set('No se pudo cargar el catálogo regional');
+      regionsError.set(true);
       await fixture.whenStable();
 
       element.querySelector<HTMLButtonElement>('app-load-error button')!.click();

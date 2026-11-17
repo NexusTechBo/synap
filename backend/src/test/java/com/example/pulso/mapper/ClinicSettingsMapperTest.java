@@ -7,13 +7,11 @@ import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.SupportedCountry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 @DisplayName("ClinicSettingsMapper")
 class ClinicSettingsMapperTest {
 
-    private final ClinicSettingsMapper mapper = new ClinicSettingsMapperImpl();
+    private final ClinicSettingsMapper mapper = new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl());
 
     @Test
     @DisplayName("maps Bolivian clinic with Spanish")
@@ -45,18 +43,5 @@ class ClinicSettingsMapperTest {
         assertThat(response.country()).isEqualTo("BR");
         assertThat(response.timezone()).isEqualTo("America/Manaus");
         assertThat(response.defaultLanguage()).isEqualTo("pt-BR");
-    }
-
-    @Test
-    @DisplayName("languageToCode returns null for null")
-    void languageToCodeNull() {
-        assertThat(mapper.languageToCode(null)).isNull();
-    }
-
-    @ParameterizedTest
-    @EnumSource(ClinicLanguage.class)
-    @DisplayName("languageToCode returns the enum code")
-    void languageToCodeAll(ClinicLanguage language) {
-        assertThat(mapper.languageToCode(language)).isEqualTo(language.code());
     }
 }

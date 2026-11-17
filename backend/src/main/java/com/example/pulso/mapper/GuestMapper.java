@@ -7,15 +7,10 @@ import com.example.pulso.dto.guest.GuestClinicResponse;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.Personal;
 import java.util.List;
-import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(
-        componentModel = "spring",
-        uses = ClinicSettingsMapper.class,
-        injectionStrategy = InjectionStrategy.CONSTRUCTOR
-)
+@Mapper(componentModel = "spring", uses = ClinicLanguageMapper.class)
 public interface GuestMapper {
     GuestClinicResponse toClinicResponse(Clinic clinic);
 

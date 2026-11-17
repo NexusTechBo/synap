@@ -47,9 +47,7 @@ export class RegionalSettingsCardComponent {
 
   protected readonly form = createRegionalForm({}, [Validators.required]);
   protected readonly saving = signal(false);
-  protected readonly errorMessage = computed(
-    () => this.store.errorMessage() ?? this.regions.errorMessage(),
-  );
+  protected readonly hasError = computed(() => this.store.hasError() || this.regions.hasError());
   protected readonly loading = computed(
     () => this.store.isLoading() || this.regions.isLoading() || !this.store.settings(),
   );
@@ -81,8 +79,8 @@ export class RegionalSettingsCardComponent {
   }
 
   protected retry(): void {
-    if (this.store.errorMessage()) this.store.load();
-    if (this.regions.errorMessage()) this.regions.reload();
+    if (this.store.hasError()) this.store.load();
+    if (this.regions.hasError()) this.regions.reload();
   }
 
   protected save(): void {

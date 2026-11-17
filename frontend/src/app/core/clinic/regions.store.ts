@@ -1,9 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RegionsApi } from '../api/regions.api';
-import { resourceError } from '../http/api-error';
 import { ClinicLanguage, CountryCode, RegionCountry } from '../models/api.models';
-import { LOAD_ERROR } from '../utils/messages.util';
 
 @Injectable({ providedIn: 'root' })
 export class RegionsStore {
@@ -17,7 +15,7 @@ export class RegionsStore {
     this.resource.hasValue() ? this.resource.value().languages : [],
   );
   readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, LOAD_ERROR.regions);
+  readonly hasError = computed(() => this.resource.status() === 'error');
   readonly available = computed(() => this.countries().length > 0);
 
   country(code: CountryCode | string | null | undefined): RegionCountry | undefined {

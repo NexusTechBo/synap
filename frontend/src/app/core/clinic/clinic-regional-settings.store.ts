@@ -3,9 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, tap } from 'rxjs';
 import { ClinicSettingsApi } from '../api/clinic-settings.api';
 import { AuthService } from '../auth/auth.service';
-import { resourceError } from '../http/api-error';
 import { ClinicRegionalSettings } from '../models/api.models';
-import { LOAD_ERROR } from '../utils/messages.util';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicRegionalSettingsStore {
@@ -30,7 +28,7 @@ export class ClinicRegionalSettingsStore {
 
   readonly settings = this.current.asReadonly();
   readonly isLoading = computed(() => this.resource.isLoading());
-  readonly errorMessage = resourceError(this.resource, LOAD_ERROR.regionalSettings);
+  readonly hasError = computed(() => this.resource.status() === 'error');
 
   load(): void {
     if (this.resource.status() === 'error') this.resource.reload();

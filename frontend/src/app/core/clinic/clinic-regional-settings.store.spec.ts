@@ -5,7 +5,6 @@ import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from '../auth/auth.service';
 import { ClinicRegionalSettings } from '../models/api.models';
-import { LOAD_ERROR } from '../utils/messages.util';
 import { ClinicRegionalSettingsStore } from './clinic-regional-settings.store';
 
 const FROM_CLAIMS: ClinicRegionalSettings = {
@@ -69,7 +68,7 @@ describe('ClinicRegionalSettingsStore', () => {
     await settle();
 
     expect(store.settings()).toEqual(FROM_SERVER);
-    expect(store.errorMessage()).toBeNull();
+    expect(store.hasError()).toBe(false);
   });
 
   it('update() sends PUT and stores the response as the new value', async () => {
@@ -106,7 +105,7 @@ describe('ClinicRegionalSettingsStore', () => {
       .flush(null, { status: 500, statusText: 'Server Error' });
     await settle();
 
-    expect(store.errorMessage()).toBe(LOAD_ERROR.regionalSettings);
+    expect(store.hasError()).toBe(true);
     expect(store.settings()).toEqual(FROM_CLAIMS);
 
     store.load();
@@ -114,7 +113,7 @@ describe('ClinicRegionalSettingsStore', () => {
     http.expectOne('clinic/regional-settings').flush(FROM_SERVER);
     await settle();
 
-    expect(store.errorMessage()).toBeNull();
+    expect(store.hasError()).toBe(false);
     expect(store.settings()).toEqual(FROM_SERVER);
   });
 });

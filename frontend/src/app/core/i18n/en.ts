@@ -100,7 +100,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loginLink: 'Sign in',
     slugPatternError: '3 to 50 characters: lowercase letters and numbers only (no "@" or ".com")',
     registerError: 'An error occurred during registration, please try again',
-    // --- Llaves de register-success ---
     successTitle: 'Workspace created!',
     successSentTo: 'We sent an email to',
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',

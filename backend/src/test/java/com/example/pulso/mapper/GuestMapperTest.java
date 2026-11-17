@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("GuestMapper")
 class GuestMapperTest {
 
-    private final GuestMapper mapper = new GuestMapperImpl(new ClinicSettingsMapperImpl());
+    private final GuestMapper mapper = new GuestMapperImpl(new ClinicLanguageMapperImpl());
 
     @Test
     @DisplayName("toClinicResponse maps fields and serializes language as code")

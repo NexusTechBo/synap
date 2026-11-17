@@ -8,7 +8,7 @@ import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.SupportedCountry;
-import com.example.pulso.mapper.ClinicSettingsMapperImpl;
+import com.example.pulso.mapper.ClinicLanguageMapperImpl;
 import com.example.pulso.mapper.GuestMapperImpl;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
@@ -42,7 +42,7 @@ class GuestServiceImplClinicTest {
                 null,
                 null,
                 null,
-                new GuestMapperImpl(new ClinicSettingsMapperImpl()));
+                new GuestMapperImpl(new ClinicLanguageMapperImpl()));
 
         var response = service.findCurrentClinic();
 

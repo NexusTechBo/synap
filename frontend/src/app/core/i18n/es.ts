@@ -99,7 +99,6 @@ export const ES_TRANSLATIONS = {
     loginLink: 'Iniciar sesión',
     slugPatternError: 'De 3 a 50 caracteres: solo minúsculas y números (sin "@" ni ".com")',
     registerError: 'Ocurrió un error al registrar, intenta de nuevo',
-    // --- Llaves de register-success ---
     successTitle: '¡Espacio de trabajo creado!',
     successSentTo: 'Te enviamos un correo a',
     successSentToSuffix: 'para activar tu cuenta. El enlace vence en 48 horas.',

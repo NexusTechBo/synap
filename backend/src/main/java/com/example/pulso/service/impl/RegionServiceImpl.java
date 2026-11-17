@@ -10,8 +10,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class RegionServiceImpl implements RegionService {
-    @Override
-    public RegionCatalogResponse getCatalog() {
+    private final RegionCatalogResponse catalog;
+
+    public RegionServiceImpl() {
         var countries = Arrays.stream(SupportedCountry.values())
                 .map(c -> new CountryResponse(
                         c.name(),
@@ -21,6 +22,11 @@ public class RegionServiceImpl implements RegionService {
                         c.phonePlaceholder()))
                 .toList();
         var languages = Arrays.stream(ClinicLanguage.values()).map(ClinicLanguage::code).toList();
-        return new RegionCatalogResponse(countries, languages);
+        this.catalog = new RegionCatalogResponse(countries, languages);
+    }
+
+    @Override
+    public RegionCatalogResponse getCatalog() {
+        return catalog;
     }
 }

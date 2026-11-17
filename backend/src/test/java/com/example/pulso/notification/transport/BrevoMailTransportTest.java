@@ -277,11 +277,6 @@ class BrevoMailTransportTest {
         }
     }
 
-    /**
-     * Exercises the real {@link BrevoExchange} HTTP interface and Jackson conversion against a mock server. The
-     * client is built like {@code BrevoExchangeConfig} (base URL and api-key default header), but the config's own
-     * JDK request factory cannot be bound to {@link MockRestServiceServer}.
-     */
     @Nested
     class OverHttp {
         private MockRestServiceServer server;

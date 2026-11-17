@@ -3,7 +3,7 @@
 </h2>
 <p class="mt-1 text-sm text-gray-500">{{ 'regional.description' | translate }}</p>
 
-@if (errorMessage()) {
+@if (hasError()) {
   <app-load-error class="mt-4" [message]="'regional.loadError' | translate" (retry)="retry()" />
 } @else if (loading()) {
   <div class="mt-4" role="status" [attr.aria-label]="'common.loading' | translate">
