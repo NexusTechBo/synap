@@ -59,12 +59,12 @@ describe('RegisterFormComponent', () => {
     await fixture.whenStable();
   }
 
-  async function fillValid(ci: string): Promise<void> {
+  async function fillValid(document: string): Promise<void> {
     await type('Nombre del espacio de trabajo', 'Mi consultorio');
     await type('Teléfono', '70000000');
     await type('Identificador del espacio de trabajo', 'miconsultorio');
     await type('Nombre completo', 'Ana Rojas');
-    await type('CI (opcional)', ci);
+    await type('CI (opcional)', document);
     await type('Usuario', 'admin');
     await type('Correo electrónico', 'admin@email.com');
     await type('Contraseña', 'secreto123');
@@ -78,7 +78,7 @@ describe('RegisterFormComponent', () => {
   }
 
   function ciError(): string | undefined {
-    return element.querySelector('#register-admin-ci-error')?.textContent?.trim();
+    return element.querySelector('#register-admin-document-error')?.textContent?.trim();
   }
 
   describe('admin CI validation (DEF-02)', () => {
@@ -88,8 +88,8 @@ describe('RegisterFormComponent', () => {
 
     it.each(['1234', '12a45', '12 345', '12345678901'])(
       'shows the CI rule and does not register for "%s"',
-      async (ci) => {
-        await fillValid(ci);
+      async (document) => {
+        await fillValid(document);
 
         expect(ciError()).toBe(CI_MESSAGE);
         await submit();
@@ -103,7 +103,9 @@ describe('RegisterFormComponent', () => {
       await submit();
 
       expect(ciError()).toBeUndefined();
-      expect(register.register).toHaveBeenCalledWith(expect.objectContaining({ adminCi: '' }));
+      expect(register.register).toHaveBeenCalledWith(
+        expect.objectContaining({ adminDocument: '' }),
+      );
     });
 
     it('registers the clinic with a valid CI', async () => {
@@ -113,7 +115,7 @@ describe('RegisterFormComponent', () => {
 
       expect(ciError()).toBeUndefined();
       expect(register.register).toHaveBeenCalledWith(
-        expect.objectContaining({ adminCi: '1234567890', slug: 'miconsultorio' }),
+        expect.objectContaining({ adminDocument: '1234567890', slug: 'miconsultorio' }),
       );
     });
   });

@@ -80,6 +80,8 @@ public final class MessageKeys {
     public static final String WHATSAPP_NO_ACTIVE_SESSION = "whatsapp.noActiveSession";
 
     public static final String VALIDATION_PHONE_INVALID = "validation.phone.invalid";
+    public static final String VALIDATION_DOCUMENT_CI_INVALID = "validation.document.ciInvalid";
+    public static final String VALIDATION_DOCUMENT_CPF_INVALID = "validation.document.cpfInvalid";
 
     public static final String ERROR_VALIDATION_FAILED = "error.validation.failed";
     public static final String ERROR_HTTP_MALFORMED_BODY = "error.http.malformedBody";

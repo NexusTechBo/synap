@@ -24,7 +24,7 @@
     type="button"
     class="btn-icon absolute right-5 top-5"
     (click)="closed.emit()"
-    aria-label="Cerrar"
+    [attr.aria-label]="'common.close' | translate"
   >
     <app-ui-icon name="x" class="h-4.5 w-4.5" />
   </button>

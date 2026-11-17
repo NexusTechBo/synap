@@ -1,5 +1,6 @@
 package com.example.pulso.util;
 
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.MessageKeys;
 import com.google.i18n.phonenumbers.NumberParseException;
@@ -12,26 +13,26 @@ import org.springframework.web.util.HtmlUtils;
 
 public final class Utils {
     public static final String USERNAME_DOMAIN = ".com";
-    private static final String DEFAULT_PHONE_REGION = "BO";
     private static final Pattern CONTROL_CHARS = Pattern.compile("\\p{Cntrl}");
+    private static final Pattern DOCUMENT_SEPARATORS = Pattern.compile("[.\\-\\s]");
 
-    public static String normalizePhoneNumber(String phoneNumber) {
+    public static String normalizePhoneNumber(String phoneNumber, SupportedCountry region) {
         if (!StringUtils.hasText(phoneNumber)) return null;
         var phoneUtil = PhoneNumberUtil.getInstance();
         try {
-            var parsed = phoneUtil.parse(phoneNumber, DEFAULT_PHONE_REGION);
+            var parsed = phoneUtil.parse(phoneNumber, region.name());
             if (phoneUtil.isValidNumber(parsed))
                 return phoneUtil.format(parsed, PhoneNumberUtil.PhoneNumberFormat.E164);
         } catch (NumberParseException _) {}
         throw new BadRequestException(MessageKeys.VALIDATION_PHONE_INVALID);
     }
 
-    public static String stripLeadingPlus(String phoneNumber) {
-        return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
+    public static String stripDocumentSeparators(String document) {
+        return DOCUMENT_SEPARATORS.matcher(document).replaceAll("");
     }
 
-    public static String normalizeCi(String ci) {
-        return StringUtils.hasText(ci) ? ci.strip() : null;
+    public static String stripLeadingPlus(String phoneNumber) {
+        return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
     }
 
     public static String normalizeEmail(String email) {

@@ -18,6 +18,7 @@ import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
 import com.example.pulso.service.SchemaProvisioningService;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver.RegionalSettings;
 import com.example.pulso.util.Utils;
@@ -51,6 +52,7 @@ public class ClinicServiceImpl implements ClinicService {
     private final RegionalSettingsResolver regionalSettingsResolver;
     private final SpecialtyRepository specialtyRepository;
     private final MessageSource messageSource;
+    private final IdentityDocumentResolver identityDocumentResolver;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
@@ -59,6 +61,7 @@ public class ClinicServiceImpl implements ClinicService {
                 request.timezone(),
                 request.defaultLanguage()
         );
+        var adminDocument = identityDocumentResolver.validateAndNormalize(request.adminDocument(), regional.country());
         var slug = request.slug();
         var tx = new TransactionTemplate(transactionManager);
         removeAbandonedClinics(request.name(), slug, tx);
@@ -71,7 +74,7 @@ public class ClinicServiceImpl implements ClinicService {
         var clinic = saveNewClinic(request, slug, regional, tx);
         try {
             schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
-            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug(), clinic.zoneId());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug(), clinic.zoneId(), clinic.getCountry());
             return tx.execute(_ -> {
                 var admin = personalRepository.save(Personal.builder()
                         .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))
@@ -79,7 +82,7 @@ public class ClinicServiceImpl implements ClinicService {
                         .password(encodedPassword)
                         .email(adminEmail)
                         .phoneNumber(clinic.getPhoneNumber())
-                        .ci(Utils.normalizeCi(request.adminCi()))
+                        .document(adminDocument)
                         .role(ERole.ADMINISTRATOR)
                         .build()
                 );
@@ -123,7 +126,7 @@ public class ClinicServiceImpl implements ClinicService {
         try {
             return tx.execute(_ -> clinicRepository.saveAndFlush(Clinic.builder()
                     .name(request.name())
-                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
+                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber(), regional.country()))
                     .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
                     .country(regional.country())

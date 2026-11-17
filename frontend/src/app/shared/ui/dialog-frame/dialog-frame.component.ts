@@ -1,5 +1,6 @@
 import { DialogConfig, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 let nextId = 0;
@@ -11,7 +12,7 @@ export function labelledByFrame(): Pick<DialogConfig, 'id' | 'ariaLabelledBy'> {
 
 @Component({
   selector: 'app-dialog-frame',
-  imports: [UiIconComponent],
+  imports: [TranslatePipe, UiIconComponent],
   templateUrl: './dialog-frame.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

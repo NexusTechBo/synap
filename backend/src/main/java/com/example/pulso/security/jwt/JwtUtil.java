@@ -2,6 +2,7 @@ package com.example.pulso.security.jwt;
 
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.enums.SupportedCountry;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -90,6 +91,13 @@ public class JwtUtil {
         } catch (DateTimeException e) {
             throw new IllegalArgumentException("Invalid timezone claim", e);
         }
+    }
+
+    public static SupportedCountry extractCountry(Claims claims) {
+        var country = claims.get(JwtClaims.COUNTRY, String.class);
+        if (country == null || country.isBlank()) throw new IllegalArgumentException("Missing country claim");
+        return SupportedCountry.fromCode(country)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid country claim"));
     }
 
     public static List<String> extractRoles(Claims claims) {

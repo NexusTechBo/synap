@@ -2,7 +2,7 @@ package com.example.pulso.dto.patient;
 
 public record PatientResponse(
         Long id,
-        String ci,
+        String document,
         String name,
         String email,
         String phoneNumber,

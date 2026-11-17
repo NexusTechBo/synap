@@ -11,10 +11,12 @@ import {
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { Role } from '../../core/models/api.models';
 import { initials } from '../../core/utils/labels.util';
+import { DocumentFormatPipe } from '../../shared/pipes/document-format.pipe';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
@@ -37,6 +39,7 @@ function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors
   imports: [
     AlertComponent,
     DoctorModeCardComponent,
+    DocumentFormatPipe,
     RegionalSettingsCardComponent,
     SkeletonComponent,
     ReactiveFormsModule,
@@ -55,6 +58,7 @@ export class ProfilePageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly profile = inject(ProfileService);
   protected readonly auth = inject(AuthService);
+  protected readonly country = inject(ClinicCountryService).country;
 
   protected readonly me = this.profile.me;
 

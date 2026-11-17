@@ -79,7 +79,7 @@ describe('api-error', () => {
         message: 'Datos inválidos',
         errors: [
           { field: 'name', message: 'El nombre es obligatorio' },
-          { field: 'ci', message: 'El CI es obligatorio' },
+          { field: 'document', message: 'El CI es obligatorio' },
           { field: 'other', message: 'El nombre es obligatorio' },
           { field: 'empty', message: '' },
         ],

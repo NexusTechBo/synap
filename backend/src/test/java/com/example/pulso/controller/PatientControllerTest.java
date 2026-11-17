@@ -20,6 +20,8 @@ import com.example.pulso.config.ratelimiting.RateLimitProperties;
 import com.example.pulso.dto.patient.PatientRequest;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.exception.ErrorResponseWriter;
+import com.example.pulso.exception.BadRequestException;
+import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.security.ActiveUserChecker;
 import com.example.pulso.security.jwt.JwtUtil;
 import com.example.pulso.service.PatientService;
@@ -44,7 +46,6 @@ import org.springframework.test.web.servlet.MockMvc;
     PatientControllerTest.SliceSecurityConfig.class
 })
 class PatientControllerTest {
-    private static final String CI_PATTERN_MESSAGE = "debe contener solo números, entre 5 y 10 dígitos";
 
     @Autowired
     private MockMvc mvc;
@@ -65,7 +66,7 @@ class PatientControllerTest {
 
     private static String body(String ci) {
         return """
-                {"ci":"%s","name":"Ana Perez","email":"ana@mail.test","phoneNumber":"70000000"}
+                {"document":"%s","name":"Ana Perez","email":"ana@mail.test","phoneNumber":"70000000"}
                 """.formatted(ci);
     }
 
@@ -94,7 +95,7 @@ class PatientControllerTest {
                                     """))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(21))
-                    .andExpect(jsonPath("$.ci").doesNotExist());
+                    .andExpect(jsonPath("$.document").doesNotExist());
 
             verify(patientService).createPatient(request(null));
         }
@@ -122,29 +123,27 @@ class PatientControllerTest {
         }
 
         @Test
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiIsMalformed() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(patientService.createPatient(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID));
+
             mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body("12a456")))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.status").value(400))
-                    .andExpect(jsonPath("$.message").value("Error de validación en los datos enviados."))
-                    .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID))
+                    .andExpect(jsonPath("$.message").value("El CPF debe tener 11 dígitos y un dígito verificador válido"))
                     .andExpect(jsonPath("$.path").value("/api/patients"));
-
-            verifyNoInteractions(patientService);
         }
 
         @Test
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiHasElevenDigits() throws Exception {
+        void shouldReturnBadRequestWithDocumentFieldErrorWhenDocumentExceedsTwentyCharacters() throws Exception {
             mvc.perform(as(ASSISTANT_TOKEN, post("/api/patients"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(body("12345678901")))
+                            .content(body("1".repeat(21))))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors[0].field").value("ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE));
+                    .andExpect(jsonPath("$.errors", hasSize(1)))
+                    .andExpect(jsonPath("$.errors[0].field").value("document"));
 
             verifyNoInteractions(patientService);
         }
@@ -158,7 +157,7 @@ class PatientControllerTest {
                             .content(body("12345")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(20))
-                    .andExpect(jsonPath("$.ci").value("12345"));
+                    .andExpect(jsonPath("$.document").value("12345"));
 
             verify(patientService).createPatient(request("12345"));
         }
@@ -167,17 +166,17 @@ class PatientControllerTest {
     @Nested
     class UpdatePatient {
         @Test
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiHasFourDigits() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(patientService.updatePatientById(anyLong(), any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CI_INVALID));
+
             mvc.perform(as(ASSISTANT_TOKEN, put("/api/patients/20"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body("1234")))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CI_INVALID))
+                    .andExpect(jsonPath("$.message").value("debe contener solo dígitos, entre 5 y 10 caracteres"))
                     .andExpect(jsonPath("$.path").value("/api/patients/20"));
-
-            verifyNoInteractions(patientService);
         }
 
         @Test
@@ -188,7 +187,7 @@ class PatientControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body("1234567890")))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.ci").value("1234567890"));
+                    .andExpect(jsonPath("$.document").value("1234567890"));
 
             verify(patientService).updatePatientById(20L, request("1234567890"));
         }

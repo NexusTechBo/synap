@@ -36,17 +36,17 @@
 
     @if (selected === 'new') {
       <app-form-field
-        [label]="'guestBooking.patientForm.ciLabel' | translate"
-        fieldId="guest-ci"
-        [errorMessages]="ciErrors"
+        [label]="'document.optionalLabel.' + country() | translate"
+        fieldId="guest-document"
       >
         <input
-          id="guest-ci"
+          id="guest-document"
           class="field-input"
-          formControlName="ci"
+          formControlName="document"
           inputmode="numeric"
-          maxlength="10"
+          [attr.maxlength]="documentMaxLength"
           autocomplete="off"
+          [placeholder]="'document.placeholder.' + country() | translate"
         />
       </app-form-field>
 
@@ -69,6 +69,7 @@
         class="field-input"
         formControlName="phoneNumber"
         autocomplete="tel"
+        [placeholder]="phonePlaceholder()"
       />
     </app-form-field>
 

@@ -36,7 +36,7 @@ const TOMORROW = toIso(addDays(new Date(), 1));
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
     id: 20,
-    ci: '1234567',
+    document: '1234567',
     name: 'Ana Pérez',
     email: null,
     phoneNumber: '70000000',
@@ -49,7 +49,7 @@ function doctor(overrides: Partial<Staff> = {}): Staff {
   return {
     id: 10,
     username: 'gomez',
-    ci: '555',
+    document: '555',
     name: 'Dr. Gómez',
     email: 'gomez@clinic.test',
     phoneNumber: null,

@@ -10,6 +10,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loading: 'Loading...',
     close: 'Close',
     confirm: 'Confirm',
+    back: 'Back',
   },
   login: {
     title: 'Sign in',
@@ -84,8 +85,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     sectionAdmin: 'Administrator',
     adminNameLabel: 'Full name',
     adminNamePlaceholder: 'Your name',
-    adminCiLabel: 'ID Number (optional)',
-    adminCiPlaceholder: 'Identity document',
     adminUsernameLabel: 'Username',
     adminUsernamePlaceholder: 'admin',
     adminEmailLabel: 'Email',
@@ -203,7 +202,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       mine: 'My patients',
     },
     newPatient: 'New patient',
-    searchPlaceholder: 'Search by name, ID, email or phone',
+    searchPlaceholder: {
+      BO: 'Search by name, ID (CI), email or phone',
+      BR: 'Search by name, CPF, email or phone',
+    },
     searchAriaLabel: 'Search patients',
     showInactive: 'Show inactive',
     emptySearchTitle: 'No results',
@@ -213,7 +215,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     emptyAllMessage: 'Register the first patient in the workspace.',
     table: {
       patient: 'Patient',
-      ci: 'ID',
       phone: 'Phone',
       status: 'Status',
       actions: 'Actions',
@@ -273,7 +274,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
-      ciLabel: 'ID Number (optional)',
       cancel: 'Cancel',
       saving: 'Saving…',
       saveChanges: 'Save changes',
@@ -315,13 +315,20 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     confirmLabel: 'Change time zone',
   },
 
+  document: {
+    label: { BO: 'ID Number (CI)', BR: 'CPF' },
+    optionalLabel: { BO: 'ID Number (CI, optional)', BR: 'CPF (optional)' },
+    placeholder: { BO: '12345678', BR: '000.000.000-00' },
+  },
+
   validation: {
     required: 'This field is required',
     email: 'Enter a valid email address',
     minlength: 'Must be at least {min} characters',
     maxlength: 'Must be at most {max} characters',
     pattern: 'Invalid format',
-    ciPattern: 'Numbers only, 5 to 10 digits',
+    documentCi: 'Numbers only, 5 to 10 digits',
+    documentCpf: 'Invalid CPF: 11 digits with a valid check digit',
     phonePattern: '7 to 20 characters: numbers, spaces, +, - or parentheses',
     usernamePattern: '3 to 50 characters: lowercase letters, numbers, dot, hyphen or underscore',
     rangeRequired: 'Enter the time range',
@@ -529,7 +536,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       specialtyLabel: 'Specialty',
       specialtyPlaceholder: 'Select a specialty',
       specialtyRequired: 'Select the doctor’s specialty',
-      ciLabel: 'ID Number (optional)',
       usernameLabel: 'Username',
       usernamePlaceholder: 'john.doe',
       newPasswordLabel: 'New password (optional)',
@@ -547,7 +553,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     subtitle: 'Your contact details at the workspace',
     info: {
       username: 'Username',
-      ci: 'ID Number',
       specialty: 'Specialty',
       clinic: 'Workspace',
       clinicWhatsapp: 'Workspace WhatsApp',
@@ -866,7 +871,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       newLabel: 'It is my first time',
       kindRequiredError: 'Choose an option',
       returningHint: 'Enter the phone number you registered with.',
-      ciLabel: 'ID Number (optional)',
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
@@ -876,7 +880,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       dateTimeLabel: 'Date and time',
       patientLabel: 'Patient',
       registeredPatientFallback: 'Registered patient',
-      ciPrefix: 'ID',
       confirmButton: 'Confirm booking',
     },
     done: {

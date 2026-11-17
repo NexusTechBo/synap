@@ -41,7 +41,7 @@ describe('GuestApi', () => {
       const request: GuestAppointmentRequest = {
         doctorId: 10,
         startTime: '2026-11-12T09:00:00',
-        patient: { ci: null, phoneNumber: '70000000', name: 'Ana Rojas', email: null },
+        patient: { document: null, phoneNumber: '70000000', name: 'Ana Rojas', email: null },
       };
 
       api.book(request).subscribe();
@@ -49,7 +49,7 @@ describe('GuestApi', () => {
       const req = http.expectOne('guest/appointments/new-patient');
       expect(req.request.method).toBe('POST');
       expect(req.request.body.patient).toEqual({
-        ci: null,
+        document: null,
         phoneNumber: '70000000',
         name: 'Ana Rojas',
         email: null,
@@ -61,13 +61,18 @@ describe('GuestApi', () => {
       const request: GuestAppointmentRequest = {
         doctorId: 10,
         startTime: '2026-11-12T09:00:00',
-        patient: { ci: '1234567', phoneNumber: '70000000', name: 'Ana Rojas', email: 'a@b.co' },
+        patient: {
+          document: '1234567',
+          phoneNumber: '70000000',
+          name: 'Ana Rojas',
+          email: 'a@b.co',
+        },
       };
 
       api.book(request).subscribe();
 
       const req = http.expectOne('guest/appointments/new-patient');
-      expect(req.request.body.patient.ci).toBe('1234567');
+      expect(req.request.body.patient.document).toBe('1234567');
       req.flush(RESPONSE);
     });
   });

@@ -43,7 +43,6 @@ import org.springframework.test.web.servlet.MockMvc;
     ClinicControllerTest.SliceSecurityConfig.class
 })
 class ClinicControllerTest {
-    private static final String CI_PATTERN_MESSAGE = "debe contener solo números, entre 5 y 10 dígitos";
 
     @Autowired
     private MockMvc mvc;
@@ -60,11 +59,11 @@ class ClinicControllerTest {
     @MockitoBean
     private ActiveUserChecker activeUserChecker;
 
-    private static String body(String adminCi) {
+    private static String body(String adminDocument) {
         return """
                 {"name":"Clinica Demo","slug":"demo","phoneNumber":"70000000","adminName":"Admin Demo",
-                 "adminUsername":"admin","adminEmail":"admin@mail.test","adminPassword":"secret123","adminCi":"%s"}
-                """.formatted(adminCi);
+                 "adminUsername":"admin","adminEmail":"admin@mail.test","adminPassword":"secret123","adminDocument":"%s"}
+                """.formatted(adminDocument);
     }
 
     @TestConfiguration
@@ -74,17 +73,24 @@ class ClinicControllerTest {
     @Nested
     class CreateClinic {
         @Test
-        void shouldReturnBadRequestWithAdminCiFieldErrorWhenAdminCiIsMalformed() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(clinicService.createClinic(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID));
+
+            mvc.perform(post("/api/clinics").contentType(MediaType.APPLICATION_JSON).content(body("1234")))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID))
+                    .andExpect(jsonPath("$.message").value("El CPF debe tener 11 dígitos y un dígito verificador válido"));
+        }
+
+        @Test
+        void shouldReturnBadRequestWithDocumentFieldErrorWhenDocumentExceedsTwentyCharacters() throws Exception {
             mvc.perform(post("/api/clinics")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(body("1234")))
+                            .content(body("1".repeat(21))))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.status").value(400))
-                    .andExpect(jsonPath("$.message").value("Error de validación en los datos enviados."))
                     .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("adminCi"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
-                    .andExpect(jsonPath("$.path").value("/api/clinics"));
+                    .andExpect(jsonPath("$.errors[0].field").value("adminDocument"));
 
             verifyNoInteractions(clinicService);
         }

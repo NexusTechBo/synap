@@ -1,12 +1,14 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, Injector, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { Patient } from '../../core/models/api.models';
 import {
   PatientFormData,
   PatientFormDialogComponent,
 } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
+import { DocumentFormatPipe } from '../../shared/pipes/document-format.pipe';
 import { InitialsPipe } from '../../shared/pipes/initials.pipe';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
@@ -31,6 +33,7 @@ import { PatientsService } from './patients.service';
 @Component({
   selector: 'app-patients-page',
   imports: [
+    DocumentFormatPipe,
     InitialsPipe,
     LoadErrorComponent,
     SkeletonComponent,
@@ -52,6 +55,7 @@ export class PatientsPageComponent {
   private readonly dialog = inject(Dialog);
   private readonly injector = inject(Injector);
   protected readonly patients = inject(PatientsService);
+  protected readonly country = inject(ClinicCountryService).country;
   private readonly focusRow = focusAfterLoad(this.patients.isLoading);
 
   protected setScope(scope: string): void {

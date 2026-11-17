@@ -24,6 +24,7 @@ import com.example.pulso.dto.personal.DoctorModeRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalResponse;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.security.ActiveUserChecker;
@@ -54,7 +55,6 @@ import org.springframework.test.web.servlet.MockMvc;
     PersonalControllerTest.SliceSecurityConfig.class
 })
 class PersonalControllerTest {
-    private static final String CI_PATTERN_MESSAGE = "debe contener solo números, entre 5 y 10 dígitos";
 
     @Autowired
     private MockMvc mvc;
@@ -81,7 +81,7 @@ class PersonalControllerTest {
 
     private static String body(String ci) {
         return """
-                {"name":"Dr House","email":"house@mail.test","phoneNumber":"70000000","ci":"%s",
+                {"name":"Dr House","email":"house@mail.test","phoneNumber":"70000000","document":"%s",
                  "username":"house","password":"secret123","role":"DOCTOR","specialtyId":1}
                 """.formatted(ci);
     }
@@ -120,7 +120,7 @@ class PersonalControllerTest {
                                     """))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(10))
-                    .andExpect(jsonPath("$.ci").doesNotExist());
+                    .andExpect(jsonPath("$.document").doesNotExist());
         }
 
         @Test
@@ -134,29 +134,27 @@ class PersonalControllerTest {
         }
 
         @Test
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiHasSpaces() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(personalService.createPersonal(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID));
+
             mvc.perform(as(ADMIN_TOKEN, post("/api/personal"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body("12 345")))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.status").value(400))
-                    .andExpect(jsonPath("$.message").value("Error de validación en los datos enviados."))
-                    .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID))
+                    .andExpect(jsonPath("$.message").value("El CPF debe tener 11 dígitos y un dígito verificador válido"))
                     .andExpect(jsonPath("$.path").value("/api/personal"));
-
-            verifyNoInteractions(personalService);
         }
 
         @Test
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiIsNegative() throws Exception {
+        void shouldReturnBadRequestWithDocumentFieldErrorWhenDocumentExceedsTwentyCharacters() throws Exception {
             mvc.perform(as(ADMIN_TOKEN, post("/api/personal"))
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(body("-12345")))
+                            .content(body("1".repeat(21))))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.errors[0].field").value("ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE));
+                    .andExpect(jsonPath("$.errors", hasSize(1)))
+                    .andExpect(jsonPath("$.errors[0].field").value("document"));
 
             verifyNoInteractions(personalService);
         }
@@ -170,7 +168,7 @@ class PersonalControllerTest {
                             .content(body("1234567890")))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(10))
-                    .andExpect(jsonPath("$.ci").value("1234567890"));
+                    .andExpect(jsonPath("$.document").value("1234567890"));
 
             verify(personalService).createPersonal(new PersonalRequest(
                     "Dr House",

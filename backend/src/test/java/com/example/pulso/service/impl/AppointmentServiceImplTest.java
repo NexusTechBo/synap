@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.entry;
@@ -121,7 +122,7 @@ class AppointmentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         service = new AppointmentServiceImpl(
                 appointmentRepository,
                 patientRepository,
@@ -317,7 +318,7 @@ class AppointmentServiceImplTest {
         private static final LocalDateTime LOCAL_10_30 = LocalDateTime.of(2026, 11, 4, 10, 30);
 
         private AppointmentServiceImpl serviceInZone(String zone) {
-            TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneId.of(zone));
+            TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneId.of(zone), SupportedCountry.BO);
             var clock = Clock.fixed(INSTANT, ZoneOffset.UTC);
             return new AppointmentServiceImpl(
                     appointmentRepository,

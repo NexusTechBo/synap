@@ -22,6 +22,7 @@
           class="field-input"
           formControlName="phoneNumber"
           autocomplete="off"
+          [placeholder]="phonePlaceholder()"
         />
       </app-form-field>
       <app-form-field
@@ -39,17 +40,17 @@
     </div>
 
     <app-form-field
-      [label]="'patients.formDialog.ciLabel' | translate"
-      fieldId="patient-ci"
-      [errorMessages]="ciErrors"
+      [label]="'document.optionalLabel.' + country() | translate"
+      fieldId="patient-document"
     >
       <input
-        id="patient-ci"
+        id="patient-document"
         class="field-input"
-        formControlName="ci"
+        formControlName="document"
         inputmode="numeric"
-        maxlength="10"
+        [attr.maxlength]="documentMaxLength"
         autocomplete="off"
+        [placeholder]="'document.placeholder.' + country() | translate"
       />
     </app-form-field>
 

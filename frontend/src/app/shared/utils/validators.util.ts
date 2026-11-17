@@ -1,5 +1,7 @@
-import { AbstractControl, ValidationErrors, Validators } from '@angular/forms';
+import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { CountryCode } from '../../core/models/api.models';
+import { isValidDocument } from './document.util';
 
 export const INVALID_EMAIL_KEY = 'validation.email';
 
@@ -18,10 +20,20 @@ const VALIDATION_MESSAGE_KEYS: Record<
     params: { max: error.requiredLength ?? 0 },
   }),
   pattern: () => ({ key: 'validation.pattern' }),
+  documentCi: () => ({ key: 'validation.documentCi' }),
+  documentCpf: () => ({ key: 'validation.documentCpf' }),
 };
 
-export const ciValidator = Validators.pattern(/^\d{5,10}$/);
-export const CI_ERRORS = { pattern: 'validation.ciPattern' };
+const DOCUMENT_ERROR_KEYS: Record<CountryCode, string> = { BO: 'documentCi', BR: 'documentCpf' };
+
+export function documentValidator(country: CountryCode): ValidatorFn {
+  return (control) => {
+    const value = String(control.value ?? '');
+    return !value || isValidDocument(value, country)
+      ? null
+      : { [DOCUMENT_ERROR_KEYS[country]]: true };
+  };
+}
 
 export const phoneValidator = Validators.pattern(/^[\d\s()+-]{7,20}$/);
 export const PHONE_ERRORS = {

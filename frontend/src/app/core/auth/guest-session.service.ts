@@ -5,7 +5,7 @@ import { Observable, catchError, finalize, map, of, shareReplay, throwError } fr
 import { GuestApi } from '../api/guest.api';
 import { apiErrorMessage, isRateLimited, retryAfterSeconds } from '../http/api-error';
 import { I18nService } from '../i18n/i18n.service';
-import { GuestTokenPayload } from '../models/api.models';
+import { CountryCode, GuestTokenPayload } from '../models/api.models';
 import { createCooldown } from '../utils/cooldown.util';
 
 export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
@@ -13,6 +13,7 @@ export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
 interface GuestSession {
   token: string;
   clinicSlug: string;
+  country: CountryCode | null;
   timezone: string | null;
   expiresAt: number;
 }
@@ -43,6 +44,7 @@ function decodeGuestSession(token: string | null, slug: string): GuestSession | 
     return {
       token,
       clinicSlug: payload.clinicSlug,
+      country: payload.country ?? null,
       timezone: payload.timezone ?? null,
       expiresAt: payload.exp * 1000,
     };
@@ -63,14 +65,16 @@ export class GuestSessionService {
   private slug: string | null = null;
   private session: GuestSession | null = null;
   private pending: Observable<string> | null = null;
-  private timezoneActive = false;
+  private contextActive = false;
 
   private readonly _status = signal<GuestSessionStatus>('loading');
   private readonly _message = signal<string | null>(null);
   private readonly _timezone = signal<string | null>(null);
+  private readonly _country = signal<CountryCode | null>(null);
   private readonly cooldown = createCooldown();
 
   readonly timezone = this._timezone.asReadonly();
+  readonly country = this._country.asReadonly();
   readonly status = this._status.asReadonly();
   readonly message = this._message.asReadonly();
   readonly ready = computed(() => this._status() === 'ready');
@@ -80,7 +84,7 @@ export class GuestSessionService {
 
   start(slug: string | null): void {
     this.cooldown.reset();
-    this.timezoneActive = true;
+    this.contextActive = true;
     this.slug = slug?.trim() || null;
     this.pending = null;
     if (!this.slug) {
@@ -130,9 +134,10 @@ export class GuestSessionService {
     return request;
   }
 
-  releaseTimezone(): void {
-    this.timezoneActive = false;
+  releaseClinicContext(): void {
+    this.contextActive = false;
     this._timezone.set(null);
+    this._country.set(null);
   }
 
   clear(): void {
@@ -156,7 +161,8 @@ export class GuestSessionService {
 
   private setSession(session: GuestSession | null): void {
     this.session = session;
-    this._timezone.set(this.timezoneActive ? (session?.timezone ?? null) : null);
+    this._timezone.set(this.contextActive ? (session?.timezone ?? null) : null);
+    this._country.set(this.contextActive ? (session?.country ?? null) : null);
   }
 
   private setStatus(status: GuestSessionStatus, message: string | null = null): void {

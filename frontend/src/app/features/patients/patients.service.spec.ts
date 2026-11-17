@@ -13,7 +13,7 @@ import { PatientsService } from './patients.service';
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
     id: 20,
-    ci: '1234567',
+    document: '1234567',
     name: 'Ana Pérez',
     email: null,
     phoneNumber: '70000000',

@@ -2,6 +2,7 @@ package com.example.pulso.websocket;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.security.ActiveUserChecker;
 import com.example.pulso.security.SecurityUtils;
 import com.example.pulso.security.jwt.JwtClaims;
@@ -61,12 +62,14 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var role = claims.get(JwtClaims.ROLE, String.class);
         var roles = JwtUtil.extractRoles(claims);
         ZoneId zone;
+        SupportedCountry country;
         try {
             zone = JwtUtil.extractZone(claims);
+            country = JwtUtil.extractCountry(claims);
         } catch (IllegalArgumentException _) {
             throw new MessageDeliveryException(INVALID_TOKEN);
         }
-        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), zone);
+        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), zone, country);
         try {
             if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role, roles)) {
                 log.warn(

@@ -56,6 +56,7 @@
           class="field-input"
           formControlName="phoneNumber"
           autocomplete="off"
+          [placeholder]="phonePlaceholder()"
         />
       </app-form-field>
     </div>
@@ -79,17 +80,17 @@
     @if (!staff) {
       <div class="grid gap-4">
         <app-form-field
-          [label]="'staff.formDialog.ciLabel' | translate"
-          fieldId="staff-ci"
-          [errorMessages]="ciErrors()"
+          [label]="'document.optionalLabel.' + country() | translate"
+          fieldId="staff-document"
         >
           <input
-            id="staff-ci"
+            id="staff-document"
             class="field-input"
-            formControlName="ci"
+            formControlName="document"
             inputmode="numeric"
-            maxlength="10"
+            [attr.maxlength]="documentMaxLength"
             autocomplete="off"
+            [placeholder]="'document.placeholder.' + country() | translate"
           />
         </app-form-field>
         <app-form-field

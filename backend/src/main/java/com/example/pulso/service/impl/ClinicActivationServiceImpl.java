@@ -140,7 +140,7 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
         var clinic = clinicRepository.findById(clinicId).orElseThrow(ClinicActivationServiceImpl::invalidLink);
         var previousTenant = TenantContext.current();
         try {
-            TenantContext.setCurrentTenant(clinicId, clinic.getSlug(), clinic.zoneId());
+            TenantContext.setCurrentTenant(clinicId, clinic.getSlug(), clinic.zoneId(), clinic.getCountry());
             return new TransactionTemplate(transactionManager).execute(action);
         } finally {
             TenantContext.restore(previousTenant);

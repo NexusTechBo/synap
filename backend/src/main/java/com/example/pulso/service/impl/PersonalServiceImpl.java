@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.personal.DoctorModeRequest;
 import com.example.pulso.dto.personal.PersonalProfileUpdateRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
@@ -24,6 +25,7 @@ import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PersonalService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +57,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ClinicTimeProvider clinicTimeProvider;
+    private final IdentityDocumentResolver identityDocumentResolver;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -78,18 +81,19 @@ public class PersonalServiceImpl implements PersonalService {
         var username = request.username() + Utils.usernameSuffix(clinic.getSlug());
         if (personalRepository.existsByUsername(username))
             throw new BusinessException(MessageKeys.PERSONAL_USERNAME_TAKEN, username);
-        var ci = Utils.normalizeCi(request.ci());
-        if (ci != null && personalRepository.existsByCi(ci))
+        var country = TenantContext.getCurrentCountry();
+        var document = identityDocumentResolver.validateAndNormalize(request.document(), country);
+        if (document != null && personalRepository.existsByDocument(document))
             throw new BusinessException(MessageKeys.PERSONAL_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (personalRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber(), country);
         if (phoneNumber != null && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         var personal = Personal.builder()
                 .username(username)
-                .ci(ci)
+                .document(document)
                 .name(request.name())
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
@@ -188,7 +192,7 @@ public class PersonalServiceImpl implements PersonalService {
         var email = Utils.normalizeEmail(rawEmail);
         if (!Objects.equals(personal.getEmail(), email) && personalRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, TenantContext.getCurrentCountry());
         if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         personal.setName(name);

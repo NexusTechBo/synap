@@ -26,7 +26,7 @@ class GuestServiceImplClinicTest {
     @Test
     void shouldExposeRegionalSettingsOfCurrentClinic() {
         var repository = mock(ClinicRepository.class);
-        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         when(repository.findById(7L))
                 .thenReturn(Optional.of(Clinic.builder()
                         .id(7L)
@@ -43,7 +43,8 @@ class GuestServiceImplClinicTest {
                 null,
                 null,
                 null,
-                new GuestMapperImpl(new ClinicLanguageMapperImpl()));
+                new GuestMapperImpl(new ClinicLanguageMapperImpl()),
+                null);
 
         var response = service.findCurrentClinic();
 
