@@ -11,6 +11,7 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import {
   addDays,
   buildMonthMatrix,
@@ -71,7 +72,7 @@ export class MonthGridComponent {
   private readonly injector = inject(Injector);
 
   protected readonly weekdays = DAYS_OF_WEEK;
-  private readonly today = toIso(new Date());
+  private readonly today = inject(ClinicClockService).today();
   private readonly active = signal<string | null>(null);
 
   protected readonly focusIso = computed(() => {

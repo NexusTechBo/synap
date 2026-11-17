@@ -13,6 +13,7 @@ import com.example.pulso.mapper.GuestMapperImpl;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import java.util.Optional;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +26,7 @@ class GuestServiceImplClinicTest {
     @Test
     void shouldExposeRegionalSettingsOfCurrentClinic() {
         var repository = mock(ClinicRepository.class);
-        TenantContext.setCurrentTenant(7L, "demo");
+        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC);
         when(repository.findById(7L))
                 .thenReturn(Optional.of(Clinic.builder()
                         .id(7L)

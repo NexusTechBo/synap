@@ -9,7 +9,9 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -77,6 +79,16 @@ public class JwtUtil {
                     .getPayload());
         } catch (JwtException | IllegalArgumentException _) {
             return Optional.empty();
+        }
+    }
+
+    public static ZoneId extractZone(Claims claims) {
+        var timezone = claims.get(JwtClaims.TIMEZONE, String.class);
+        if (timezone == null || timezone.isBlank()) throw new IllegalArgumentException("Missing timezone claim");
+        try {
+            return ZoneId.of(timezone);
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("Invalid timezone claim", e);
         }
     }
 

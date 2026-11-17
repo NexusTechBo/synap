@@ -26,9 +26,11 @@ describe('ClinicRegionalSettingsStore', () => {
 
   let store: ClinicRegionalSettingsStore;
   let http: HttpTestingController;
+  const replaceToken = vi.fn();
   let claims: ReturnType<typeof signal<ClinicRegionalSettings | null>>;
 
   beforeEach(() => {
+    replaceToken.mockClear();
     claims = signal<ClinicRegionalSettings | null>(FROM_CLAIMS);
     TestBed.configureTestingModule({
       providers: [
@@ -36,7 +38,7 @@ describe('ClinicRegionalSettingsStore', () => {
         provideHttpClientTesting(),
         {
           provide: AuthService,
-          useValue: { regionalSettings: claims, session: signal({ clinicId: 1 }) },
+          useValue: { regionalSettings: claims, session: signal({ clinicId: 1 }), replaceToken },
         },
       ],
     });
@@ -49,6 +51,7 @@ describe('ClinicRegionalSettingsStore', () => {
   it('seeds the settings from the session claims without any request', async () => {
     TestBed.tick();
 
+    expect(replaceToken).not.toHaveBeenCalled();
     expect(store.settings()).toEqual(FROM_CLAIMS);
     http.expectNone('clinic/regional-settings');
   });
@@ -78,10 +81,17 @@ describe('ClinicRegionalSettingsStore', () => {
     const req = http.expectOne('clinic/regional-settings');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(FROM_SERVER);
-    req.flush({ ...FROM_SERVER, timezone: 'America/Manaus' });
+    req.flush({ settings: { ...FROM_SERVER, timezone: 'America/Manaus' }, token: 'new-jwt' });
 
     expect(result?.timezone).toBe('America/Manaus');
     expect(store.settings()).toEqual({ ...FROM_SERVER, timezone: 'America/Manaus' });
+  });
+
+  it('update() replaces the session token with the one returned by the server', () => {
+    store.update(FROM_SERVER).subscribe();
+    http.expectOne('clinic/regional-settings').flush({ settings: FROM_SERVER, token: 'new-jwt' });
+
+    expect(replaceToken).toHaveBeenCalledExactlyOnceWith('new-jwt');
   });
 
   it('keeps the previous value when update() fails', async () => {
@@ -94,6 +104,7 @@ describe('ClinicRegionalSettingsStore', () => {
     await settle();
 
     expect(failed).toBe(true);
+    expect(replaceToken).not.toHaveBeenCalled();
     expect(store.settings()).toEqual(FROM_CLAIMS);
   });
 
@@ -106,6 +117,7 @@ describe('ClinicRegionalSettingsStore', () => {
     await settle();
 
     expect(store.hasError()).toBe(true);
+    expect(replaceToken).not.toHaveBeenCalled();
     expect(store.settings()).toEqual(FROM_CLAIMS);
 
     store.load();

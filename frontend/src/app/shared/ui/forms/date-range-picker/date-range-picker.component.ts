@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { addDays, formatShortDate, parseIso, toIso } from '../../../../core/utils/calendar.util';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
@@ -44,21 +45,25 @@ export interface DateRange {
 })
 export class DateRangePickerComponent implements ControlValueAccessor {
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
   protected readonly positions = POPOVER_POSITIONS;
   protected readonly presets: { labelKey: string; range: () => DateRange }[] = [
     {
       labelKey: 'dateRangePicker.presets.today',
-      range: () => ({ from: toIso(new Date()), to: toIso(new Date()) }),
+      range: () => ({ from: this.clock.today(), to: this.clock.today() }),
     },
     {
       labelKey: 'dateRangePicker.presets.next7Days',
-      range: () => ({ from: toIso(new Date()), to: toIso(addDays(new Date(), 6)) }),
+      range: () => ({
+        from: this.clock.today(),
+        to: toIso(addDays(parseIso(this.clock.today()), 6)),
+      }),
     },
     {
       labelKey: 'dateRangePicker.presets.thisMonth',
       range: () => {
-        const now = new Date();
+        const now = parseIso(this.clock.today());
         return {
           from: toIso(new Date(now.getFullYear(), now.getMonth(), 1)),
           to: toIso(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
@@ -70,7 +75,7 @@ export class DateRangePickerComponent implements ControlValueAccessor {
   protected readonly isOpen = signal(false);
   protected readonly disabled = signal(false);
   protected readonly value = signal<DateRange | null>(null);
-  protected readonly viewDate = signal(new Date());
+  protected readonly viewDate = signal(parseIso(this.clock.today()));
   protected readonly draftStart = signal<string | null>(null);
   protected readonly draftEnd = signal<string | null>(null);
   protected readonly hovered = signal<string | null>(null);
@@ -106,7 +111,7 @@ export class DateRangePickerComponent implements ControlValueAccessor {
     const range = this.value();
     this.draftStart.set(range?.from ?? null);
     this.draftEnd.set(range?.to ?? null);
-    this.viewDate.set(parseIso(range?.from ?? toIso(new Date())));
+    this.viewDate.set(parseIso(range?.from ?? this.clock.today()));
     this.isOpen.set(true);
   }
 

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ClinicRegionalSettings } from '../models/api.models';
+import { ClinicRegionalSettings, ClinicRegionalSettingsUpdateResponse } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class ClinicSettingsApi {
@@ -11,7 +11,9 @@ export class ClinicSettingsApi {
     return this.http.get<ClinicRegionalSettings>('clinic/regional-settings');
   }
 
-  updateRegionalSettings(request: ClinicRegionalSettings): Observable<ClinicRegionalSettings> {
-    return this.http.put<ClinicRegionalSettings>('clinic/regional-settings', request);
+  updateRegionalSettings(
+    request: ClinicRegionalSettings,
+  ): Observable<ClinicRegionalSettingsUpdateResponse> {
+    return this.http.put<ClinicRegionalSettingsUpdateResponse>('clinic/regional-settings', request);
   }
 }

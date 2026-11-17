@@ -9,6 +9,7 @@ import { PatientsApi } from '../../core/api/patients.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { API_ERROR_CODES } from '../../core/http/api-error';
 import {
   ApiError,
@@ -165,6 +166,7 @@ describe('BookingService', () => {
           },
         },
         { provide: AppointmentsApi, useValue: appointmentsApi },
+        { provide: ClinicClockService, useValue: { today: () => TODAY } },
         { provide: AgendaApi, useValue: agendaApi },
         { provide: PatientsApi, useValue: patientsApi },
         { provide: SpecialtiesStore, useValue: specialtiesStore },

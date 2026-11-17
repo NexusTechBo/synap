@@ -9,11 +9,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.personal.DoctorModeRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.exception.ApiException;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import org.mockito.ArgumentCaptor;
 import com.example.pulso.entity.Personal;
@@ -35,6 +37,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -84,6 +87,7 @@ class PersonalServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
         service = new PersonalServiceImpl(
                 personalRepository,
                 specialtyRepository,
@@ -94,8 +98,13 @@ class PersonalServiceImplTest {
                 appointmentRepository,
                 doctorAvailabilityRepository,
                 eventPublisher,
-                CLOCK
+                new ClinicTimeProvider(CLOCK)
         );
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     private Personal admin(boolean alsoDoctor) {

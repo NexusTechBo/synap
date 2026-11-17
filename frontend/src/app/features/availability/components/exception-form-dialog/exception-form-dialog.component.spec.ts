@@ -5,6 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject, of, throwError } from 'rxjs';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import { toIso } from '../../../../core/utils/calendar.util';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
@@ -18,11 +19,11 @@ const TODAY = toIso(new Date());
 describe('ExceptionFormDialogComponent', () => {
   let fixture: ComponentFixture<ExceptionFormDialogComponent>;
   let element: HTMLElement;
-  let availability: { addException: ReturnType<typeof vi.fn> };
+  let availability: { addException: ReturnType<typeof vi.fn>; today: string };
   let dialogRef: { id: string; close: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    availability = { addException: vi.fn(() => of(undefined)) };
+    availability = { addException: vi.fn(() => of(undefined)), today: TODAY };
     dialogRef = { id: 'exception-dialog', close: vi.fn() };
     TestBed.configureTestingModule({
       imports: [ExceptionFormDialogComponent],
@@ -30,6 +31,7 @@ describe('ExceptionFormDialogComponent', () => {
         provideZoneChangeDetection(),
         { provide: AvailabilityService, useValue: availability },
         { provide: DialogRef, useValue: dialogRef },
+        { provide: ClinicClockService, useValue: { today: () => TODAY } },
       ],
     });
     fixture = TestBed.createComponent(ExceptionFormDialogComponent);

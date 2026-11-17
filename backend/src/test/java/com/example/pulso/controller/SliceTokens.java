@@ -19,6 +19,7 @@ final class SliceTokens {
     static final String ASSISTANT_TOKEN = "assistant-token";
     static final String DOCTOR_TOKEN = "doctor-token";
     static final String GUEST_TOKEN = "guest-token";
+    static final String NO_TIMEZONE_TOKEN = "no-timezone-token";
     static final long DOCTOR_ID = 2L;
     static final long ADMIN_ID = 1L;
     static final long ASSISTANT_ID = 3L;
@@ -34,6 +35,17 @@ final class SliceTokens {
                 .thenReturn(true);
     }
 
+    static void givenTokenWithoutTimezone(JwtUtil jwtUtil) {
+        var claims = Jwts.claims()
+                .subject(Long.toString(ADMIN_ID))
+                .add(JwtClaims.ROLE, "ADMINISTRATOR")
+                .add(JwtClaims.ROLES, List.of("ADMINISTRATOR"))
+                .add(JwtClaims.CLINIC_ID, 7L)
+                .add(JwtClaims.CLINIC_SLUG, "demo")
+                .build();
+        when(jwtUtil.parse(NO_TIMEZONE_TOKEN)).thenReturn(Optional.of(claims));
+    }
+
     static MockHttpServletRequestBuilder as(String token, MockHttpServletRequestBuilder builder) {
         return builder.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
@@ -43,7 +55,8 @@ final class SliceTokens {
                 .subject(Long.toString(userId))
                 .add(JwtClaims.ROLE, role)
                 .add(JwtClaims.CLINIC_ID, 7L)
-                .add(JwtClaims.CLINIC_SLUG, "demo");
+                .add(JwtClaims.CLINIC_SLUG, "demo")
+                .add(JwtClaims.TIMEZONE, "America/La_Paz");
         if (!roles.isEmpty()) builder.add(JwtClaims.ROLES, roles);
         when(jwtUtil.parse(token)).thenReturn(Optional.of(builder.build()));
     }

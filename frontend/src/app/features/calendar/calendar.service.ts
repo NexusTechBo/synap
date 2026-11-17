@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
@@ -27,7 +28,8 @@ export class CalendarService {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
-  private readonly today = toIso(new Date());
+  private readonly clock = inject(ClinicClockService);
+  private readonly today = this.clock.today();
   private readonly _scope = signal<CalendarScope>('all');
 
   private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));

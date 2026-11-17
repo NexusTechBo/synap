@@ -75,7 +75,7 @@ public class AuthServiceImpl implements AuthService {
         }
         var previousTenant = TenantContext.current();
         try {
-            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug(), clinic.zoneId());
             var personal = personalRepository.findByUsername(username).orElse(null);
             var passwordOk = passwordEncoder.matches(request.password(), personal != null ? personal.getPassword() : dummyPasswordHash);
             if (personal == null)

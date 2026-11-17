@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ClinicRegionalSettings } from '../models/api.models';
+import { ClinicRegionalSettings, ClinicRegionalSettingsUpdateResponse } from '../models/api.models';
 import { ClinicSettingsApi } from './clinic-settings.api';
 
 const SETTINGS: ClinicRegionalSettings = {
@@ -36,14 +36,14 @@ describe('ClinicSettingsApi', () => {
   });
 
   it('updates the settings with PUT clinic/regional-settings and the request body', () => {
-    let result: ClinicRegionalSettings | undefined;
+    let result: ClinicRegionalSettingsUpdateResponse | undefined;
 
     api.updateRegionalSettings(SETTINGS).subscribe((value) => (result = value));
     const req = http.expectOne('clinic/regional-settings');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(SETTINGS);
-    req.flush(SETTINGS);
+    req.flush({ settings: SETTINGS, token: 'jwt' });
 
-    expect(result).toEqual(SETTINGS);
+    expect(result).toEqual({ settings: SETTINGS, token: 'jwt' });
   });
 });

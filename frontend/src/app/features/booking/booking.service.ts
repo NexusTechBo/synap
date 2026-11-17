@@ -19,6 +19,7 @@ import { PatientsApi } from '../../core/api/patients.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   apiErrorMessage,
   isSlotUnavailableError,
@@ -37,7 +38,6 @@ import {
   formatLongDate,
   formatTime,
   isIsoDate,
-  toIso,
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
@@ -68,9 +68,10 @@ export class BookingService {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
   readonly ownDataOnly = this.auth.restrictedToOwnData();
-  readonly today = toIso(new Date());
+  readonly today = this.clock.today();
 
   private readonly _patientSearch = signal('');
   private readonly _selectedPatient = signal<Patient | null>(null);

@@ -3,6 +3,7 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, debounceTime, merge, skip } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { BoardSocket } from '../../core/api/board.socket';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
@@ -12,7 +13,7 @@ import {
   canConfirmAppointment,
   hasAppointmentStarted,
 } from '../../core/utils/appointment.util';
-import { addDays, toIso } from '../../core/utils/calendar.util';
+import { addDays, parseIso, toIso } from '../../core/utils/calendar.util';
 import { APPOINTMENT_STATUSES, STATUS_STYLE } from '../../core/utils/labels.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -26,10 +27,11 @@ export class BoardService {
   private readonly notifications = inject(NotificationService);
   private readonly socket = inject(BoardSocket);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
   private readonly _range = signal<DateRange>({
-    from: toIso(new Date()),
-    to: toIso(addDays(new Date(), 6)),
+    from: this.clock.today(),
+    to: toIso(addDays(parseIso(this.clock.today()), 6)),
   });
   readonly range = this._range.asReadonly();
 
@@ -47,8 +49,9 @@ export class BoardService {
     return APPOINTMENT_STATUSES.map((status) => {
       const appointments = [...(board?.[status] ?? [])];
       const pastIds: Record<number, true> = {};
+      const now = this.clock.now();
       for (const appointment of appointments) {
-        if (hasAppointmentStarted(appointmentStartDateTime(appointment)))
+        if (hasAppointmentStarted(appointmentStartDateTime(appointment), now))
           pastIds[appointment.id] = true;
       }
       return {
@@ -84,11 +87,11 @@ export class BoardService {
     const start = appointmentStartDateTime(appointment);
     let action: Observable<unknown> | null = null;
     if (target === 'CONFIRMED' && status === 'PENDING') {
-      if (!canConfirmAppointment(status, start)) return this.rejectPast();
+      if (!canConfirmAppointment(status, start, this.clock.now())) return this.rejectPast();
       action = this.actions.confirm(id, clientName, start);
     }
     if (target === 'CANCELLED') {
-      if (!canCancelAppointment(status, start)) return this.rejectPast();
+      if (!canCancelAppointment(status, start, this.clock.now())) return this.rejectPast();
       action = this.actions.cancel(id, clientName, start);
     }
 

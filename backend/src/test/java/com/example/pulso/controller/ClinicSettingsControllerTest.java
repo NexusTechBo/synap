@@ -1,11 +1,13 @@
 package com.example.pulso.controller;
 
 import static com.example.pulso.controller.SliceTokens.ADMIN_TOKEN;
+import static com.example.pulso.controller.SliceTokens.ADMIN_ID;
 import static com.example.pulso.controller.SliceTokens.ASSISTANT_TOKEN;
 import static com.example.pulso.controller.SliceTokens.DOCTOR_TOKEN;
+import static com.example.pulso.controller.SliceTokens.NO_TIMEZONE_TOKEN;
 import static com.example.pulso.controller.SliceTokens.as;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,11 +21,13 @@ import com.example.pulso.config.SecurityConfig;
 import com.example.pulso.config.ratelimiting.RateLimitProperties;
 import com.example.pulso.dto.clinic.ClinicRegionalSettingsRequest;
 import com.example.pulso.dto.clinic.ClinicRegionalSettingsResponse;
+import com.example.pulso.dto.login.LoginResponse;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.security.ActiveUserChecker;
 import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.service.AuthService;
 import com.example.pulso.service.ClinicSettingsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -56,6 +60,9 @@ class ClinicSettingsControllerTest {
 
     @MockitoBean
     private ClinicSettingsService clinicSettingsService;
+
+    @MockitoBean
+    private AuthService authService;
 
     @MockitoBean
     private JwtUtil jwtUtil;
@@ -95,6 +102,15 @@ class ClinicSettingsControllerTest {
         }
 
         @Test
+        void shouldReturnUnauthorizedWhenTokenHasNoTimezoneClaim() throws Exception {
+            SliceTokens.givenTokenWithoutTimezone(jwtUtil);
+
+            mvc.perform(as(NO_TIMEZONE_TOKEN, get(URL))).andExpect(status().isUnauthorized());
+
+            verifyNoInteractions(clinicSettingsService);
+        }
+
+        @Test
         void shouldReturnUnauthorizedWithoutToken() throws Exception {
             mvc.perform(get(URL)).andExpect(status().isUnauthorized());
 
@@ -105,18 +121,22 @@ class ClinicSettingsControllerTest {
     @Nested
     class UpdateRegionalSettings {
         @Test
-        void shouldReturnUpdatedSettingsForAdministrator() throws Exception {
+        void shouldReturnUpdatedSettingsAndNewTokenForAdministrator() throws Exception {
             when(clinicSettingsService.updateRegionalSettings(any()))
                     .thenReturn(new ClinicRegionalSettingsResponse("BR", "America/Manaus", "pt-BR"));
+            when(authService.issueToken(ADMIN_ID)).thenReturn(new LoginResponse("fresh-token"));
 
             mvc.perform(as(ADMIN_TOKEN, put(URL)).contentType(MediaType.APPLICATION_JSON).content(BODY))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.country").value("BR"))
-                    .andExpect(jsonPath("$.timezone").value("America/Manaus"))
-                    .andExpect(jsonPath("$.defaultLanguage").value("pt-BR"));
+                    .andExpect(jsonPath("$.settings.country").value("BR"))
+                    .andExpect(jsonPath("$.settings.timezone").value("America/Manaus"))
+                    .andExpect(jsonPath("$.settings.defaultLanguage").value("pt-BR"))
+                    .andExpect(jsonPath("$.token").value("fresh-token"));
 
-            verify(clinicSettingsService)
+            var order = inOrder(clinicSettingsService, authService);
+            order.verify(clinicSettingsService)
                     .updateRegionalSettings(new ClinicRegionalSettingsRequest("BR", "America/Manaus", "pt-BR"));
+            order.verify(authService).issueToken(ADMIN_ID);
         }
 
         @Test

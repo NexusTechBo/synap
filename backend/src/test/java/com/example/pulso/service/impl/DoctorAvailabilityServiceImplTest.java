@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.doctoravailability.SlotResponse;
 import com.example.pulso.entity.Appointment;
 import com.example.pulso.entity.DoctorAvailability;
@@ -24,6 +25,7 @@ import com.example.pulso.repository.AppointmentRepository;
 import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -34,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,6 +77,16 @@ class DoctorAvailabilityServiceImplTest {
     private final List<ScheduleException> exceptions = new ArrayList<>();
     private final List<Appointment> appointments = new ArrayList<>();
 
+    @BeforeEach
+    void bindTenant() {
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
+    }
+
+    @AfterEach
+    void clearTenant() {
+        TenantContext.clear();
+    }
+
     private DoctorAvailabilityServiceImpl serviceAt(LocalDateTime now) {
         return new DoctorAvailabilityServiceImpl(
                 doctorAvailabilityRepository,
@@ -80,7 +94,7 @@ class DoctorAvailabilityServiceImplTest {
                 appointmentRepository,
                 personalRepository,
                 mapper,
-                Clock.fixed(now.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+                new ClinicTimeProvider(Clock.fixed(now.toInstant(ZoneOffset.UTC), ZoneOffset.UTC))
         );
     }
 

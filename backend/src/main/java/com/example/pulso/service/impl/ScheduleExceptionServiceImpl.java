@@ -15,7 +15,7 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.ScheduleExceptionService;
-import java.time.Clock;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,7 +38,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     private final AppointmentRepository appointmentRepository;
     private final AppointmentService appointmentService;
     private final ScheduleExceptionMapper mapper;
-    private final Clock clock;
+    private final ClinicTimeProvider clinicTimeProvider;
     private final MessageSource messageSource;
 
     @Override
@@ -46,7 +46,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     public ScheduleExceptionResponse addDoctorScheduleException(Long doctorId, ScheduleExceptionRequest request) {
         var doctor = doctorRepository.findByIdForUpdate(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctorId));
-        if (request.date().isBefore(LocalDate.now(clock)))
+        if (request.date().isBefore(clinicTimeProvider.today()))
             throw new BadRequestException(MessageKeys.SCHEDULE_EXCEPTION_DATE_PAST);
         var futureRange = futureBlockedRange(request);
         var affected = futureRange
@@ -107,7 +107,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
         var date = request.date();
         var from = request.isFullDayBlock() ? date.atStartOfDay() : date.atTime(request.startTime());
         var to = request.isFullDayBlock() ? date.plusDays(1).atStartOfDay() : date.atTime(request.endTime());
-        var now = LocalDateTime.now(clock);
+        var now = clinicTimeProvider.now();
         if (from.isBefore(now))
             from = now;
         return from.isBefore(to) ? Optional.of(new BlockedRange(from, to)) : Optional.empty();

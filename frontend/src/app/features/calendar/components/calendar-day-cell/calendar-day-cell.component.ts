@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
-import { CalendarDay, formatLongDate, toIso } from '../../../../core/utils/calendar.util';
+import { CalendarDay, formatLongDate } from '../../../../core/utils/calendar.util';
 import { APPOINTMENT_STATUSES, STATUS_STYLE } from '../../../../core/utils/labels.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
@@ -21,7 +22,7 @@ export class CalendarDayCellComponent {
 
   select = output<string>();
 
-  protected readonly today = toIso(new Date());
+  protected readonly today = inject(ClinicClockService).today();
 
   protected readonly dotTones = computed(() => {
     const present = new Set((this.appointments() ?? []).map((appointment) => appointment.status));

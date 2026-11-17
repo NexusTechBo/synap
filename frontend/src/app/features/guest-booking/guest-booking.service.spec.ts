@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { API_ERROR_CODES } from '../../core/http/api-error';
 import {
   ApiError,
@@ -95,6 +96,7 @@ describe('GuestBookingService', () => {
       providers: [
         GuestBookingService,
         { provide: GuestApi, useValue: guestApi },
+        { provide: ClinicClockService, useValue: { today: () => TODAY } },
         { provide: GuestSessionService, useValue: { ready } },
       ],
     });

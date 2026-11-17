@@ -17,6 +17,7 @@ import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import java.util.Optional;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ class ClinicSettingsServiceImplTest {
                 new CurrentClinicProvider(clinicRepository),
                 new RegionalSettingsResolver(),
                 new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl()));
-        TenantContext.setCurrentTenant(7L, "demo");
+        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC);
         clinic = Clinic.builder()
                 .id(7L)
                 .name("Demo")

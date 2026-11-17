@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   apiErrorMessage,
   isSlotUnavailableError,
@@ -33,10 +34,13 @@ export class GuestBookingService {
   private readonly guestApi = inject(GuestApi);
   private readonly guestSession = inject(GuestSessionService);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
   private readonly cooldown = createCooldown();
 
-  readonly today = toIso(new Date());
-  private readonly lastStripDay = toIso(addDays(parseIso(this.today), DATE_STRIP_DAYS - 1));
+  readonly today = computed(() => this.clock.today());
+  private readonly lastStripDay = computed(() =>
+    toIso(addDays(parseIso(this.today()), DATE_STRIP_DAYS - 1)),
+  );
 
   private readonly _step = signal<GuestBookingStep>('doctor');
   readonly step = this._step.asReadonly();
@@ -50,7 +54,7 @@ export class GuestBookingService {
 
   private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
-  private readonly _selectedDate = signal(this.today);
+  private readonly _selectedDate = linkedSignal(() => this.today());
   readonly selectedDate = this._selectedDate.asReadonly();
   private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
     source: () => [this._selectedDoctor()?.id, this._selectedDate()],
@@ -101,7 +105,7 @@ export class GuestBookingService {
       return this.active() && doctorId ? { doctorId } : undefined;
     },
     stream: ({ params }) =>
-      this.guestApi.unavailableDates(params.doctorId, this.today, this.lastStripDay).pipe(
+      this.guestApi.unavailableDates(params.doctorId, this.today(), this.lastStripDay()).pipe(
         map((response) => response.unavailableDates),
         tap((dates) => this.jumpToFirstAvailableDate(dates)),
       ),
@@ -185,7 +189,7 @@ export class GuestBookingService {
   }
 
   selectDate(iso: string): void {
-    if (iso && iso >= this.today) this._selectedDate.set(iso);
+    if (iso && iso >= this.today()) this._selectedDate.set(iso);
   }
 
   selectSlot(slot: TimeSlot): void {
@@ -206,7 +210,7 @@ export class GuestBookingService {
   bookAnother(): void {
     this._result.set(null);
     this._selectedDoctor.set(null);
-    this._selectedDate.set(this.today);
+    this._selectedDate.set(this.today());
     this.goTo('doctor');
   }
 
@@ -293,7 +297,7 @@ export class GuestBookingService {
     const unavailable = new Set(unavailableDates);
     if (!unavailable.has(this._selectedDate())) return;
     for (let i = 0; i < DATE_STRIP_DAYS; i++) {
-      const iso = toIso(addDays(parseIso(this.today), i));
+      const iso = toIso(addDays(parseIso(this.today()), i));
       if (!unavailable.has(iso)) {
         this._selectedDate.set(iso);
         return;

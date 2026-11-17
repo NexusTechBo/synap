@@ -2,6 +2,7 @@ import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { EMPTY, of, throwError } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { AppointmentBoard, AppointmentSummaryItem } from '../../core/models/api.models';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { DashboardService } from './dashboard.service';
@@ -83,6 +84,24 @@ describe('DashboardService', () => {
       expect(service.weekErrorMessage()).toBe('No se pudo cargar la agenda');
       expect(service.kpis().map((k) => k.value)).toEqual([null, null, null, null]);
       expect(service.todayAppointments()).toEqual([]);
+    });
+  });
+
+  describe('clinic clock', () => {
+    it('loads the week that contains the clinic today instead of the system today', async () => {
+      api = { board: vi.fn(() => of(board())) };
+      TestBed.configureTestingModule({
+        providers: [
+          DashboardService,
+          { provide: AppointmentsApi, useValue: api },
+          { provide: AppointmentActionsService, useValue: {} },
+          { provide: ClinicClockService, useValue: { today: () => '2026-11-18' } },
+        ],
+      });
+      service = TestBed.inject(DashboardService);
+      await settle();
+
+      expect(api.board).toHaveBeenCalledWith({ from: '2026-11-16', to: '2026-11-22' });
     });
   });
 

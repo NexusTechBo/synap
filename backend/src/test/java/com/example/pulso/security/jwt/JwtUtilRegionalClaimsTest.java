@@ -1,6 +1,7 @@
 package com.example.pulso.security.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.enums.ClinicLanguage;
@@ -8,7 +9,10 @@ import com.example.pulso.enums.ERole;
 import com.example.pulso.enums.SupportedCountry;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -42,5 +46,35 @@ class JwtUtilRegionalClaimsTest {
         assertThat(claims.get(JwtClaims.COUNTRY, String.class)).isEqualTo("BR");
         assertThat(claims.get(JwtClaims.TIMEZONE, String.class)).isEqualTo("America/Manaus");
         assertThat(claims.get(JwtClaims.DEFAULT_LANGUAGE, String.class)).isEqualTo("pt-BR");
+    }
+
+    private static Claims claimsWithTimezone(String timezone) {
+        var builder = Jwts.claims().subject("1");
+        if (timezone != null) builder.add(JwtClaims.TIMEZONE, timezone);
+        return builder.build();
+    }
+
+    @Test
+    void shouldExtractZoneFromValidClaim() {
+        assertThat(JwtUtil.extractZone(claimsWithTimezone("America/Sao_Paulo")))
+                .isEqualTo(ZoneId.of("America/Sao_Paulo"));
+    }
+
+    @Test
+    void shouldRejectMissingTimezoneClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone(null)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectBlankTimezoneClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone("   ")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectInvalidTimezoneClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone("Mars/Olympus")))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

@@ -22,16 +22,7 @@ function summaryItem(overrides: Partial<AppointmentSummaryItem> = {}): Appointme
 }
 
 describe('appointment.util', () => {
-  const NOW = new Date(2026, 10, 5, 10, 0, 0);
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(NOW);
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+  const NOW = '2026-11-05T10:00:00';
 
   describe('appointmentStartDateTime', () => {
     it('combines the appointment date and start time as a local date time', () => {
@@ -47,43 +38,43 @@ describe('appointment.util', () => {
 
   describe('hasAppointmentStarted', () => {
     it('is true for a start time in the past', () => {
-      expect(hasAppointmentStarted('2026-11-05T09:59:00')).toBe(true);
+      expect(hasAppointmentStarted('2026-11-05T09:59:00', NOW)).toBe(true);
     });
 
     it('is true exactly at the start time', () => {
-      expect(hasAppointmentStarted('2026-11-05T10:00:00')).toBe(true);
+      expect(hasAppointmentStarted('2026-11-05T10:00:00', NOW)).toBe(true);
     });
 
     it('is false for a start time in the future', () => {
-      expect(hasAppointmentStarted('2026-11-05T10:01:00')).toBe(false);
+      expect(hasAppointmentStarted('2026-11-05T10:01:00', NOW)).toBe(false);
     });
   });
 
   describe('canConfirmAppointment', () => {
     it('allows confirming a future pending appointment', () => {
-      expect(canConfirmAppointment('PENDING', '2026-11-06T09:00:00')).toBe(true);
+      expect(canConfirmAppointment('PENDING', '2026-11-06T09:00:00', NOW)).toBe(true);
     });
 
     it('rejects a past pending appointment', () => {
-      expect(canConfirmAppointment('PENDING', '2026-11-04T09:00:00')).toBe(false);
+      expect(canConfirmAppointment('PENDING', '2026-11-04T09:00:00', NOW)).toBe(false);
     });
 
     it.each(['CONFIRMED', 'CANCELLED'] as const)('rejects a future %s appointment', (status) => {
-      expect(canConfirmAppointment(status, '2026-11-06T09:00:00')).toBe(false);
+      expect(canConfirmAppointment(status, '2026-11-06T09:00:00', NOW)).toBe(false);
     });
   });
 
   describe('canCancelAppointment', () => {
     it.each(['PENDING', 'CONFIRMED'] as const)('allows cancelling a future %s appointment', (s) => {
-      expect(canCancelAppointment(s, '2026-11-06T09:00:00')).toBe(true);
+      expect(canCancelAppointment(s, '2026-11-06T09:00:00', NOW)).toBe(true);
     });
 
     it('rejects an already cancelled appointment', () => {
-      expect(canCancelAppointment('CANCELLED', '2026-11-06T09:00:00')).toBe(false);
+      expect(canCancelAppointment('CANCELLED', '2026-11-06T09:00:00', NOW)).toBe(false);
     });
 
     it('rejects a past appointment', () => {
-      expect(canCancelAppointment('CONFIRMED', '2026-11-04T09:00:00')).toBe(false);
+      expect(canCancelAppointment('CONFIRMED', '2026-11-04T09:00:00', NOW)).toBe(false);
     });
   });
 });
