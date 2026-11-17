@@ -57,6 +57,10 @@ class JwtChannelInterceptorTest {
     }
 
     private Claims claims(String timezone) {
+        return claims(timezone, "BO");
+    }
+
+    private Claims claims(String timezone, String country) {
         var builder = Jwts.claims()
                 .subject("1")
                 .add(JwtClaims.ROLE, "ADMINISTRATOR")
@@ -65,6 +69,7 @@ class JwtChannelInterceptorTest {
                 .add(JwtClaims.CLINIC_SLUG, "demo")
                 .expiration(Date.from(NOW.plusSeconds(3600)));
         if (timezone != null) builder.add(JwtClaims.TIMEZONE, timezone);
+        if (country != null) builder.add(JwtClaims.COUNTRY, country);
         return builder.build();
     }
 
@@ -90,6 +95,28 @@ class JwtChannelInterceptorTest {
     @Test
     void shouldRejectConnectWhenTimezoneClaimIsInvalid() {
         when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("Mars/Olympus")));
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class);
+
+        assertThat(TenantContext.current()).isNull();
+        verifyNoInteractions(activeUserChecker);
+    }
+
+    @Test
+    void shouldRejectConnectWhenCountryClaimIsMissing() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", null)));
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class);
+
+        assertThat(TenantContext.current()).isNull();
+        verifyNoInteractions(activeUserChecker);
+    }
+
+    @Test
+    void shouldRejectConnectWhenCountryClaimIsInvalid() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "XX")));
 
         assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
                 .isInstanceOf(MessageDeliveryException.class);

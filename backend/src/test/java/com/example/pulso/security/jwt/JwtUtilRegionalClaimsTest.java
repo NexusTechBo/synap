@@ -77,4 +77,33 @@ class JwtUtilRegionalClaimsTest {
         assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone("Mars/Olympus")))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    private static Claims claimsWithCountry(String country) {
+        var builder = Jwts.claims().subject("1");
+        if (country != null) builder.add(JwtClaims.COUNTRY, country);
+        return builder.build();
+    }
+
+    @Test
+    void shouldExtractCountryFromValidClaim() {
+        assertThat(JwtUtil.extractCountry(claimsWithCountry("BR"))).isEqualTo(SupportedCountry.BR);
+    }
+
+    @Test
+    void shouldRejectMissingCountryClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry(null)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectBlankCountryClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry("  ")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldRejectInvalidCountryClaim() {
+        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry("XX")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

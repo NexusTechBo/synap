@@ -8,6 +8,7 @@ export const ES_TRANSLATIONS = {
     loading: 'Cargando...',
     close: 'Cerrar',
     confirm: 'Confirmar',
+    back: 'Volver',
   },
   login: {
     title: 'Inicia sesión',
@@ -83,8 +84,6 @@ export const ES_TRANSLATIONS = {
     sectionAdmin: 'Administrador',
     adminNameLabel: 'Nombre completo',
     adminNamePlaceholder: 'Tu nombre',
-    adminCiLabel: 'CI (opcional)',
-    adminCiPlaceholder: 'Documento de identidad',
     adminUsernameLabel: 'Usuario',
     adminUsernamePlaceholder: 'admin',
     adminEmailLabel: 'Correo electrónico',
@@ -202,7 +201,10 @@ export const ES_TRANSLATIONS = {
       mine: 'Mis pacientes',
     },
     newPatient: 'Nuevo paciente',
-    searchPlaceholder: 'Buscar por nombre, CI, email o teléfono',
+    searchPlaceholder: {
+      BO: 'Buscar por nombre, CI, email o teléfono',
+      BR: 'Buscar por nombre, CPF, email o teléfono',
+    },
     searchAriaLabel: 'Buscar pacientes',
     showInactive: 'Mostrar inactivos',
     emptySearchTitle: 'Sin resultados',
@@ -212,7 +214,6 @@ export const ES_TRANSLATIONS = {
     emptyAllMessage: 'Registra al primer paciente del espacio de trabajo.',
     table: {
       patient: 'Paciente',
-      ci: 'CI',
       phone: 'Teléfono',
       status: 'Estado',
       actions: 'Acciones',
@@ -272,7 +273,6 @@ export const ES_TRANSLATIONS = {
       nameLabel: 'Nombre completo',
       phoneLabel: 'Teléfono',
       emailLabel: 'Email (opcional)',
-      ciLabel: 'CI (opcional)',
       cancel: 'Cancelar',
       saving: 'Guardando…',
       saveChanges: 'Guardar cambios',
@@ -314,13 +314,20 @@ export const ES_TRANSLATIONS = {
     confirmLabel: 'Cambiar zona horaria',
   },
 
+  document: {
+    label: { BO: 'CI', BR: 'CPF' },
+    optionalLabel: { BO: 'CI (opcional)', BR: 'CPF (opcional)' },
+    placeholder: { BO: '12345678', BR: '000.000.000-00' },
+  },
+
   validation: {
     required: 'Este campo es obligatorio',
     email: 'Ingresa un email válido',
     minlength: 'Debe tener al menos {min} caracteres',
     maxlength: 'Debe tener como máximo {max} caracteres',
     pattern: 'El formato ingresado no es válido',
-    ciPattern: 'Solo números, de 5 a 10 dígitos',
+    documentCi: 'Solo números, de 5 a 10 dígitos',
+    documentCpf: 'CPF inválido: 11 dígitos con dígito verificador válido',
     phonePattern: 'De 7 a 20 caracteres: números, espacios, +, - o paréntesis',
     usernamePattern: 'De 3 a 50 caracteres: minúsculas, números, punto, guion o guion bajo',
     rangeRequired: 'Indica el rango de horas',
@@ -530,7 +537,6 @@ export const ES_TRANSLATIONS = {
       specialtyLabel: 'Especialidad',
       specialtyPlaceholder: 'Selecciona una especialidad',
       specialtyRequired: 'Selecciona la especialidad del doctor',
-      ciLabel: 'CI (opcional)',
       usernameLabel: 'Usuario',
       usernamePlaceholder: 'juan.perez',
       newPasswordLabel: 'Nueva contraseña (opcional)',
@@ -548,7 +554,6 @@ export const ES_TRANSLATIONS = {
     subtitle: 'Tus datos de contacto en el espacio de trabajo',
     info: {
       username: 'Usuario',
-      ci: 'CI',
       specialty: 'Especialidad',
       clinic: 'Espacio de trabajo',
       clinicWhatsapp: 'WhatsApp del espacio de trabajo',
@@ -866,7 +871,6 @@ export const ES_TRANSLATIONS = {
       newLabel: 'Es mi primera vez',
       kindRequiredError: 'Elige una opción',
       returningHint: 'Ingresa el teléfono con el que te registraste.',
-      ciLabel: 'CI (opcional)',
       nameLabel: 'Nombre completo',
       phoneLabel: 'Teléfono',
       emailLabel: 'Email (opcional)',
@@ -876,7 +880,6 @@ export const ES_TRANSLATIONS = {
       dateTimeLabel: 'Fecha y horario',
       patientLabel: 'Paciente',
       registeredPatientFallback: 'Paciente registrado',
-      ciPrefix: 'CI',
       confirmButton: 'Confirmar reserva',
     },
     done: {

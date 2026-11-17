@@ -58,6 +58,55 @@ describe('GuestSessionService', () => {
     service.start(SLUG);
   }
 
+  describe('country', () => {
+    it('is null before any session exists', () => {
+      expect(service.country()).toBeNull();
+    });
+
+    it('is set from the country claim of the created session', () => {
+      guestApi.createSession.mockReturnValue(of(sessionResponse(guestToken({ country: 'BR' }))));
+
+      service.start(SLUG);
+
+      expect(service.country()).toBe('BR');
+    });
+
+    it('is set from the country claim of a stored token', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ country: 'BO' }));
+
+      service.start(SLUG);
+
+      expect(service.country()).toBe('BO');
+    });
+
+    it('stays null when the token has no country claim', () => {
+      service.start(SLUG);
+
+      expect(service.country()).toBeNull();
+    });
+
+    it('is reset by releaseClinicContext without removing the stored token', () => {
+      const token = guestToken({ country: 'BR' });
+      sessionStorage.setItem(GUEST_TOKEN_KEY, token);
+      service.start(SLUG);
+
+      service.releaseClinicContext();
+
+      expect(service.country()).toBeNull();
+      expect(sessionStorage.getItem(GUEST_TOKEN_KEY)).toBe(token);
+    });
+
+    it('is restored when the session starts again', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ country: 'BR' }));
+      service.start(SLUG);
+      service.releaseClinicContext();
+
+      service.start(SLUG);
+
+      expect(service.country()).toBe('BR');
+    });
+  });
+
   describe('timezone', () => {
     it('is null before any session exists', () => {
       expect(service.timezone()).toBeNull();
@@ -103,7 +152,7 @@ describe('GuestSessionService', () => {
       sessionStorage.setItem(GUEST_TOKEN_KEY, token);
       service.start(SLUG);
 
-      service.releaseTimezone();
+      service.releaseClinicContext();
 
       expect(service.timezone()).toBeNull();
       expect(sessionStorage.getItem(GUEST_TOKEN_KEY)).toBe(token);
@@ -114,7 +163,7 @@ describe('GuestSessionService', () => {
       guestApi.createSession.mockReturnValue(response);
       service.start(SLUG);
 
-      service.releaseTimezone();
+      service.releaseClinicContext();
       response.next(sessionResponse(guestToken({ timezone: 'America/La_Paz' })));
       response.complete();
 
@@ -129,7 +178,7 @@ describe('GuestSessionService', () => {
     it('is reactivated from the stored token when the session starts again', () => {
       sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ timezone: 'America/La_Paz' }));
       service.start(SLUG);
-      service.releaseTimezone();
+      service.releaseClinicContext();
 
       service.start(SLUG);
 

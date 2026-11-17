@@ -1,16 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { CI_ERRORS, ciValidator, getValidationErrorMessage } from './validators.util';
+import { documentValidator, getValidationErrorMessage } from './validators.util';
 
-function ciErrors(value: string) {
-  return ciValidator(new FormControl(value));
+function documentErrors(value: string, country: 'BO' | 'BR' = 'BO') {
+  return documentValidator(country)(new FormControl(value));
 }
 
 describe('validators util', () => {
-  describe('ciValidator (DEF-02)', () => {
+  describe('documentValidator for BO (CI)', () => {
     it.each(['12345', '1234567', '1234567890'])('accepts "%s"', (value) => {
-      expect(ciErrors(value)).toBeNull();
+      expect(documentErrors(value)).toBeNull();
     });
 
     it.each([
@@ -19,22 +19,26 @@ describe('validators util', () => {
       ['12a45', 'letters'],
       ['12 345', 'spaces'],
       ['12345-LP', 'an extension suffix'],
-      [' 12345', 'leading whitespace'],
-    ])('rejects "%s" (%s) with a pattern error', (value) => {
-      expect(ciErrors(value)).toEqual({ pattern: expect.anything() });
+    ])('rejects "%s" (%s) with a documentCi error', (value) => {
+      expect(documentErrors(value)).toEqual({ documentCi: true });
     });
 
     it('leaves empty values to the required validators', () => {
-      expect(ciErrors('')).toBeNull();
+      expect(documentErrors('')).toBeNull();
     });
   });
 
-  describe('CI_ERRORS', () => {
-    it('describes the CI rule in Spanish', () => {
-      expect(TestBed.inject(I18nService).translate(CI_ERRORS.pattern)).toBe(
-        'Solo números, de 5 a 10 dígitos',
-      );
+  describe('documentValidator for BR (CPF)', () => {
+    it.each(['529.982.247-25', '52998224725', '529 982 247-25'])('accepts "%s"', (value) => {
+      expect(documentErrors(value, 'BR')).toBeNull();
     });
+
+    it.each(['52998224724', '11111111111', '5299822472', '529.982.247-2a'])(
+      'rejects "%s" with a documentCpf error',
+      (value) => {
+        expect(documentErrors(value, 'BR')).toEqual({ documentCpf: true });
+      },
+    );
   });
 
   describe('getValidationErrorMessage', () => {
@@ -49,6 +53,18 @@ describe('validators util', () => {
     it('uses the generic pattern message when no override is given', () => {
       expect(getValidationErrorMessage({ pattern: {} }, TestBed.inject(I18nService))).toBe(
         'El formato ingresado no es válido',
+      );
+    });
+
+    it('translates the CI error', () => {
+      expect(getValidationErrorMessage({ documentCi: true }, TestBed.inject(I18nService))).toBe(
+        'Solo números, de 5 a 10 dígitos',
+      );
+    });
+
+    it('translates the CPF error', () => {
+      expect(getValidationErrorMessage({ documentCpf: true }, TestBed.inject(I18nService))).toBe(
+        'CPF inválido: 11 dígitos con dígito verificador válido',
       );
     });
 

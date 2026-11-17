@@ -1,5 +1,6 @@
 package com.example.pulso.service.component.provider;
 
+import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,7 +28,7 @@ class ClinicTimeProviderTest {
     }
 
     private static void bindZone(String zone) {
-        TenantContext.setCurrentTenant(1L, "demo", ZoneId.of(zone));
+        TenantContext.setCurrentTenant(1L, "demo", ZoneId.of(zone), SupportedCountry.BO);
     }
 
     @Test

@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { Observable, finalize, startWith } from 'rxjs';
 import { AuthService } from '../../../../core/auth/auth.service';
+import { ClinicCountryService } from '../../../../core/clinic/clinic-country.service';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Role, Staff } from '../../../../core/models/api.models';
@@ -18,8 +19,9 @@ import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
+import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
-  ciValidator,
+  documentValidator,
   notBlank,
   phoneValidator,
   usernameValidator,
@@ -63,6 +65,10 @@ export class StaffFormDialogComponent {
   protected readonly staff = inject<StaffFormData>(DIALOG_DATA).staff;
 
   private readonly clinic = inject(AuthService).clinic;
+  private readonly clinicCountry = inject(ClinicCountryService);
+  protected readonly country = this.clinicCountry.country;
+  protected readonly phonePlaceholder = this.clinicCountry.phonePlaceholder;
+  protected readonly documentMaxLength = DOCUMENT_MAX_LENGTH[this.country()];
   protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
 
   protected readonly roles = computed(() => {
@@ -76,11 +82,6 @@ export class StaffFormDialogComponent {
   protected readonly usernameErrors = computed(() => {
     this.i18n.currentLang();
     return { pattern: this.i18n.translate('validation.usernamePattern') };
-  });
-
-  protected readonly ciErrors = computed(() => {
-    this.i18n.currentLang();
-    return { pattern: this.i18n.translate('validation.ciPattern') };
   });
 
   protected readonly phoneErrors = computed(() => {
@@ -101,7 +102,7 @@ export class StaffFormDialogComponent {
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
-    ci: ['', this.staff ? [] : [ciValidator]],
+    document: ['', this.staff ? [] : [documentValidator(this.country())]],
     username: ['', this.staff ? [] : [Validators.required, usernameValidator]],
     password: [
       '',
@@ -147,7 +148,7 @@ export class StaffFormDialogComponent {
       ? this.staffService.update(this.staff.id, { ...common, password: value.password || null })
       : this.staffService.create({
           ...common,
-          ci: value.ci.trim() || null,
+          document: value.document.trim() || null,
           username: value.username,
           password: value.password,
         });

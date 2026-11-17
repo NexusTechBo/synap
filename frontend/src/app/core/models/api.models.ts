@@ -87,7 +87,7 @@ export interface ClinicRequest {
   adminUsername: string;
   adminEmail: string;
   adminPassword: string;
-  adminCi?: string | null;
+  adminDocument?: string | null;
   country?: CountryCode;
   timezone?: string;
   defaultLanguage?: ClinicLanguage;
@@ -206,7 +206,7 @@ export interface AppointmentCalendarQuery {
 
 export interface Patient {
   id: number;
-  ci: string | null;
+  document: string | null;
   name: string;
   email: string | null;
   phoneNumber: string;
@@ -214,7 +214,7 @@ export interface Patient {
 }
 
 export interface PatientRequest {
-  ci?: string | null;
+  document?: string | null;
   name: string;
   phoneNumber: string;
   email?: string | null;
@@ -223,7 +223,7 @@ export interface PatientRequest {
 export interface Staff {
   id: number;
   username: string;
-  ci: string | null;
+  document: string | null;
   name: string;
   email: string;
   phoneNumber: string | null;
@@ -238,7 +238,7 @@ export interface StaffRegisterRequest {
   name: string;
   email: string;
   phoneNumber?: string | null;
-  ci?: string | null;
+  document?: string | null;
   username: string;
   password: string;
   role: Role;
@@ -340,6 +340,7 @@ export interface GuestTokenPayload {
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
+  country?: CountryCode;
   timezone?: string;
   exp: number;
 }
@@ -373,13 +374,13 @@ export interface GuestPatientRequest {
 }
 
 export interface GuestNewPatientRequest extends GuestPatientRequest {
-  ci?: string | null;
+  document?: string | null;
   name: string;
   email?: string | null;
 }
 
 export type GuestBookingPatient = GuestPatientRequest &
-  Partial<Pick<GuestNewPatientRequest, 'ci' | 'name' | 'email'>>;
+  Partial<Pick<GuestNewPatientRequest, 'document' | 'name' | 'email'>>;
 
 export interface GuestAppointmentRequest<P extends GuestBookingPatient = GuestBookingPatient> {
   doctorId: number;

@@ -59,7 +59,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private void authenticate(HttpServletRequest request, Claims claims) {
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
-        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), JwtUtil.extractZone(claims));
+        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), JwtUtil.extractZone(claims), JwtUtil.extractCountry(claims));
         var role = claims.get(JwtClaims.ROLE, String.class);
         var roles = JwtUtil.extractRoles(claims);
         var userId = Long.valueOf(claims.getSubject());

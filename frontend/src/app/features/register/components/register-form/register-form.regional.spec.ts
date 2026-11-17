@@ -154,6 +154,59 @@ describe('RegisterFormComponent regional settings', () => {
       );
     });
 
+    it('sends the administrator CI in the default Bolivian country', async () => {
+      await fillValid();
+      await type('CI (opcional)', '1234567');
+
+      await submit();
+
+      expect(register.register).toHaveBeenCalledWith(
+        expect.objectContaining({ adminDocument: '1234567' }),
+      );
+    });
+
+    it('switches the document label, placeholder and limit when the country changes to BR', async () => {
+      expect(field('CI (opcional)').placeholder).toBe('12345678');
+
+      await pickCountry('Brasil');
+
+      expect(field('CPF (opcional)').placeholder).toBe('000.000.000-00');
+      expect(field('CPF (opcional)').getAttribute('maxlength')).toBe('14');
+    });
+
+    it('invalidates a CI that was valid once the country changes to BR', async () => {
+      await fillValid();
+      await type('CI (opcional)', '1234567');
+      await pickCountry('Brasil');
+
+      await submit();
+
+      expect(register.register).not.toHaveBeenCalled();
+    });
+
+    it('accepts a valid CPF once the country changes to BR', async () => {
+      await fillValid();
+      await pickCountry('Brasil');
+      await type('CPF (opcional)', '529.982.247-25');
+
+      await submit();
+
+      expect(register.register).toHaveBeenCalledWith(
+        expect.objectContaining({ adminDocument: '529.982.247-25', country: 'BR' }),
+      );
+    });
+
+    it('invalidates a CPF that was valid once the country returns to BO', async () => {
+      await fillValid();
+      await pickCountry('Brasil');
+      await type('CPF (opcional)', '529.982.247-25');
+      await pickCountry('Bolivia');
+
+      await submit();
+
+      expect(register.register).not.toHaveBeenCalled();
+    });
+
     it('shows the phone placeholder of the selected country', async () => {
       expect(field('Teléfono').placeholder).toBe('+591 70000000');
 

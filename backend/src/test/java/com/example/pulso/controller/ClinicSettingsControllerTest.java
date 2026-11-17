@@ -4,6 +4,8 @@ import static com.example.pulso.controller.SliceTokens.ADMIN_TOKEN;
 import static com.example.pulso.controller.SliceTokens.ADMIN_ID;
 import static com.example.pulso.controller.SliceTokens.ASSISTANT_TOKEN;
 import static com.example.pulso.controller.SliceTokens.DOCTOR_TOKEN;
+import static com.example.pulso.controller.SliceTokens.INVALID_COUNTRY_TOKEN;
+import static com.example.pulso.controller.SliceTokens.NO_COUNTRY_TOKEN;
 import static com.example.pulso.controller.SliceTokens.NO_TIMEZONE_TOKEN;
 import static com.example.pulso.controller.SliceTokens.as;
 import static org.mockito.ArgumentMatchers.any;
@@ -106,6 +108,24 @@ class ClinicSettingsControllerTest {
             SliceTokens.givenTokenWithoutTimezone(jwtUtil);
 
             mvc.perform(as(NO_TIMEZONE_TOKEN, get(URL))).andExpect(status().isUnauthorized());
+
+            verifyNoInteractions(clinicSettingsService);
+        }
+
+        @Test
+        void shouldReturnUnauthorizedWhenTokenHasNoCountryClaim() throws Exception {
+            SliceTokens.givenTokenWithoutCountry(jwtUtil);
+
+            mvc.perform(as(NO_COUNTRY_TOKEN, get(URL))).andExpect(status().isUnauthorized());
+
+            verifyNoInteractions(clinicSettingsService);
+        }
+
+        @Test
+        void shouldReturnUnauthorizedWhenTokenHasInvalidCountryClaim() throws Exception {
+            SliceTokens.givenTokenWithInvalidCountry(jwtUtil);
+
+            mvc.perform(as(INVALID_COUNTRY_TOKEN, get(URL))).andExpect(status().isUnauthorized());
 
             verifyNoInteractions(clinicSettingsService);
         }

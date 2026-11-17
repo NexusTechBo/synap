@@ -28,7 +28,7 @@ public class PatientController {
 
     @GetMapping
     @PreAuthorize(RoleExpressions.STAFF)
-    @Operation(summary = "GET /api/patients?search={text}&isActive={bool} — list patients, optionally filtered by name, CI, email or phone and by active state")
+    @Operation(summary = "GET /api/patients?search={text}&isActive={bool} — list patients, optionally filtered by name, document, email or phone and by active state")
     public ResponseEntity<Page<PatientResponse>> findAllPatients(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean isActive,

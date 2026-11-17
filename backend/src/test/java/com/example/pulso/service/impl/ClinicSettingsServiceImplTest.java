@@ -39,7 +39,7 @@ class ClinicSettingsServiceImplTest {
                 new CurrentClinicProvider(clinicRepository),
                 new RegionalSettingsResolver(),
                 new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl()));
-        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         clinic = Clinic.builder()
                 .id(7L)
                 .name("Demo")

@@ -19,7 +19,7 @@ public class Patient {
     private Long id;
 
     @Column(unique = true)
-    private String ci;
+    private String document;
 
     @Column(nullable = false)
     private String name;

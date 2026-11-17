@@ -15,10 +15,14 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     @Query("SELECT p FROM Patient p "
             + "WHERE (:isActive IS NULL OR p.active = :isActive) "
             + "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) "
-            + "OR p.ci LIKE CONCAT('%', :search, '%') "
+            + "OR p.document LIKE CONCAT('%', :search, '%') "
+            + "OR (:documentSearch <> '' AND p.document LIKE CONCAT('%', :documentSearch, '%')) "
             + "OR LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')) "
             + "OR p.phoneNumber LIKE CONCAT('%', :search, '%'))")
-    Page<Patient> search(@Param("search") String search, @Param("isActive") Boolean isActive, Pageable pageable);
+    Page<Patient> search(
+            @Param("search") String search,
+            @Param("documentSearch") String documentSearch,
+            @Param("isActive") Boolean isActive, Pageable pageable);
 
     @EntityGraph(attributePaths = {"doctors.specialty"})
     Optional<Patient> findPatientDoctorsById(Long id);
@@ -33,7 +37,7 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
 
     Optional<Patient> findByPhoneNumber(String phoneNumber);
 
-    boolean existsByCi(String ci);
+    boolean existsByDocument(String document);
 
     boolean existsByEmailIgnoreCase(String email);
 

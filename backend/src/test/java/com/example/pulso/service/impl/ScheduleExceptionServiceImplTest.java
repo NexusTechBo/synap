@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.entry;
@@ -85,7 +86,7 @@ class ScheduleExceptionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         service = new ScheduleExceptionServiceImpl(
                 scheduleExceptionRepository,
                 personalRepository,
@@ -141,7 +142,7 @@ class ScheduleExceptionServiceImplTest {
         private static final LocalDate LOCAL_DATE_IN_LA_PAZ = LocalDate.of(2026, 11, 3);
 
         private ScheduleExceptionServiceImpl serviceInZone(String zone) {
-            TenantContext.setCurrentTenant(1L, "demo", ZoneId.of(zone));
+            TenantContext.setCurrentTenant(1L, "demo", ZoneId.of(zone), SupportedCountry.BO);
             return new ScheduleExceptionServiceImpl(
                     scheduleExceptionRepository,
                     personalRepository,

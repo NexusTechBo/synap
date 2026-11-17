@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.patient.PatientRequest;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.dto.personal.PersonalResponse;
@@ -12,6 +13,7 @@ import com.example.pulso.mapper.PersonalMapper;
 import com.example.pulso.repository.PatientRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PatientService;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
 import java.util.List;
 import java.util.Objects;
@@ -29,27 +31,30 @@ public class PatientServiceImpl implements PatientService {
     private final PatientMapper patientMapper;
     private final PersonalMapper personalMapper;
     private final AppointmentService appointmentService;
+    private final IdentityDocumentResolver identityDocumentResolver;
 
     @Override
     public Page<PatientResponse> findAllPatients(String search, Boolean isActive, Pageable pageable) {
-        return patientRepository.search(search == null ? "" : search.strip(), isActive, pageable)
+        var term = search == null ? "" : search.strip();
+        return patientRepository.search(term, Utils.stripDocumentSeparators(term), isActive, pageable)
                 .map(patientMapper::toResponse);
     }
 
     @Override
     @Transactional
     public PatientResponse createPatient(PatientRequest request) {
-        var ci = Utils.normalizeCi(request.ci());
-        if (ci != null && patientRepository.existsByCi(ci))
+        var country = TenantContext.getCurrentCountry();
+        var document = identityDocumentResolver.validateAndNormalize(request.document(), country);
+        if (document != null && patientRepository.existsByDocument(document))
             throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (email != null && patientRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber(), country);
         if (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
         var patient = Patient.builder()
-                .ci(ci)
+                .document(document)
                 .name(request.name())
                 .email(email)
                 .phoneNumber(phoneNumber)
@@ -66,20 +71,21 @@ public class PatientServiceImpl implements PatientService {
     @Transactional
     public PatientResponse updatePatientById(Long patientId, PatientRequest request) {
         var patient = getPatientOrThrowById(patientId);
-        var ci = Utils.normalizeCi(request.ci());
-        if (ci != null && !Objects.equals(patient.getCi(), ci) && patientRepository.existsByCi(ci))
+        var country = TenantContext.getCurrentCountry();
+        var document = identityDocumentResolver.validateAndNormalizeUnlessUnchanged(request.document(), country, patient.getDocument());
+        if (document != null && !Objects.equals(patient.getDocument(), document) && patientRepository.existsByDocument(document))
             throw new BusinessException(MessageKeys.PATIENT_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (email != null
                 && !email.equalsIgnoreCase(patient.getEmail())
                 && patientRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PATIENT_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber(), country);
         if (phoneNumber != null
                 && !Objects.equals(patient.getPhoneNumber(), phoneNumber)
                 && patientRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PATIENT_PHONE_ALREADY_EXISTS, phoneNumber);
-        patient.setCi(ci);
+        patient.setDocument(document);
         patient.setName(request.name());
         patient.setEmail(email);
         patient.setPhoneNumber(phoneNumber);

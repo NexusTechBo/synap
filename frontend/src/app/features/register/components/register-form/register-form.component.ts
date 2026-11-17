@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { map, startWith } from 'rxjs';
+import { DEFAULT_COUNTRY } from '../../../../core/clinic/clinic-country.service';
 import { RegionsStore } from '../../../../core/clinic/regions.store';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ClinicRequest } from '../../../../core/models/api.models';
@@ -12,11 +13,11 @@ import {
 } from '../../../../shared/components/regional-fields/regional-fields.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
-  CI_ERRORS,
   PHONE_ERRORS,
   USERNAME_ERRORS,
-  ciValidator,
+  documentValidator,
   notBlank,
   phoneValidator,
   usernameValidator,
@@ -46,14 +47,13 @@ export class RegisterFormComponent {
     slug: ['', [Validators.required, Validators.pattern(/^[a-z0-9]{3,50}$/)]],
     phoneNumber: ['', [notBlank, phoneValidator]],
     adminName: ['', notBlank],
-    adminCi: ['', [ciValidator]],
+    adminDocument: [''],
     adminUsername: ['', [Validators.required, usernameValidator]],
     adminEmail: ['', [Validators.required, Validators.email]],
     adminPassword: ['', [Validators.required, Validators.minLength(8)]],
     regional: createRegionalForm({ country: 'BO' }),
   });
 
-  protected readonly ciErrors = CI_ERRORS;
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly slugErrors = {
     pattern: 'register.slugPatternError',
@@ -72,6 +72,10 @@ export class RegisterFormComponent {
     ),
     { initialValue: '' as const },
   );
+  protected readonly documentCountry = computed(() => this.country() || DEFAULT_COUNTRY);
+  protected readonly documentMaxLength = computed(
+    () => DOCUMENT_MAX_LENGTH[this.documentCountry()],
+  );
   protected readonly regionalAvailable = this.regions.available;
   protected readonly phonePlaceholder = computed(() => {
     this.i18n.currentLang();
@@ -80,6 +84,16 @@ export class RegisterFormComponent {
       this.i18n.translate('register.clinicPhoneGenericPlaceholder')
     );
   });
+
+  constructor() {
+    this.form.controls.regional.controls.country.valueChanges
+      .pipe(startWith(this.form.controls.regional.controls.country.value), takeUntilDestroyed())
+      .subscribe((country) => {
+        const { adminDocument } = this.form.controls;
+        adminDocument.setValidators(documentValidator(country || DEFAULT_COUNTRY));
+        adminDocument.updateValueAndValidity();
+      });
+  }
 
   protected submit(): void {
     if (this.form.invalid) {

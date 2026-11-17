@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,6 +16,9 @@ import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.exception.ApiException;
+import com.example.pulso.service.component.document.BolivianCiValidator;
+import com.example.pulso.service.component.document.BrazilianCpfValidator;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +26,7 @@ import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
@@ -87,7 +92,7 @@ class PersonalServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         service = new PersonalServiceImpl(
                 personalRepository,
                 specialtyRepository,
@@ -98,7 +103,8 @@ class PersonalServiceImplTest {
                 appointmentRepository,
                 doctorAvailabilityRepository,
                 eventPublisher,
-                new ClinicTimeProvider(CLOCK)
+                new ClinicTimeProvider(CLOCK),
+                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator()))
         );
     }
 
@@ -159,8 +165,8 @@ class PersonalServiceImplTest {
 
             service.createPersonal(request(null));
 
-            verify(personalRepository, never()).existsByCi(any());
-            assertThat(savedPersonal().getCi()).isNull();
+            verify(personalRepository, never()).existsByDocument(any());
+            assertThat(savedPersonal().getDocument()).isNull();
         }
 
         @Test
@@ -170,25 +176,25 @@ class PersonalServiceImplTest {
 
             service.createPersonal(request("   "));
 
-            verify(personalRepository, never()).existsByCi(any());
-            assertThat(savedPersonal().getCi()).isNull();
+            verify(personalRepository, never()).existsByDocument(any());
+            assertThat(savedPersonal().getDocument()).isNull();
         }
 
         @Test
         void shouldSaveCiWhenCiIsNew() {
             givenClinic();
-            when(personalRepository.existsByCi("123456")).thenReturn(false);
+            when(personalRepository.existsByDocument("123456")).thenReturn(false);
             when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
 
             service.createPersonal(request("123456"));
 
-            assertThat(savedPersonal().getCi()).isEqualTo("123456");
+            assertThat(savedPersonal().getDocument()).isEqualTo("123456");
         }
 
         @Test
         void shouldThrowAlreadyExistsWhenCiIsDuplicated() {
             givenClinic();
-            when(personalRepository.existsByCi("123456")).thenReturn(true);
+            when(personalRepository.existsByDocument("123456")).thenReturn(true);
 
             var thrown = catchThrowable(() -> service.createPersonal(request("123456")));
 
@@ -341,6 +347,58 @@ class PersonalServiceImplTest {
             assertThat(((BusinessException) thrown).getMessageKey())
                     .isEqualTo(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);
             verify(personalRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class CreatePersonalInBrazilianTenant {
+        @BeforeEach
+        void bindBrazil() {
+            TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BR);
+        }
+
+        private PersonalRequest request(String document, String phone) {
+            return new PersonalRequest(
+                    "Asistente", "asist@mail.test", phone, document, "asist", "secret123", ERole.ASSISTANT, null);
+        }
+
+        private void givenClinic() {
+            when(currentClinicProvider.getCurrentClinic())
+                    .thenReturn(Clinic.builder().name("Demo").slug("demo").build());
+        }
+
+        @Test
+        void shouldSaveDigitsOnlyDocumentAndE164PhoneWhenCpfIsValid() {
+            givenClinic();
+            when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.createPersonal(request("529.982.247-25", "11 91234-5678"));
+
+            var captor = ArgumentCaptor.forClass(Personal.class);
+            verify(personalRepository).save(captor.capture());
+            assertThat(captor.getValue().getDocument()).isEqualTo("52998224725");
+            assertThat(captor.getValue().getPhoneNumber()).isEqualTo("+5511912345678");
+            verify(personalRepository).existsByDocument("52998224725");
+        }
+
+        @Test
+        void shouldThrowCpfInvalidWhenCheckDigitIsWrong() {
+            givenClinic();
+
+            var thrown = catchThrowable(() -> service.createPersonal(request("52998224724", null)));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
+            verify(personalRepository, never()).save(any());
+        }
+
+        @Test
+        void shouldThrowCpfInvalidWhenBolivianCiIsSent() {
+            givenClinic();
+
+            var thrown = catchThrowable(() -> service.createPersonal(request("1234567", null)));
+
+            assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
         }
     }
 }

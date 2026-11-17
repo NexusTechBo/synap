@@ -24,6 +24,9 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.SchemaProvisioningService;
+import com.example.pulso.service.component.document.BolivianCiValidator;
+import com.example.pulso.service.component.document.BrazilianCpfValidator;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -100,12 +103,28 @@ class ClinicServiceImplTest {
                 Clock.systemUTC(),
                 new RegionalSettingsResolver(),
                 specialtyRepository,
-                messageSource());
+                messageSource(),
+                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator())));
     }
 
     private static ClinicRequest request(String country, String timezone, String language) {
-        return new ClinicRequest("Clinica Demo", "demo", "70000000", "Admin Demo", "admin",
-                "admin@mail.test", "secret123", "12345", country, timezone, language);
+        return request(country, timezone, language, "70000000", "12345");
+    }
+
+    private static ClinicRequest brazilRequest(String timezone, String language, String adminDocument) {
+        return request("BR", timezone, language, "11 91234-5678", adminDocument);
+    }
+
+    private static ClinicRequest request(
+            String country, String timezone, String language, String phoneNumber, String adminDocument) {
+        return new ClinicRequest("Clinica Demo", "demo", phoneNumber, "Admin Demo", "admin",
+                "admin@mail.test", "secret123", adminDocument, country, timezone, language);
+    }
+
+    private Personal savedAdmin() {
+        var captor = ArgumentCaptor.forClass(Personal.class);
+        verify(personalRepository).save(captor.capture());
+        return captor.getValue();
     }
 
     private void stubHappyPath() {
@@ -152,7 +171,7 @@ class ClinicServiceImplTest {
     void shouldPersistProvidedRegionalValues() {
         stubHappyPath();
 
-        service().createClinic(request("br", "America/Manaus", "en"));
+        service().createClinic(request("br", "America/Manaus", "en", "11 91234-5678", "52998224725"));
 
         var clinic = savedClinic();
         assertThat(clinic.getCountry()).isEqualTo(SupportedCountry.BR);
@@ -164,7 +183,7 @@ class ClinicServiceImplTest {
     void shouldUseBrazilDefaultsWhenOnlyCountryIsProvided() {
         stubHappyPath();
 
-        service().createClinic(request("BR", null, null));
+        service().createClinic(brazilRequest(null, null, "52998224725"));
 
         var clinic = savedClinic();
         assertThat(clinic.getTimezone()).isEqualTo("America/Sao_Paulo");
@@ -179,6 +198,53 @@ class ClinicServiceImplTest {
         assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.REGION_TIMEZONE_INVALID);
         verify(clinicRepository, never()).saveAndFlush(any());
         verifyNoInteractions(schemaProvisioningService, personalRepository, specialtyRepository, clinicActivationService);
+    }
+
+    @Test
+    void shouldNormalizeClinicPhoneAndAdminDocumentWithRequestCountry() {
+        stubHappyPath();
+
+        service().createClinic(brazilRequest(null, null, "529.982.247-25"));
+
+        assertThat(savedClinic().getPhoneNumber()).isEqualTo("+5511912345678");
+        assertThat(savedAdmin().getDocument()).isEqualTo("52998224725");
+    }
+
+    @Test
+    void shouldNormalizeBolivianPhoneByDefault() {
+        stubHappyPath();
+
+        service().createClinic(request(null, null, null));
+
+        assertThat(savedClinic().getPhoneNumber()).isEqualTo("+59170000000");
+        assertThat(savedAdmin().getDocument()).isEqualTo("12345");
+    }
+
+    @Test
+    void shouldRejectInvalidCpfBeforeCreatingAnything() {
+        var thrown = catchThrowable(() -> service().createClinic(brazilRequest(null, null, "52998224724")));
+
+        assertThat(thrown).isInstanceOf(BadRequestException.class);
+        assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
+        verifyNoInteractions(clinicRepository, schemaProvisioningService, personalRepository, specialtyRepository, clinicActivationService);
+    }
+
+    @Test
+    void shouldRejectBolivianCiWhenCountryIsBrazil() {
+        var thrown = catchThrowable(() -> service().createClinic(brazilRequest(null, null, "12345")));
+
+        assertThat(thrown).isInstanceOf(BadRequestException.class);
+        assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
+        verifyNoInteractions(schemaProvisioningService);
+    }
+
+    @Test
+    void shouldRejectInvalidCiBeforeCreatingAnythingWhenCountryIsBolivia() {
+        var thrown = catchThrowable(() -> service().createClinic(request("BO", null, null, "70000000", "1234")));
+
+        assertThat(thrown).isInstanceOf(BadRequestException.class);
+        assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CI_INVALID);
+        verifyNoInteractions(schemaProvisioningService);
     }
 
     @Test

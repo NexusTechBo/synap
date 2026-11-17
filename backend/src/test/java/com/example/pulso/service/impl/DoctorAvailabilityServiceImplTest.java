@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
@@ -79,7 +80,7 @@ class DoctorAvailabilityServiceImplTest {
 
     @BeforeEach
     void bindTenant() {
-        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
     }
 
     @AfterEach

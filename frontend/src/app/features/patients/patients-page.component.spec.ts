@@ -2,7 +2,8 @@ import { Dialog } from '@angular/cdk/dialog';
 import { computed, provideZoneChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { EMPTY, of } from 'rxjs';
-import { Patient } from '../../core/models/api.models';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
+import { CountryCode, Patient } from '../../core/models/api.models';
 import { PatientFormDialogComponent } from '../../shared/components/patient-form-dialog/patient-form-dialog.component';
 import { PatientsPageComponent } from './patients-page.component';
 import { PatientScope } from './patients.model';
@@ -11,7 +12,7 @@ import { PatientsService } from './patients.service';
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
     id: 20,
-    ci: '1234567',
+    document: '1234567',
     name: 'Ana Pérez',
     email: 'ana@mail.test',
     phoneNumber: '70000000',
@@ -126,7 +127,7 @@ describe('PatientsPageComponent', () => {
     beforeEach(async () => {
       patients.patients.set([
         patient(),
-        patient({ id: 21, ci: '7654321', name: 'Luis Rojas', email: null, active: false }),
+        patient({ id: 21, document: '7654321', name: 'Luis Rojas', email: null, active: false }),
       ]);
       await render();
     });
@@ -146,7 +147,7 @@ describe('PatientsPageComponent', () => {
     });
 
     it('shows a dash instead of the CI for a patient without CI', async () => {
-      patients.patients.set([patient({ id: 22, ci: null, name: 'Sin Carnet' })]);
+      patients.patients.set([patient({ id: 22, document: null, name: 'Sin Carnet' })]);
       await render();
 
       const row = element.querySelector('tbody tr')!;
@@ -248,5 +249,64 @@ describe('PatientsPageComponent', () => {
       buttonByText('Nuevo paciente').click();
       expect(patients.reload).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('PatientsPageComponent document by country', () => {
+  let fixture: ComponentFixture<PatientsPageComponent>;
+  let element: HTMLElement;
+
+  async function setup(country: CountryCode, document: string | null): Promise<void> {
+    const patients = createPatientsStub();
+    patients.patients.set([patient({ document })]);
+    TestBed.configureTestingModule({
+      imports: [PatientsPageComponent],
+      providers: [
+        provideZoneChangeDetection(),
+        { provide: Dialog, useValue: { open: vi.fn() } },
+        {
+          provide: ClinicCountryService,
+          useValue: { country: signal(country), phonePlaceholder: signal('') },
+        },
+      ],
+    });
+    TestBed.overrideComponent(PatientsPageComponent, {
+      set: { providers: [{ provide: PatientsService, useValue: patients }] },
+    });
+    fixture = TestBed.createComponent(PatientsPageComponent);
+    fixture.autoDetectChanges();
+    element = fixture.nativeElement;
+    await fixture.whenStable();
+  }
+
+  function searchPlaceholder(): string {
+    return element.querySelector<HTMLInputElement>('input[aria-label="Buscar pacientes"]')!
+      .placeholder;
+  }
+
+  it('shows the masked CPF, the CPF label and the CPF search placeholder in a BR clinic', async () => {
+    await setup('BR', '52998224725');
+
+    const headers = [...element.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
+    const firstCell = element.querySelector('tbody tr td')!;
+    expect(headers[1]).toBe('CPF');
+    expect(element.querySelectorAll('tbody tr td')[1].textContent?.trim()).toBe('529.982.247-25');
+    expect(firstCell.textContent).toContain('CPF 529.982.247-25');
+    expect(searchPlaceholder()).toBe('Buscar por nombre, CPF, email o teléfono');
+  });
+
+  it('shows the plain CI, the CI label and the CI search placeholder in a BO clinic', async () => {
+    await setup('BO', '1234567');
+
+    const headers = [...element.querySelectorAll('thead th')].map((th) => th.textContent?.trim());
+    expect(headers[1]).toBe('CI');
+    expect(element.querySelectorAll('tbody tr td')[1].textContent?.trim()).toBe('1234567');
+    expect(searchPlaceholder()).toBe('Buscar por nombre, CI, email o teléfono');
+  });
+
+  it('shows a dash for a patient without document in a BR clinic', async () => {
+    await setup('BR', null);
+
+    expect(element.querySelectorAll('tbody tr td')[1].textContent?.trim()).toBe('—');
   });
 });

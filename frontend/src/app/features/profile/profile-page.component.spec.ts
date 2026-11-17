@@ -3,8 +3,9 @@ import { Component, provideZoneChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { Role } from '../../core/models/api.models';
+import { CountryCode, Role } from '../../core/models/api.models';
 import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
 import { RegionalSettingsCardComponent } from './components/regional-settings-card/regional-settings-card.component';
 import { ProfilePageComponent } from './profile-page.component';
@@ -26,6 +27,10 @@ describe('ProfilePageComponent regional settings card', () => {
       imports: [ProfilePageComponent],
       providers: [
         provideZoneChangeDetection(),
+        {
+          provide: ClinicCountryService,
+          useValue: { country: signal('BO'), phonePlaceholder: signal('') },
+        },
         { provide: Dialog, useValue: { open: vi.fn() } },
         {
           provide: AuthService,
@@ -102,6 +107,10 @@ describe('ProfilePageComponent password change validation', () => {
       imports: [ProfilePageComponent],
       providers: [
         provideZoneChangeDetection(),
+        {
+          provide: ClinicCountryService,
+          useValue: { country: signal('BO'), phonePlaceholder: signal('') },
+        },
         { provide: Dialog, useValue: { open: vi.fn() } },
         {
           provide: AuthService,
@@ -184,5 +193,82 @@ describe('ProfilePageComponent password change validation', () => {
 
     expect(update).toHaveBeenCalledOnce();
     expect(update.mock.calls[0][0]).not.toHaveProperty('currentPassword');
+  });
+});
+
+describe('ProfilePageComponent document by country', () => {
+  let fixture: ComponentFixture<ProfilePageComponent>;
+  let element: HTMLElement;
+
+  async function setup(country: CountryCode): Promise<void> {
+    TestBed.configureTestingModule({
+      imports: [ProfilePageComponent],
+      providers: [
+        provideZoneChangeDetection(),
+        {
+          provide: ClinicCountryService,
+          useValue: { country: signal(country), phonePlaceholder: signal('') },
+        },
+        { provide: Dialog, useValue: { open: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: {
+            hasRole: () => false,
+            clinic: signal({ name: 'Clínica', slug: 'clinica' }),
+          },
+        },
+      ],
+    });
+    TestBed.overrideComponent(ProfilePageComponent, {
+      set: {
+        providers: [
+          {
+            provide: ProfileService,
+            useValue: {
+              me: signal({
+                id: 1,
+                name: 'Ana Rojas',
+                email: 'ana@clinic.test',
+                username: 'ana',
+                role: 'ASSISTANT',
+                document: '52998224725',
+                phoneNumber: null,
+                alsoDoctor: false,
+              }),
+              isLoading: signal(false),
+              errorMessage: signal(null),
+              canToggleDoctorMode: () => false,
+              reload: vi.fn(),
+              update: vi.fn(),
+            },
+          },
+        ],
+      },
+    });
+    localStorage.setItem('lang', 'es');
+    await TestBed.inject(I18nService).init();
+    fixture = TestBed.createComponent(ProfilePageComponent);
+    fixture.autoDetectChanges();
+    element = fixture.nativeElement;
+    await fixture.whenStable();
+  }
+
+  afterEach(() => fixture.destroy());
+
+  function documentEntry(label: string): string | undefined {
+    const term = [...element.querySelectorAll('dt')].find((dt) => dt.textContent?.trim() === label);
+    return term?.nextElementSibling?.textContent?.trim();
+  }
+
+  it('shows the CPF label and the masked CPF in a BR clinic', async () => {
+    await setup('BR');
+
+    expect(documentEntry('CPF')).toBe('529.982.247-25');
+  });
+
+  it('shows the CI label and the plain value in a BO clinic', async () => {
+    await setup('BO');
+
+    expect(documentEntry('CI')).toBe('52998224725');
   });
 });

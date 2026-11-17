@@ -114,7 +114,8 @@ class AppointmentControllerTest {
                 .add(JwtClaims.ROLE, role)
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
-                .add(JwtClaims.TIMEZONE, "America/La_Paz");
+                .add(JwtClaims.TIMEZONE, "America/La_Paz")
+                .add(JwtClaims.COUNTRY, "BO");
         if (!roles.isEmpty()) builder.add(JwtClaims.ROLES, roles);
         when(jwtUtil.parse(token)).thenReturn(Optional.of(builder.build()));
     }
