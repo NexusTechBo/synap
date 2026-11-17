@@ -4,7 +4,14 @@ import { ActivatedRouteSnapshot, NavigationExtras, Router } from '@angular/route
 import { jwtDecode } from 'jwt-decode';
 import { Observable, map } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
-import { Role, Staff, TokenPayload } from '../models/api.models';
+import {
+  ClinicLanguage,
+  ClinicRegionalSettings,
+  CountryCode,
+  Role,
+  Staff,
+  TokenPayload,
+} from '../models/api.models';
 import { HOME_URL, SESSION_ACCESS, SessionAccess } from '../navigation/navigation';
 
 interface Session {
@@ -16,6 +23,9 @@ interface Session {
   clinicName: string;
   clinicSlug: string;
   username: string;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
   expiresAt: number;
 }
 
@@ -54,6 +64,9 @@ function decodeSession(token: string | null): Session | null {
       clinicName: payload.clinicName,
       clinicSlug: payload.clinicSlug,
       username: payload.username,
+      country: payload.country,
+      timezone: payload.timezone,
+      defaultLanguage: payload.defaultLanguage,
       expiresAt: payload.exp * 1000,
     };
     return isExpired(session) ? null : session;
@@ -93,6 +106,16 @@ export class AuthService {
   readonly clinic = computed(() => {
     const session = this._session();
     return session ? { name: session.clinicName, slug: session.clinicSlug } : null;
+  });
+
+  readonly regionalSettings = computed<ClinicRegionalSettings | null>(() => {
+    const session = this._session();
+    if (!session?.country || !session.timezone || !session.defaultLanguage) return null;
+    return {
+      country: session.country,
+      timezone: session.timezone,
+      defaultLanguage: session.defaultLanguage,
+    };
   });
 
   constructor() {

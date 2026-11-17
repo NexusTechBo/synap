@@ -1,0 +1,43 @@
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { Observable, tap } from 'rxjs';
+import { ClinicSettingsApi } from '../api/clinic-settings.api';
+import { AuthService } from '../auth/auth.service';
+import { resourceError } from '../http/api-error';
+import { ClinicRegionalSettings } from '../models/api.models';
+import { LOAD_ERROR } from '../utils/messages.util';
+
+@Injectable({ providedIn: 'root' })
+export class ClinicRegionalSettingsStore {
+  private readonly api = inject(ClinicSettingsApi);
+  private readonly auth = inject(AuthService);
+
+  private readonly current = linkedSignal<ClinicRegionalSettings | null>(() =>
+    this.auth.regionalSettings(),
+  );
+  private readonly requested = linkedSignal({
+    source: () => this.auth.session()?.clinicId,
+    computation: () => false,
+  });
+
+  private readonly resource = rxResource({
+    params: () => {
+      const clinicId = this.auth.session()?.clinicId;
+      return this.requested() && clinicId !== undefined ? { clinicId } : undefined;
+    },
+    stream: () => this.api.regionalSettings().pipe(tap((settings) => this.current.set(settings))),
+  });
+
+  readonly settings = this.current.asReadonly();
+  readonly isLoading = computed(() => this.resource.isLoading());
+  readonly errorMessage = resourceError(this.resource, LOAD_ERROR.regionalSettings);
+
+  load(): void {
+    if (this.resource.status() === 'error') this.resource.reload();
+    else this.requested.set(true);
+  }
+
+  update(settings: ClinicRegionalSettings): Observable<ClinicRegionalSettings> {
+    return this.api.updateRegionalSettings(settings).pipe(tap((saved) => this.current.set(saved)));
+  }
+}

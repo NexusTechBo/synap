@@ -6,6 +6,7 @@ import {
   computed,
   forwardRef,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -36,6 +37,7 @@ export class SelectComponent<T> implements ControlValueAccessor {
   readonly placeholder = input('Seleccionar');
   readonly icon = input<UiIconName | null>(null);
   readonly id = input<string | null>(null);
+  readonly selectionChange = output<T>();
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('triggerEl');
 
   protected readonly listboxId = `app-select-${nextId++}`;
@@ -112,6 +114,7 @@ export class SelectComponent<T> implements ControlValueAccessor {
     if (option.value !== this.value()) {
       this.value.set(option.value);
       this.onChange(option.value);
+      this.selectionChange.emit(option.value);
     }
     this.close();
     this.trigger().nativeElement.focus();

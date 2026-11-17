@@ -150,6 +150,40 @@ describe('StaffFormDialogComponent', () => {
     });
   });
 
+  describe('specialty requirement for doctors', () => {
+    beforeEach(async () => {
+      await setup();
+      await type('Nombre completo', 'Luis Pérez');
+      await type('Email', 'luis@email.com');
+      await type('Usuario', 'luis.perez');
+      await type('Contraseña inicial', 'secreto123');
+    });
+
+    it('blocks submit for a doctor without specialty', async () => {
+      await submit();
+
+      expect(staffService.create).not.toHaveBeenCalled();
+      expect(dialogRef.close).not.toHaveBeenCalled();
+    });
+
+    it('allows submit without specialty once the role is not doctor', async () => {
+      await chooseRole('Asistente');
+      await submit();
+
+      expect(staffService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'ASSISTANT' }),
+      );
+    });
+
+    it('blocks again when switching back to doctor', async () => {
+      await chooseRole('Asistente');
+      await chooseRole('Doctor');
+      await submit();
+
+      expect(staffService.create).not.toHaveBeenCalled();
+    });
+  });
+
   describe('edit mode', () => {
     it('does not render nor validate the CI and saves without it', async () => {
       await setup({ staff: staff({ ci: '1234567-LP' }) });

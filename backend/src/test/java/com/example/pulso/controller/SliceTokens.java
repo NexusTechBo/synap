@@ -17,7 +17,9 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 final class SliceTokens {
     static final String ADMIN_TOKEN = "admin-token";
     static final String ASSISTANT_TOKEN = "assistant-token";
+    static final String DOCTOR_TOKEN = "doctor-token";
     static final String GUEST_TOKEN = "guest-token";
+    static final long DOCTOR_ID = 2L;
     static final long ADMIN_ID = 1L;
     static final long ASSISTANT_ID = 3L;
 
@@ -26,6 +28,7 @@ final class SliceTokens {
     static void givenStandardTokens(JwtUtil jwtUtil, ActiveUserChecker activeUserChecker) {
         givenToken(jwtUtil, ADMIN_TOKEN, ADMIN_ID, "ADMINISTRATOR", List.of("ADMINISTRATOR"));
         givenToken(jwtUtil, ASSISTANT_TOKEN, ASSISTANT_ID, "ASSISTANT", List.of("ASSISTANT"));
+        givenToken(jwtUtil, DOCTOR_TOKEN, DOCTOR_ID, "DOCTOR", List.of("DOCTOR"));
         givenToken(jwtUtil, GUEST_TOKEN, 0L, "GUEST", List.of());
         when(activeUserChecker.isActive(anyLong(), anyString(), anyCollection()))
                 .thenReturn(true);

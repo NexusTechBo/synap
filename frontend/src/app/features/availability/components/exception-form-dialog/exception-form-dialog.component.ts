@@ -11,7 +11,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { I18nService } from '../../../../core/i18n/i18n.service';
@@ -23,7 +29,14 @@ import { DatePickerComponent } from '../../../../shared/ui/forms/date-picker/dat
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { exceptionEndAfterStart } from '../../availability.util';
+
+export function exceptionEndAfterStart(control: AbstractControl): ValidationErrors | null {
+  const group = control.parent;
+  if (!group || group.get('isFullDayBlock')?.value) return null;
+  const startTime = group.get('startTime')?.value as string;
+  if (!startTime || !control.value) return { rangeRequired: true };
+  return control.value <= startTime ? { endBeforeStart: true } : null;
+}
 
 @Component({
   selector: 'app-exception-form-dialog',

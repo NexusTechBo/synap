@@ -2,13 +2,16 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideZoneChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NgControl } from '@angular/forms';
+import { FormControl, FormGroup, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject, of, throwError } from 'rxjs';
 import { toIso } from '../../../../core/utils/calendar.util';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { ExceptionFormDialogComponent } from './exception-form-dialog.component';
+import {
+  ExceptionFormDialogComponent,
+  exceptionEndAfterStart,
+} from './exception-form-dialog.component';
 
 const TODAY = toIso(new Date());
 
@@ -207,5 +210,47 @@ describe('ExceptionFormDialogComponent', () => {
         .click();
       expect(dialogRef.close).toHaveBeenCalledOnce();
     });
+  });
+});
+
+function exceptionGroup(isFullDayBlock: boolean, startTime: string, endTime: string) {
+  return new FormGroup({
+    isFullDayBlock: new FormControl(isFullDayBlock),
+    startTime: new FormControl(startTime),
+    endTime: new FormControl(endTime, exceptionEndAfterStart),
+  });
+}
+
+describe('exceptionEndAfterStart', () => {
+  it('is valid for a full day block regardless of times', () => {
+    const group = exceptionGroup(true, '', '');
+    expect(exceptionEndAfterStart(group.controls.endTime)).toBeNull();
+  });
+
+  it('is valid for a partial block with end after start', () => {
+    const group = exceptionGroup(false, '09:00', '10:00');
+    expect(exceptionEndAfterStart(group.controls.endTime)).toBeNull();
+  });
+
+  it('requires both times for a partial block', () => {
+    expect(exceptionEndAfterStart(exceptionGroup(false, '', '10:00').controls.endTime)).toEqual({
+      rangeRequired: true,
+    });
+    expect(exceptionEndAfterStart(exceptionGroup(false, '09:00', '').controls.endTime)).toEqual({
+      rangeRequired: true,
+    });
+  });
+
+  it('flags an end equal to or before the start for a partial block', () => {
+    expect(
+      exceptionEndAfterStart(exceptionGroup(false, '10:00', '10:00').controls.endTime),
+    ).toEqual({ endBeforeStart: true });
+    expect(
+      exceptionEndAfterStart(exceptionGroup(false, '10:00', '09:00').controls.endTime),
+    ).toEqual({ endBeforeStart: true });
+  });
+
+  it('is valid for a control without parent', () => {
+    expect(exceptionEndAfterStart(new FormControl(''))).toBeNull();
   });
 });

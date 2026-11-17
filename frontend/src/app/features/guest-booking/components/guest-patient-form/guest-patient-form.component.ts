@@ -10,7 +10,7 @@ import {
   ciValidator,
   notBlank,
   phoneValidator,
-} from '../../../../shared/utils/validation-messages.util';
+} from '../../../../shared/utils/validators.util';
 
 type PatientKind = 'returning' | 'new';
 

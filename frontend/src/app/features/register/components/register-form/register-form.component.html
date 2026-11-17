@@ -44,6 +44,10 @@
       </app-form-field>
     </div>
 
+    @if (regionalAvailable()) {
+      <app-regional-fields class="mt-4" idPrefix="register" [form]="form.controls.regional" />
+    }
+
     <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">
       {{ 'register.sectionAdmin' | translate }}
     </p>
@@ -126,7 +130,7 @@
             class="field-input"
             formControlName="phoneNumber"
             autocomplete="tel"
-            [placeholder]="'register.clinicPhonePlaceholder' | translate"
+            [placeholder]="phonePlaceholder()"
           />
         </app-form-field>
       </div>

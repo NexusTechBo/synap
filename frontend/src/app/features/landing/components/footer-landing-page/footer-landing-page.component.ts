@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { MoonshineLogoComponent } from '../../../../shared/ui/moonshine-logo/moonshine-logo.component';
 import { PulsoLogoComponent } from '../../../../shared/ui/pulso-logo/pulso-logo.component';
+import { MoonshineLogoComponent } from '../moonshine-logo/moonshine-logo.component';
 
 @Component({
   selector: 'app-footer-landing-page',

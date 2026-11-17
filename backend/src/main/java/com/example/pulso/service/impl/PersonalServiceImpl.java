@@ -22,6 +22,7 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PersonalService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.Utils;
 import java.time.Clock;
 import java.time.LocalDateTime;

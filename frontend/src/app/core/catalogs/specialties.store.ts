@@ -4,8 +4,11 @@ import { CatalogsApi } from '../api/catalogs.api';
 import { resourceError } from '../http/api-error';
 import { Specialty } from '../models/api.models';
 import { LOAD_ERROR } from '../utils/messages.util';
-import { byName } from '../utils/sort.util';
 import { clinicScopedResource } from './clinic-scoped-resource';
+
+function byName(a: { name: string }, b: { name: string }): number {
+  return a.name.localeCompare(b.name);
+}
 
 @Injectable({ providedIn: 'root' })
 export class SpecialtiesStore {

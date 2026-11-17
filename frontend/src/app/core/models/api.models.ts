@@ -1,5 +1,9 @@
 export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT';
 
+export type CountryCode = 'BO' | 'BR';
+
+export type ClinicLanguage = 'es' | 'en' | 'pt-BR';
+
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
 export type DayOfWeek =
@@ -61,6 +65,9 @@ export interface TokenPayload {
   clinicName: string;
   clinicSlug: string;
   username: string;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
   exp: number;
 }
 
@@ -81,6 +88,28 @@ export interface ClinicRequest {
   adminEmail: string;
   adminPassword: string;
   adminCi?: string | null;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
+}
+
+export interface RegionCountry {
+  code: CountryCode;
+  defaultTimezone: string;
+  timezones: string[];
+  defaultLanguage: ClinicLanguage;
+  phonePlaceholder: string;
+}
+
+export interface RegionCatalog {
+  countries: RegionCountry[];
+  languages: ClinicLanguage[];
+}
+
+export interface ClinicRegionalSettings {
+  country: CountryCode;
+  timezone: string;
+  defaultLanguage: ClinicLanguage;
 }
 
 export interface ClinicCreatedResponse {
@@ -321,6 +350,9 @@ export interface GuestSessionResponse {
 export interface GuestClinic {
   name: string;
   slug: string;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
 }
 
 export interface GuestDoctor {

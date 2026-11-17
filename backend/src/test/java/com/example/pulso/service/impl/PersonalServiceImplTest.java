@@ -14,6 +14,7 @@ import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.exception.ApiException;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import org.mockito.ArgumentCaptor;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.Specialty;

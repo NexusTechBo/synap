@@ -1,7 +1,13 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { finalize, map } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { DayOfWeek } from '../../../../core/models/api.models';
@@ -14,7 +20,11 @@ import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { availabilityEndAfterStart } from '../../availability.util';
+
+export function availabilityEndAfterStart(control: AbstractControl): ValidationErrors | null {
+  const startTime = control.parent?.get('startTime')?.value as string | undefined;
+  return startTime && control.value && control.value <= startTime ? { endBeforeStart: true } : null;
+}
 
 @Component({
   selector: 'app-availability-form-dialog',

@@ -91,12 +91,6 @@ export function formatMonthShort(date: Date, locale: string = LOCALE): string {
   return date.toLocaleDateString(locale, { month: 'short' }).replace('.', '');
 }
 
-export function formatToday(locale: string = LOCALE): string {
-  return capitalize(
-    new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }),
-  );
-}
-
 export function formatShortDate(iso: string, locale: string = LOCALE): string {
   return parseIso(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }

@@ -1,14 +1,16 @@
 import { DialogRef } from '@angular/cdk/dialog';
 import { provideZoneChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NgControl } from '@angular/forms';
+import { FormControl, FormGroup, NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Subject, of } from 'rxjs';
 import { DayOfWeek } from '../../../../core/models/api.models';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
-import { AddAvailabilityResult } from '../../availability.model';
-import { AvailabilityService } from '../../availability.service';
-import { AvailabilityFormDialogComponent } from './availability-form-dialog.component';
+import { AddAvailabilityResult, AvailabilityService } from '../../availability.service';
+import {
+  AvailabilityFormDialogComponent,
+  availabilityEndAfterStart,
+} from './availability-form-dialog.component';
 
 function result(saved: DayOfWeek[], failed: AddAvailabilityResult['failed'] = []) {
   return { saved, failed };
@@ -221,5 +223,45 @@ describe('AvailabilityFormDialogComponent', () => {
       element.querySelector<HTMLButtonElement>('button[aria-label="Cerrar"]')!.click();
       expect(dialogRef.close).toHaveBeenCalledOnce();
     });
+  });
+});
+
+function availabilityGroup(startTime: string, endTime: string) {
+  return new FormGroup({
+    startTime: new FormControl(startTime),
+    endTime: new FormControl(endTime, availabilityEndAfterStart),
+  });
+}
+
+describe('availabilityEndAfterStart', () => {
+  it('is valid when the end is after the start', () => {
+    const group = availabilityGroup('08:00', '12:00');
+    expect(availabilityEndAfterStart(group.controls.endTime)).toBeNull();
+  });
+
+  it('flags an end equal to the start', () => {
+    const group = availabilityGroup('08:00', '08:00');
+    expect(availabilityEndAfterStart(group.controls.endTime)).toEqual({ endBeforeStart: true });
+  });
+
+  it('flags an end before the start', () => {
+    const group = availabilityGroup('12:00', '08:00');
+    expect(availabilityEndAfterStart(group.controls.endTime)).toEqual({ endBeforeStart: true });
+  });
+
+  it('is valid when either time is empty (required validators handle it)', () => {
+    expect(availabilityEndAfterStart(availabilityGroup('', '08:00').controls.endTime)).toBeNull();
+    expect(availabilityEndAfterStart(availabilityGroup('08:00', '').controls.endTime)).toBeNull();
+  });
+
+  it('is valid for a control without parent', () => {
+    expect(availabilityEndAfterStart(new FormControl('08:00'))).toBeNull();
+  });
+
+  it('marks the control invalid inside a group after revalidation', () => {
+    const group = availabilityGroup('08:00', '12:00');
+    group.controls.startTime.setValue('13:00');
+    group.controls.endTime.updateValueAndValidity();
+    expect(group.controls.endTime.hasError('endBeforeStart')).toBe(true);
   });
 });

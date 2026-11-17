@@ -1,16 +1,6 @@
-import { firstName, initials, rolesLabel, specialtyLabel } from './labels.util';
+import { firstName, initials, specialtyLabel } from './labels.util';
 
 describe('labels.util', () => {
-  describe('rolesLabel', () => {
-    it('joins role labels in a fixed order', () => {
-      expect(rolesLabel(['DOCTOR', 'ADMINISTRATOR'])).toBe('Administrador · Doctor');
-    });
-
-    it('returns an empty string without roles', () => {
-      expect(rolesLabel([])).toBe('');
-    });
-  });
-
   describe('specialtyLabel', () => {
     it('returns the name or a placeholder', () => {
       expect(specialtyLabel('Cardiología')).toBe('Cardiología');
