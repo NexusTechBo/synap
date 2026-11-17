@@ -6,6 +6,7 @@ import com.example.pulso.enums.ClinicStatus;
 import com.example.pulso.enums.SupportedCountry;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import lombok.*;
 
 @Getter
@@ -47,4 +48,8 @@ public class Clinic {
     @Convert(converter = ClinicLanguageConverter.class)
     @Column(name = "default_language", nullable = false, length = 10)
     private ClinicLanguage defaultLanguage;
+
+    public ZoneId zoneId() {
+        return ZoneId.of(timezone);
+    }
 }

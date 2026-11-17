@@ -71,7 +71,7 @@ public class ClinicServiceImpl implements ClinicService {
         var clinic = saveNewClinic(request, slug, regional, tx);
         try {
             schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
-            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug(), clinic.zoneId());
             return tx.execute(_ -> {
                 var admin = personalRepository.save(Personal.builder()
                         .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))

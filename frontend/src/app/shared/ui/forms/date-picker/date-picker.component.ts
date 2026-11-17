@@ -5,11 +5,13 @@ import {
   Component,
   computed,
   forwardRef,
+  inject,
   input,
   signal,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { formatShortDate, parseIso, toIso } from '../../../../core/utils/calendar.util';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
+import { formatShortDate, parseIso } from '../../../../core/utils/calendar.util';
 import { POPOVER_POSITIONS } from '../../../utils/overlay-positions.util';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
 import { MonthGridComponent } from '../month-grid/month-grid.component';
@@ -35,12 +37,12 @@ export class DatePickerComponent implements ControlValueAccessor {
   readonly ariaLabel = input<string | null>(null);
   readonly id = input<string | null>(null);
 
-  protected readonly today = toIso(new Date());
+  protected readonly today = inject(ClinicClockService).today();
   protected readonly positions = POPOVER_POSITIONS;
   protected readonly isOpen = signal(false);
   protected readonly disabled = signal(false);
   protected readonly value = signal<string | null>(null);
-  protected readonly viewDate = signal(new Date());
+  protected readonly viewDate = signal(parseIso(this.today));
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 

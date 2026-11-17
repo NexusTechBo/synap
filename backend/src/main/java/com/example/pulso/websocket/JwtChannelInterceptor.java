@@ -9,6 +9,7 @@ import com.example.pulso.security.jwt.JwtUtil;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -59,7 +60,13 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
         var role = claims.get(JwtClaims.ROLE, String.class);
         var roles = JwtUtil.extractRoles(claims);
-        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class));
+        ZoneId zone;
+        try {
+            zone = JwtUtil.extractZone(claims);
+        } catch (IllegalArgumentException _) {
+            throw new MessageDeliveryException(INVALID_TOKEN);
+        }
+        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), zone);
         try {
             if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role, roles)) {
                 log.warn(

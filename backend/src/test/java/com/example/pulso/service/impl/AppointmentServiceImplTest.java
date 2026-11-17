@@ -43,14 +43,17 @@ import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PatientRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
 import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
@@ -118,7 +121,7 @@ class AppointmentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        TenantContext.setCurrentTenant(CLINIC_ID, "demo");
+        TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneOffset.UTC);
         service = new AppointmentServiceImpl(
                 appointmentRepository,
                 patientRepository,
@@ -129,7 +132,8 @@ class AppointmentServiceImplTest {
                 currentClinicProvider,
                 eventPublisher,
                 messageSource,
-                CLOCK
+                CLOCK,
+                new ClinicTimeProvider(CLOCK)
         );
     }
 
@@ -304,6 +308,73 @@ class AppointmentServiceImplTest {
                 .startTime(start)
                 .endTime(end)
                 .build();
+    }
+
+    @Nested
+    @DisplayName("clinic time zone")
+    class ClinicTimeZone {
+        private static final Instant INSTANT = Instant.parse("2026-11-04T14:00:00Z");
+        private static final LocalDateTime LOCAL_10_30 = LocalDateTime.of(2026, 11, 4, 10, 30);
+
+        private AppointmentServiceImpl serviceInZone(String zone) {
+            TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneId.of(zone));
+            var clock = Clock.fixed(INSTANT, ZoneOffset.UTC);
+            return new AppointmentServiceImpl(
+                    appointmentRepository,
+                    patientRepository,
+                    personalRepository,
+                    appointmentMapper,
+                    scheduleExceptionRepository,
+                    doctorAvailabilityRepository,
+                    currentClinicProvider,
+                    eventPublisher,
+                    messageSource,
+                    clock,
+                    new ClinicTimeProvider(clock)
+            );
+        }
+
+        @Test
+        @DisplayName("rejects 10:30 as past in a clinic where it is already 11:00")
+        void shouldRejectStartInThePastForSaoPauloClinic() {
+            var saoPauloService = serviceInZone("America/Sao_Paulo");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+
+            var thrown = catchThrowable(
+                    () -> saoPauloService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.APPOINTMENT_PAST_DATE);
+            verify(appointmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("accepts 10:30 as future in a clinic where it is 10:00")
+        void shouldAcceptSameStartForLaPazClinic() {
+            var laPazService = serviceInZone("America/La_Paz");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            givenWorkingDay(DOCTOR_ID, LOCAL_10_30.getDayOfWeek());
+            givenPatient(patient(PATIENT_ID, true));
+            givenSaveAssignsId();
+
+            laPazService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false);
+
+            assertThat(captureSaved().getStartTime()).isEqualTo(LOCAL_10_30);
+        }
+
+        @Test
+        @DisplayName("createdAt keeps using the global clock")
+        void shouldStampCreatedAtWithGlobalClock() {
+            var laPazService = serviceInZone("America/La_Paz");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            givenWorkingDay(DOCTOR_ID, LOCAL_10_30.getDayOfWeek());
+            givenPatient(patient(PATIENT_ID, true));
+            givenSaveAssignsId();
+
+            laPazService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false);
+
+            assertThat(captureSaved().getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 11, 4, 14, 0));
+        }
     }
 
     @Nested

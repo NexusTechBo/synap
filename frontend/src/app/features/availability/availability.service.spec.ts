@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { EMPTY, Observable, of, throwError } from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { API_ERROR_CODES } from '../../core/http/api-error';
 import { Availability, ScheduleException } from '../../core/models/api.models';
 import { toIso } from '../../core/utils/calendar.util';
@@ -112,6 +113,7 @@ describe('AvailabilityService', () => {
         AvailabilityService,
         { provide: AgendaApi, useValue: api },
         { provide: AuthService, useValue: { userId: signal(10) } },
+        { provide: ClinicClockService, useValue: { today: () => TODAY } },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
       ],

@@ -112,6 +112,11 @@ export interface ClinicRegionalSettings {
   defaultLanguage: ClinicLanguage;
 }
 
+export interface ClinicRegionalSettingsUpdateResponse {
+  settings: ClinicRegionalSettings;
+  token: string;
+}
+
 export interface ClinicCreatedResponse {
   id: number;
   name: string;
@@ -335,6 +340,7 @@ export interface GuestTokenPayload {
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
+  timezone?: string;
   exp: number;
 }
 

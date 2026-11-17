@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { firstName, initials } from '../../../../core/utils/labels.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -17,6 +18,7 @@ import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component
 })
 export class TopbarComponent {
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
   userName = input('');
   roleLabel = input('');
@@ -28,6 +30,7 @@ export class TopbarComponent {
     const lang = this.i18n.currentLang();
     const locale = lang === 'es' ? 'es-BO' : 'en-US';
     return new Intl.DateTimeFormat(locale, {
+      timeZone: this.clock.timezone(),
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -35,7 +38,7 @@ export class TopbarComponent {
   });
 
   protected readonly greeting = computed(() => {
-    const hour = new Date().getHours();
+    const hour = this.clock.hour();
     const key =
       hour < 12
         ? 'nav.greetings.morning'

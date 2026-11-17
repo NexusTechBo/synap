@@ -1,6 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { AppointmentsApi } from '../../core/api/appointments.api';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
@@ -9,6 +10,7 @@ import {
   addDays,
   formatShortDate,
   formatWeekdayShort,
+  parseIso,
   startOfWeek,
   toIso,
 } from '../../core/utils/calendar.util';
@@ -22,8 +24,9 @@ export class DashboardService {
   private readonly appointmentsApi = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
   private readonly i18n = inject(I18nService);
-  private readonly today = toIso(new Date());
-  private readonly weekStart = startOfWeek(new Date());
+  private readonly clock = inject(ClinicClockService);
+  private readonly today = this.clock.today();
+  private readonly weekStart = startOfWeek(parseIso(this.today));
 
   private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
 

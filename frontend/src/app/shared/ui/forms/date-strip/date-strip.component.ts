@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import {
   addDays,
   formatMonthShort,
@@ -40,15 +41,20 @@ export class DateStripComponent {
   readonly unavailableDates = input<readonly string[]>([]);
   readonly select = output<string>();
 
-  private readonly nextDays = Array.from({ length: DATE_STRIP_DAYS }, (_, i) =>
-    dayChip(addDays(new Date(), i)),
+  private readonly clock = inject(ClinicClockService);
+
+  private readonly nextDays = computed(() =>
+    Array.from({ length: DATE_STRIP_DAYS }, (_, i) =>
+      dayChip(addDays(parseIso(this.clock.today()), i)),
+    ),
   );
   protected readonly days = computed(() => {
     const selected = this.selected();
     const unavailable = new Set(this.unavailableDates());
-    const days = this.nextDays.some((day) => day.iso === selected)
-      ? this.nextDays
-      : [...this.nextDays, dayChip(parseIso(selected))];
+    const nextDays = this.nextDays();
+    const days = nextDays.some((day) => day.iso === selected)
+      ? nextDays
+      : [...nextDays, dayChip(parseIso(selected))];
     return days.map((day) => {
       const isSelected = day.iso === selected;
       const isUnavailable = unavailable.has(day.iso);

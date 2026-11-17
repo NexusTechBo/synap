@@ -21,7 +21,6 @@ import {
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { I18nService } from '../../../../core/i18n/i18n.service';
-import { toIso } from '../../../../core/utils/calendar.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
@@ -60,7 +59,7 @@ export class ExceptionFormDialogComponent {
   private readonly injector = inject(Injector);
   protected readonly ref = inject(DialogRef);
 
-  protected readonly today = toIso(new Date());
+  protected readonly today = this.availability.today;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 

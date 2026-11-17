@@ -13,6 +13,7 @@ export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
 interface GuestSession {
   token: string;
   clinicSlug: string;
+  timezone: string | null;
   expiresAt: number;
 }
 
@@ -39,7 +40,12 @@ function decodeGuestSession(token: string | null, slug: string): GuestSession | 
   try {
     const payload = jwtDecode<GuestTokenPayload>(token);
     if (payload.role !== 'GUEST' || payload.clinicSlug !== slug) return null;
-    return { token, clinicSlug: payload.clinicSlug, expiresAt: payload.exp * 1000 };
+    return {
+      token,
+      clinicSlug: payload.clinicSlug,
+      timezone: payload.timezone ?? null,
+      expiresAt: payload.exp * 1000,
+    };
   } catch {
     return null;
   }
@@ -57,11 +63,14 @@ export class GuestSessionService {
   private slug: string | null = null;
   private session: GuestSession | null = null;
   private pending: Observable<string> | null = null;
+  private timezoneActive = false;
 
   private readonly _status = signal<GuestSessionStatus>('loading');
   private readonly _message = signal<string | null>(null);
+  private readonly _timezone = signal<string | null>(null);
   private readonly cooldown = createCooldown();
 
+  readonly timezone = this._timezone.asReadonly();
   readonly status = this._status.asReadonly();
   readonly message = this._message.asReadonly();
   readonly ready = computed(() => this._status() === 'ready');
@@ -71,6 +80,7 @@ export class GuestSessionService {
 
   start(slug: string | null): void {
     this.cooldown.reset();
+    this.timezoneActive = true;
     this.slug = slug?.trim() || null;
     this.pending = null;
     if (!this.slug) {
@@ -79,7 +89,7 @@ export class GuestSessionService {
     }
     const stored = decodeGuestSession(readStorage(), this.slug);
     if (isFresh(stored)) {
-      this.session = stored;
+      this.setSession(stored);
       this.setStatus('ready');
       return;
     }
@@ -97,11 +107,12 @@ export class GuestSessionService {
     const slug = this.slug;
     if (!slug) return throwError(() => new Error('No guest session'));
     if (this._status() !== 'ready') this.setStatus('loading');
-    this.pending ??= this.guestApi.createSession({ slug: slug }).pipe(
+    if (this.pending) return this.pending;
+    const request: Observable<string> = this.guestApi.createSession({ slug: slug }).pipe(
       map(({ token }) => {
         const session = decodeGuestSession(token, slug);
         if (!session) throw new Error('Invalid guest token');
-        this.session = session;
+        this.setSession(session);
         writeStorage(token);
         this.setStatus('ready');
         return token;
@@ -110,14 +121,22 @@ export class GuestSessionService {
         this.fail(error);
         return throwError(() => error);
       }),
-      finalize(() => (this.pending = null)),
+      finalize(() => {
+        if (this.pending === request) this.pending = null;
+      }),
       shareReplay(1),
     );
-    return this.pending;
+    this.pending = request;
+    return request;
+  }
+
+  releaseTimezone(): void {
+    this.timezoneActive = false;
+    this._timezone.set(null);
   }
 
   clear(): void {
-    this.session = null;
+    this.setSession(null);
     writeStorage(null);
   }
 
@@ -133,6 +152,11 @@ export class GuestSessionService {
     if (unavailable)
       this.setStatus('unavailable', this.i18n.translate('guestBooking.unavailableMessage'));
     else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
+  }
+
+  private setSession(session: GuestSession | null): void {
+    this.session = session;
+    this._timezone.set(this.timezoneActive ? (session?.timezone ?? null) : null);
   }
 
   private setStatus(status: GuestSessionStatus, message: string | null = null): void {

@@ -16,6 +16,7 @@ import {
 } from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   activeAppointmentsConflict,
   apiErrorMessage,
@@ -29,7 +30,7 @@ import {
   ScheduleException,
   ScheduleExceptionRequest,
 } from '../../core/models/api.models';
-import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.util';
+import { formatLongDate, formatTime } from '../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -48,8 +49,9 @@ export class AvailabilityService {
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   private readonly doctorId = inject(AuthService).userId()!;
+  private readonly clock = inject(ClinicClockService);
 
-  readonly today = toIso(new Date());
+  readonly today = this.clock.today();
   private readonly _previewDate = signal(this.today);
   readonly previewDate = this._previewDate.asReadonly();
 

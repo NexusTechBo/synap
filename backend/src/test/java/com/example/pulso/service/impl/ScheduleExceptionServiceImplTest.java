@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionRequest;
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionResponse;
 import com.example.pulso.entity.Personal;
@@ -30,16 +31,21 @@ import com.example.pulso.repository.AppointmentRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.AppointmentService;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -79,15 +85,21 @@ class ScheduleExceptionServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC);
         service = new ScheduleExceptionServiceImpl(
                 scheduleExceptionRepository,
                 personalRepository,
                 appointmentRepository,
                 appointmentService,
                 mapper,
-                CLOCK,
+                new ClinicTimeProvider(CLOCK),
                 messageSource
         );
+    }
+
+    @AfterEach
+    void tearDown() {
+        TenantContext.clear();
     }
 
     private Personal givenDoctor() {
@@ -120,6 +132,53 @@ class ScheduleExceptionServiceImplTest {
         var ex = type.cast(thrown);
         assertThat(ex.getMessageKey()).isEqualTo(messageKey);
         return ex;
+    }
+
+    @Nested
+    @DisplayName("clinic time zone")
+    class ClinicTimeZone {
+        private static final Instant INSTANT = Instant.parse("2026-11-04T03:30:00Z");
+        private static final LocalDate LOCAL_DATE_IN_LA_PAZ = LocalDate.of(2026, 11, 3);
+
+        private ScheduleExceptionServiceImpl serviceInZone(String zone) {
+            TenantContext.setCurrentTenant(1L, "demo", ZoneId.of(zone));
+            return new ScheduleExceptionServiceImpl(
+                    scheduleExceptionRepository,
+                    personalRepository,
+                    appointmentRepository,
+                    appointmentService,
+                    mapper,
+                    new ClinicTimeProvider(Clock.fixed(INSTANT, ZoneOffset.UTC)),
+                    messageSource
+            );
+        }
+
+        @Test
+        @DisplayName("rejects yesterday's date in a clinic already past midnight")
+        void shouldRejectDateInThePastForSaoPauloClinic() {
+            var saoPauloService = serviceInZone("America/Sao_Paulo");
+            givenDoctor();
+
+            assertApiException(
+                    () -> saoPauloService.addDoctorScheduleException(
+                            DOCTOR_ID, fullDay(LOCAL_DATE_IN_LA_PAZ, null, null)),
+                    BadRequestException.class,
+                    MessageKeys.SCHEDULE_EXCEPTION_DATE_PAST
+            );
+            verify(scheduleExceptionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("accepts the same date as today in a clinic still before midnight")
+        void shouldAcceptSameDateForLaPazClinic() {
+            var laPazService = serviceInZone("America/La_Paz");
+            givenDoctor();
+            givenSaveReturnsArgument();
+
+            laPazService.addDoctorScheduleException(DOCTOR_ID, fullDay(LOCAL_DATE_IN_LA_PAZ, null, null));
+
+            assertThat(captureSaved().getDate()).isEqualTo(LOCAL_DATE_IN_LA_PAZ);
+        }
     }
 
     @Nested

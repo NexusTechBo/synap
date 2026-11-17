@@ -22,10 +22,9 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PersonalService;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.util.Utils;
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,7 +54,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final Clock clock;
+    private final ClinicTimeProvider clinicTimeProvider;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -218,7 +217,7 @@ public class PersonalServiceImpl implements PersonalService {
 
     private void cancelOrRejectActiveAppointments(Long doctorId, DoctorModeRequest request) {
         var active = appointmentRepository.countByDoctorIdAndStatusInAndStartTimeAfter(
-                doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock)
+                doctorId, ACTIVE_STATUSES, clinicTimeProvider.now()
         );
         if (active == 0) return;
         if (!Boolean.TRUE.equals(request.cancelAppointments())) {
@@ -232,7 +231,7 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     private void verifyCanStopBeingDoctor(Long doctorId) {
-        if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(doctorId, AppointmentStatus.CANCELLED, LocalDateTime.now(clock)))
+        if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(doctorId, AppointmentStatus.CANCELLED, clinicTimeProvider.now()))
             throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS);
         if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(doctorId))
             throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);

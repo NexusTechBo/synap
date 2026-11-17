@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnInit,
   afterRenderEffect,
@@ -84,6 +85,7 @@ export class GuestBookingComponent implements OnInit {
   });
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.session.releaseTimezone());
     afterRenderEffect(() => {
       const view = this.session.ready() ? this.booking.step() : this.session.status();
       const heading = this.heading()?.nativeElement;

@@ -58,6 +58,86 @@ describe('GuestSessionService', () => {
     service.start(SLUG);
   }
 
+  describe('timezone', () => {
+    it('is null before any session exists', () => {
+      expect(service.timezone()).toBeNull();
+    });
+
+    it('is set from the timezone claim of the created session', () => {
+      guestApi.createSession.mockReturnValue(
+        of(sessionResponse(guestToken({ timezone: 'America/Sao_Paulo' }))),
+      );
+
+      service.start(SLUG);
+
+      expect(service.timezone()).toBe('America/Sao_Paulo');
+    });
+
+    it('is set from the timezone claim of a stored token', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ timezone: 'America/La_Paz' }));
+
+      service.start(SLUG);
+
+      expect(service.timezone()).toBe('America/La_Paz');
+    });
+
+    it('stays null when the token has no timezone claim', () => {
+      service.start(SLUG);
+
+      expect(service.timezone()).toBeNull();
+    });
+
+    it('is cleared with clear()', () => {
+      guestApi.createSession.mockReturnValue(
+        of(sessionResponse(guestToken({ timezone: 'America/Sao_Paulo' }))),
+      );
+      service.start(SLUG);
+
+      service.clear();
+
+      expect(service.timezone()).toBeNull();
+    });
+
+    it('is released without removing the stored token', () => {
+      const token = guestToken({ timezone: 'America/La_Paz' });
+      sessionStorage.setItem(GUEST_TOKEN_KEY, token);
+      service.start(SLUG);
+
+      service.releaseTimezone();
+
+      expect(service.timezone()).toBeNull();
+      expect(sessionStorage.getItem(GUEST_TOKEN_KEY)).toBe(token);
+    });
+
+    it('stays released when a pending session resolves after release and returns on start', () => {
+      const response = new Subject<GuestSessionResponse>();
+      guestApi.createSession.mockReturnValue(response);
+      service.start(SLUG);
+
+      service.releaseTimezone();
+      response.next(sessionResponse(guestToken({ timezone: 'America/La_Paz' })));
+      response.complete();
+
+      expect(service.timezone()).toBeNull();
+      expect(service.ready()).toBe(true);
+
+      service.start(SLUG);
+
+      expect(service.timezone()).toBe('America/La_Paz');
+    });
+
+    it('is reactivated from the stored token when the session starts again', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ timezone: 'America/La_Paz' }));
+      service.start(SLUG);
+      service.releaseTimezone();
+
+      service.start(SLUG);
+
+      expect(service.timezone()).toBe('America/La_Paz');
+      expect(guestApi.createSession).not.toHaveBeenCalled();
+    });
+  });
+
   describe('start', () => {
     it('marks the session unavailable without calling the API when there is no slug', () => {
       service.start('   ');
