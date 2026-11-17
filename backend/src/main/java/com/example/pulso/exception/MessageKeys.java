@@ -41,6 +41,7 @@ public final class MessageKeys {
 
     public static final String SPECIALTY_NOT_FOUND = "specialty.notFound";
     public static final String SPECIALTY_ALREADY_EXISTS = "specialty.alreadyExists";
+    public static final String SPECIALTY_DEFAULT_GENERAL_MEDICINE = "specialty.defaultGeneralMedicine";
 
     public static final String AVAILABILITY_NOT_FOUND = "availability.notFound";
     public static final String AVAILABILITY_OVERLAPS = "availability.overlaps";

@@ -1,10 +1,12 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.clinic.ClinicCreatedResponse;
 import com.example.pulso.dto.clinic.ClinicRequest;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.Personal;
+import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.ClinicStatus;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.exception.BusinessException;
@@ -12,17 +14,20 @@ import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.repository.ClinicActivationTokenRepository;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
+import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
+import com.example.pulso.service.SchemaProvisioningService;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver.RegionalSettings;
-import com.example.pulso.service.SchemaProvisioningService;
 import com.example.pulso.util.Utils;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,6 +49,8 @@ public class ClinicServiceImpl implements ClinicService {
     private final ClinicActivationTokenRepository tokenRepository;
     private final Clock clock;
     private final RegionalSettingsResolver regionalSettingsResolver;
+    private final SpecialtyRepository specialtyRepository;
+    private final MessageSource messageSource;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
@@ -76,6 +83,10 @@ public class ClinicServiceImpl implements ClinicService {
                         .role(ERole.ADMINISTRATOR)
                         .build()
                 );
+                specialtyRepository.save(Specialty.builder()
+                        .name(resolveDefaultSpecialtyName())
+                        .build()
+                );
                 clinicActivationService.issueActivationToken(clinic, admin.getName(), admin.getEmail());
                 return new ClinicCreatedResponse(
                         clinic.getId(),
@@ -93,6 +104,19 @@ public class ClinicServiceImpl implements ClinicService {
         } finally {
             TenantContext.clear();
         }
+    }
+
+    private String resolveDefaultSpecialtyName() {
+        var locale = LocaleContextHolder.getLocale();
+        var effectiveLocale = LocaleConfig.SUPPORTED_LOCALES.stream()
+                .anyMatch(supported -> supported.getLanguage().equals(locale.getLanguage()))
+                ? locale
+                : LocaleConfig.SPANISH;
+        return messageSource.getMessage(
+                MessageKeys.SPECIALTY_DEFAULT_GENERAL_MEDICINE,
+                null,
+                effectiveLocale
+        );
     }
 
     private Clinic saveNewClinic(ClinicRequest request, String slug, RegionalSettings regional, TransactionTemplate tx) {
