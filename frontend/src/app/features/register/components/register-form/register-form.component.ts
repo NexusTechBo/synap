@@ -7,6 +7,7 @@ import { DEFAULT_COUNTRY } from '../../../../core/clinic/clinic-country.service'
 import { RegionsStore } from '../../../../core/clinic/regions.store';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { ClinicRequest } from '../../../../core/models/api.models';
+import { BackToHomeLinkComponent } from '../../../../shared/components/back-to-home-link/back-to-home-link.component';
 import {
   RegionalFieldsComponent,
   createRegionalForm,
@@ -27,6 +28,7 @@ import { RegisterService } from '../../register.service';
 @Component({
   selector: 'app-register-form',
   imports: [
+    BackToHomeLinkComponent,
     ReactiveFormsModule,
     RouterLink,
     FormFieldComponent,
@@ -34,7 +36,9 @@ import { RegisterService } from '../../register.service';
     TranslatePipe,
   ],
   templateUrl: './register-form.component.html',
-  host: { class: 'flex min-h-screen items-center justify-center px-4 py-10 sm:px-6' },
+  host: {
+    class: 'flex min-h-screen flex-col items-center justify-center gap-2 px-4 py-10 sm:px-6',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterFormComponent {

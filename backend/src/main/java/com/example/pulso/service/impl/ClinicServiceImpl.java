@@ -1,6 +1,5 @@
 package com.example.pulso.service.impl;
 
-import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.clinic.ClinicCreatedResponse;
 import com.example.pulso.dto.clinic.ClinicRequest;
@@ -18,6 +17,7 @@ import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
 import com.example.pulso.service.SchemaProvisioningService;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver.RegionalSettings;
@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -53,6 +52,7 @@ public class ClinicServiceImpl implements ClinicService {
     private final SpecialtyRepository specialtyRepository;
     private final MessageSource messageSource;
     private final IdentityDocumentResolver identityDocumentResolver;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
@@ -87,7 +87,7 @@ public class ClinicServiceImpl implements ClinicService {
                         .build()
                 );
                 specialtyRepository.save(Specialty.builder()
-                        .name(resolveDefaultSpecialtyName())
+                        .name(resolveDefaultSpecialtyName(clinic))
                         .build()
                 );
                 clinicActivationService.issueActivationToken(clinic, admin.getName(), admin.getEmail());
@@ -109,16 +109,11 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    private String resolveDefaultSpecialtyName() {
-        var locale = LocaleContextHolder.getLocale();
-        var effectiveLocale = LocaleConfig.SUPPORTED_LOCALES.stream()
-                .anyMatch(supported -> supported.getLanguage().equals(locale.getLanguage()))
-                ? locale
-                : LocaleConfig.SPANISH;
+    private String resolveDefaultSpecialtyName(Clinic clinic) {
         return messageSource.getMessage(
                 MessageKeys.SPECIALTY_DEFAULT_GENERAL_MEDICINE,
                 null,
-                effectiveLocale
+                clinicLocaleResolver.resolve(clinic)
         );
     }
 

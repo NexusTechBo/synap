@@ -115,7 +115,7 @@ export class RegionalSettingsCardComponent {
         },
         error: (error) =>
           this.notifications.error(
-            apiErrorMessage(error, this.i18n.translate('regional.saveError')),
+            apiErrorMessage(error, this.i18n, this.i18n.translate('regional.saveError')),
           ),
       });
   }

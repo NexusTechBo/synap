@@ -28,13 +28,14 @@ export class AppointmentDetailService {
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(
     this.resource,
+    this.i18n,
     this.i18n.translate('shared.detailDialog.loadError'),
   );
   readonly appointment = computed(() =>
     this.resource.hasValue() ? this.resource.value() : undefined,
   );
   readonly dateLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     const appointment = this.appointment();
     return appointment ? formatLongDate(datePart(appointment.startTime), locale) : '';
   });

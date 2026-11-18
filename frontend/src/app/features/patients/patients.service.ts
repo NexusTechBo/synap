@@ -118,6 +118,7 @@ export class PatientsService {
   readonly isLoading = computed(() => this.activeResource().isLoading());
   readonly errorMessage = resourceError(
     { error: () => this.activeResource().error() },
+    this.i18n,
     this.i18n.translate('patients.errors.load'),
   );
 
@@ -196,7 +197,7 @@ export class PatientsService {
         this.reload();
       }),
       catchError((error) => {
-        this.notifications.error(apiErrorMessage(error));
+        this.notifications.error(apiErrorMessage(error, this.i18n));
         return EMPTY;
       }),
     );

@@ -48,9 +48,9 @@ export class AvailabilityFormDialogComponent {
   protected readonly days = computed(() => {
     this.i18n.currentLang();
     return DAYS_OF_WEEK.map((day) => ({
-      value: day.value,
-      label: this.i18n.translate(`days.${day.value}.label`),
-      short: this.i18n.translate(`days.${day.value}.short`),
+      value: day,
+      label: this.i18n.translate(`days.${day}.label`),
+      short: this.i18n.translate(`days.${day}.short`),
     }));
   });
 

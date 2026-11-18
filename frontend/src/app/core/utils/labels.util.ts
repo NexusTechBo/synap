@@ -8,19 +8,15 @@ export const STATUS_STYLE: Record<AppointmentStatus, { dot: string; badge: strin
   CANCELLED: { dot: 'bg-gray-400', badge: 'bg-gray-900/[0.06] text-gray-500' },
 };
 
-export const DAYS_OF_WEEK: { value: DayOfWeek; label: string; short: string }[] = [
-  { value: 'MONDAY', label: 'Lunes', short: 'Lun' },
-  { value: 'TUESDAY', label: 'Martes', short: 'Mar' },
-  { value: 'WEDNESDAY', label: 'Miércoles', short: 'Mié' },
-  { value: 'THURSDAY', label: 'Jueves', short: 'Jue' },
-  { value: 'FRIDAY', label: 'Viernes', short: 'Vie' },
-  { value: 'SATURDAY', label: 'Sábado', short: 'Sáb' },
-  { value: 'SUNDAY', label: 'Domingo', short: 'Dom' },
+export const DAYS_OF_WEEK: DayOfWeek[] = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
 ];
-
-export function specialtyLabel(name: string | null | undefined): string {
-  return name ?? 'Sin especialidad';
-}
 
 function nameWords(name: string): string[] {
   return name

@@ -1,7 +1,7 @@
 import { CdkCopyToClipboard } from '@angular/cdk/clipboard';
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { SUCCESS_MESSAGE } from '../../../../core/utils/messages.util';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
@@ -26,6 +26,7 @@ export interface GuestLinkData {
 })
 export class GuestLinkDialogComponent {
   private readonly notifications = inject(NotificationService);
+  private readonly i18n = inject(I18nService);
   protected readonly ref = inject(DialogRef);
   protected readonly link = inject<GuestLinkData>(DIALOG_DATA);
   protected readonly copyFailed = signal(false);
@@ -35,7 +36,7 @@ export class GuestLinkDialogComponent {
       this.copyFailed.set(true);
       return;
     }
-    this.notifications.success(SUCCESS_MESSAGE.guestLinkCopied);
+    this.notifications.success(this.i18n.translate('appointments.guestLink.copied'));
     this.ref.close();
   }
 }

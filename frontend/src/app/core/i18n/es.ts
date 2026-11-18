@@ -1,5 +1,7 @@
 export const ES_TRANSLATIONS = {
   common: {
+    select: 'Seleccionar',
+    backToHome: 'Volver al inicio',
     save: 'Guardar',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -10,6 +12,16 @@ export const ES_TRANSLATIONS = {
     confirm: 'Confirmar',
     back: 'Volver',
   },
+  errors: {
+    unexpected: 'Ocurrió un error inesperado',
+    connection: 'No se pudo conectar con el servidor',
+    rateLimited: 'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.',
+    loadAppointments: 'No se pudieron cargar las citas',
+    loadSpecialties: 'No se pudieron cargar las especialidades',
+    loadDoctors: 'No se pudieron cargar los doctores',
+    loadSlots: 'No se pudieron cargar los horarios',
+  },
+
   login: {
     title: 'Inicia sesión',
     subtitle: 'Ingresa tus credenciales para acceder a tu cuenta',
@@ -162,6 +174,7 @@ export const ES_TRANSLATIONS = {
     actions: {
       confirm: 'Confirmar',
       cancel: 'Cancelar cita',
+      cancelFor: 'Cancelar cita de',
     },
     subtitles: {
       own: 'Tus citas',
@@ -360,6 +373,21 @@ export const ES_TRANSLATIONS = {
       next7Days: 'Próximos 7 días',
       thisMonth: 'Este mes',
     },
+  },
+
+  datePicker: {
+    placeholder: 'Seleccionar fecha',
+    dialogAriaLabel: 'Seleccionar fecha',
+    today: 'Hoy',
+  },
+
+  monthGrid: {
+    previousMonth: 'Mes anterior',
+    nextMonth: 'Mes siguiente',
+  },
+
+  dateStrip: {
+    unavailable: 'sin horarios disponibles',
   },
 
   availability: {
@@ -664,6 +692,10 @@ export const ES_TRANSLATIONS = {
   shared: {
     noSpecialty: 'Sin especialidad',
     defaultClinicName: 'Mi espacio de trabajo',
+    specialtyFilter: {
+      all: 'Todas',
+      ariaLabel: 'Especialidad',
+    },
     closeNotificationAria: 'Cerrar notificación',
     pagination: {
       page: 'Página',
@@ -785,6 +817,7 @@ export const ES_TRANSLATIONS = {
     schedule: {
       dateAria: 'Fecha',
       chooseDoctorTitle: 'Elige un doctor',
+      emptySlotsTitle: 'Sin horarios libres',
       chooseDoctorMessage: 'Te mostraremos sus horarios libres.',
       emptySlots: 'El doctor no atiende o ya no tiene espacios este día. Prueba otra fecha.',
     },
@@ -845,6 +878,7 @@ export const ES_TRANSLATIONS = {
     retryButton: 'Reintentar',
     retryIn: 'Reintenta en',
     cooldownFinished: 'Ya puedes intentarlo de nuevo',
+    startError: 'No se pudo iniciar la reserva',
     loadingSessionTitle: 'Preparando tu reserva…',
     headerPrefix: 'Reserva tu cita en',
     loadingClinicSr: 'Cargando espacio de trabajo…',

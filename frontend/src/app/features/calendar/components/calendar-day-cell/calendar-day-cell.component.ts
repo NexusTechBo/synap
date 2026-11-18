@@ -32,7 +32,7 @@ export class CalendarDayCellComponent {
   });
   protected readonly count = computed(() => this.appointments()?.length ?? null);
   protected readonly ariaLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     const date = formatLongDate(this.day().iso, locale);
     const count = this.count();
     if (count === null) return date;

@@ -30,7 +30,7 @@ export class PatientFormService {
                 map(() => saved),
                 catchError((error) => {
                   this.notifications.error(
-                    `${this.i18n.translate('patients.formDialog.assignWarningPrefix')} ${apiErrorMessage(error)}`,
+                    `${this.i18n.translate('patients.formDialog.assignWarningPrefix')} ${apiErrorMessage(error, this.i18n)}`,
                   );
                   return of(saved);
                 }),

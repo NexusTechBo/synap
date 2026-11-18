@@ -1,6 +1,7 @@
 package com.example.pulso.notification.event;
 
 import com.example.pulso.enums.ERole;
+import java.util.Locale;
 import org.jspecify.annotations.NonNull;
 
 public record StaffCreatedEvent(
@@ -9,5 +10,6 @@ public record StaffCreatedEvent(
         String username,
         String rawPassword,
         ERole role,
-        String clinicName
+        String clinicName,
+        Locale locale
 ) {}

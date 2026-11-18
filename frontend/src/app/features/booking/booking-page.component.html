@@ -172,6 +172,7 @@
           [selected]="booking.selectedSlot()"
           [loading]="booking.slotsLoading()"
           [errorMessage]="booking.slotsErrorMessage()"
+          [emptyTitle]="'booking.schedule.emptySlotsTitle' | translate"
           [emptyMessage]="'booking.schedule.emptySlots' | translate"
           (select)="booking.selectSlot($event)"
           (retry)="booking.reloadSlots()"

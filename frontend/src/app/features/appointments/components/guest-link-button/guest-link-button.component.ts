@@ -3,8 +3,8 @@ import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { ROLES } from '../../../../core/auth/roles';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { GUEST_BOOKING_PATH } from '../../../../core/navigation/navigation';
-import { SUCCESS_MESSAGE } from '../../../../core/utils/messages.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { labelledByFrame } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
@@ -23,6 +23,7 @@ import {
 })
 export class GuestLinkButtonComponent {
   private readonly auth = inject(AuthService);
+  private readonly i18n = inject(I18nService);
   private readonly clipboard = inject(Clipboard);
   private readonly notifications = inject(NotificationService);
   private readonly dialog = inject(Dialog);
@@ -41,7 +42,7 @@ export class GuestLinkButtonComponent {
     const url = this.url();
     if (!url) return;
     if (this.clipboard.copy(url)) {
-      this.notifications.success(SUCCESS_MESSAGE.guestLinkCopied);
+      this.notifications.success(this.i18n.translate('appointments.guestLink.copied'));
       return;
     }
     this.dialog.open<void, GuestLinkData>(GuestLinkDialogComponent, {

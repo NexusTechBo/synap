@@ -26,6 +26,8 @@ import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.SchemaProvisioningService;
 import com.example.pulso.service.component.document.BolivianCiValidator;
 import com.example.pulso.service.component.document.BrazilianCpfValidator;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +74,9 @@ class ClinicServiceImplTest {
     @Mock
     private ClinicActivationTokenRepository tokenRepository;
 
+    @Mock
+    private CurrentClinicProvider currentClinicProvider;
+
     @BeforeEach
     void initLocale() {
         LocaleContextHolder.setDefaultLocale(LocaleConfig.SPANISH);
@@ -104,7 +109,8 @@ class ClinicServiceImplTest {
                 new RegionalSettingsResolver(),
                 specialtyRepository,
                 messageSource(),
-                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator())));
+                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator())),
+                new ClinicLocaleResolver(currentClinicProvider));
     }
 
     private static ClinicRequest request(String country, String timezone, String language) {
@@ -248,37 +254,44 @@ class ClinicServiceImplTest {
     }
 
     @Test
-    void shouldCreateDefaultGeneralMedicineSpecialtyInSpanishWhenLocaleIsEs() {
+    void shouldCreateDefaultSpecialtyInSpanishWhenClinicLanguageIsEs() {
         stubHappyPath();
-        LocaleContextHolder.setLocale(Locale.forLanguageTag("es"));
 
-        service().createClinic(request(null, null, null));
+        service().createClinic(request(null, null, "es"));
 
         assertThat(savedSpecialty().getName()).isEqualTo("Medicina general");
     }
 
     @Test
-    void shouldCreateDefaultGeneralMedicineSpecialtyInEnglishWhenLocaleIsEn() {
+    void shouldCreateDefaultSpecialtyInEnglishWhenClinicLanguageIsEn() {
         stubHappyPath();
-        LocaleContextHolder.setLocale(Locale.forLanguageTag("en"));
 
-        service().createClinic(request(null, null, null));
+        service().createClinic(request(null, null, "en"));
 
         assertThat(savedSpecialty().getName()).isEqualTo("General medicine");
     }
 
     @Test
-    void shouldFallbackToSpanishForDefaultSpecialtyWhenLocaleIsUnsupported() {
+    void shouldCreateDefaultSpecialtyInSpanishWhenClinicLanguageIsPtBr() {
         stubHappyPath();
-        LocaleContextHolder.setLocale(Locale.forLanguageTag("fr"));
 
-        service().createClinic(request(null, null, null));
+        service().createClinic(request(null, null, "pt-BR"));
 
         assertThat(savedSpecialty().getName()).isEqualTo("Medicina general");
     }
 
     @Test
-    void shouldFallbackToSpanishForDefaultSpecialtyWhenLocaleIsNotSet() {
+    void shouldIgnoreRequestLocaleWhenCreatingDefaultSpecialty() {
+        stubHappyPath();
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+
+        service().createClinic(request(null, null, "es"));
+
+        assertThat(savedSpecialty().getName()).isEqualTo("Medicina general");
+    }
+
+    @Test
+    void shouldCreateDefaultSpecialtyInSpanishWhenClinicLanguageIsOmitted() {
         stubHappyPath();
 
         service().createClinic(request(null, null, null));

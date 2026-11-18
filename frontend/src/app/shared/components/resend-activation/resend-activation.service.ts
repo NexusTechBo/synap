@@ -42,7 +42,7 @@ export class ResendActivationService {
           if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
             this._error.set(emailEditable ? this.i18n.translate(INVALID_EMAIL_KEY) : fallback);
           } else {
-            this._error.set(apiErrorMessage(error, fallback));
+            this._error.set(apiErrorMessage(error, this.i18n, fallback));
           }
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter, () => this._error.set(null));

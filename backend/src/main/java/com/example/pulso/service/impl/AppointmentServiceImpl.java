@@ -23,6 +23,7 @@ import com.example.pulso.repository.*;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.util.DateTimeUtils;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
@@ -42,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -68,6 +68,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final MessageSource messageSource;
     private final Clock clock;
     private final ClinicTimeProvider clinicTimeProvider;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     @Transactional
@@ -418,12 +419,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getStartTime(),
                 appointment.getEndTime(),
                 appointment.getCancellationReason(),
-                channels
+                channels,
+                clinicLocaleResolver.resolve(clinic)
         ));
     }
 
     private String resolveMessage(String key) {
-        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
+        return messageSource.getMessage(key, null, clinicLocaleResolver.resolveCurrent());
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {

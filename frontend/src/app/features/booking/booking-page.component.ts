@@ -55,7 +55,7 @@ export class BookingPageComponent {
   protected readonly booking = inject(BookingService);
 
   protected readonly dateLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     return formatLongDate(this.booking.selectedDate(), locale);
   });
 

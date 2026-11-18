@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import {
   addDays,
   formatMonthShort,
@@ -7,15 +8,16 @@ import {
   parseIso,
   toIso,
 } from '../../../../core/utils/calendar.util';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 
 export const DATE_STRIP_DAYS = 14;
 
-function dayChip(date: Date) {
+function dayChip(date: Date, locale: string) {
   return {
     iso: toIso(date),
-    weekday: formatWeekdayShort(date),
+    weekday: formatWeekdayShort(date, locale),
     day: date.getDate(),
-    month: formatMonthShort(date),
+    month: formatMonthShort(date, locale),
   };
 }
 
@@ -32,6 +34,7 @@ function chipStateClass(selected: boolean, unavailable: boolean): string {
 
 @Component({
   selector: 'app-date-strip',
+  imports: [TranslatePipe],
   templateUrl: './date-strip.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,19 +45,21 @@ export class DateStripComponent {
   readonly select = output<string>();
 
   private readonly clock = inject(ClinicClockService);
+  private readonly i18n = inject(I18nService);
 
-  private readonly nextDays = computed(() =>
-    Array.from({ length: DATE_STRIP_DAYS }, (_, i) =>
-      dayChip(addDays(parseIso(this.clock.today()), i)),
-    ),
-  );
+  private readonly nextDays = computed(() => {
+    const locale = this.i18n.intlLocale();
+    return Array.from({ length: DATE_STRIP_DAYS }, (_, i) =>
+      dayChip(addDays(parseIso(this.clock.today()), i), locale),
+    );
+  });
   protected readonly days = computed(() => {
     const selected = this.selected();
     const unavailable = new Set(this.unavailableDates());
     const nextDays = this.nextDays();
     const days = nextDays.some((day) => day.iso === selected)
       ? nextDays
-      : [...nextDays, dayChip(parseIso(selected))];
+      : [...nextDays, dayChip(parseIso(selected), this.i18n.intlLocale())];
     return days.map((day) => {
       const isSelected = day.iso === selected;
       const isUnavailable = unavailable.has(day.iso);

@@ -88,7 +88,11 @@ export class ActivationService {
         if (retryAfter) this.cooldown.start(retryAfter);
         this._state.set({
           status: 'error',
-          message: apiErrorMessage(error, this.i18n.translate('activation.defaultError')),
+          message: apiErrorMessage(
+            error,
+            this.i18n,
+            this.i18n.translate('activation.defaultError'),
+          ),
         });
       },
     });

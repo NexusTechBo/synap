@@ -2,6 +2,8 @@ import { ES_TRANSLATIONS } from './es';
 
 export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   common: {
+    select: 'Select',
+    backToHome: 'Back to home',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -12,6 +14,16 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     confirm: 'Confirm',
     back: 'Back',
   },
+  errors: {
+    unexpected: 'An unexpected error occurred',
+    connection: 'Could not connect to the server',
+    rateLimited: 'You have made too many requests. Please try again in a few minutes.',
+    loadAppointments: 'Could not load appointments',
+    loadSpecialties: 'Could not load specialties',
+    loadDoctors: 'Could not load doctors',
+    loadSlots: 'Could not load time slots',
+  },
+
   login: {
     title: 'Sign in',
     subtitle: 'Enter your credentials to access your account',
@@ -163,6 +175,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     actions: {
       confirm: 'Confirm',
       cancel: 'Cancel appointment',
+      cancelFor: 'Cancel appointment for',
     },
     subtitles: {
       own: 'Your appointments',
@@ -360,6 +373,21 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       next7Days: 'Next 7 days',
       thisMonth: 'This month',
     },
+  },
+
+  datePicker: {
+    placeholder: 'Select date',
+    dialogAriaLabel: 'Select date',
+    today: 'Today',
+  },
+
+  monthGrid: {
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+  },
+
+  dateStrip: {
+    unavailable: 'no available times',
   },
 
   availability: {
@@ -663,6 +691,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   shared: {
     noSpecialty: 'No specialty',
     defaultClinicName: 'My workspace',
+    specialtyFilter: {
+      all: 'All',
+      ariaLabel: 'Specialty',
+    },
     closeNotificationAria: 'Close notification',
     pagination: {
       page: 'Page',
@@ -785,6 +817,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       dateAria: 'Date',
       chooseDoctorTitle: 'Choose a doctor',
       chooseDoctorMessage: 'We will show their available time slots.',
+      emptySlotsTitle: 'No free times',
       emptySlots:
         'The doctor is unavailable or has no remaining slots on this day. Try another date.',
     },
@@ -845,6 +878,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     retryButton: 'Try again',
     retryIn: 'Retry in',
     cooldownFinished: 'You can try again now',
+    startError: 'Could not start your booking',
     loadingSessionTitle: 'Preparing your booking…',
     headerPrefix: 'Book your appointment at',
     loadingClinicSr: 'Loading workspace…',

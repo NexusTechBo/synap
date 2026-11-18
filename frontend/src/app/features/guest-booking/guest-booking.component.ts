@@ -111,17 +111,15 @@ export class GuestBookingComponent implements OnInit {
     return this.i18n.translate(STEP_TITLE_KEYS[this.booking.step()]);
   });
   protected readonly dateLabel = computed(() => {
-    this.i18n.currentLang();
-    return formatLongDate(this.booking.selectedDate());
+    return formatLongDate(this.booking.selectedDate(), this.i18n.intlLocale());
   });
   protected readonly patientPhone = computed(() => {
     const patient = this.booking.patient();
     return patient ? formatPhone(patient.phoneNumber, this.country()) : '';
   });
   protected readonly resultDateLabel = computed(() => {
-    this.i18n.currentLang();
     const result = this.booking.result();
-    return result ? formatLongDate(datePart(result.startTime)) : '';
+    return result ? formatLongDate(datePart(result.startTime), this.i18n.intlLocale()) : '';
   });
 
   constructor() {

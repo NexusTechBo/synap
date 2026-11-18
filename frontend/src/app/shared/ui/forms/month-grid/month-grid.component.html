@@ -3,7 +3,7 @@
     type="button"
     (click)="shiftMonth(-1)"
     class="flex h-8 w-8 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-white/60"
-    aria-label="Mes anterior"
+    [attr.aria-label]="'monthGrid.previousMonth' | translate"
   >
     <app-ui-icon name="chevronLeft" class="h-4 w-4" [strokeWidth]="2" />
   </button>
@@ -12,14 +12,14 @@
     type="button"
     (click)="shiftMonth(1)"
     class="flex h-8 w-8 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-white/60"
-    aria-label="Mes siguiente"
+    [attr.aria-label]="'monthGrid.nextMonth' | translate"
   >
     <app-ui-icon name="chevronRight" class="h-4 w-4" [strokeWidth]="2" />
   </button>
 </div>
 
 <div class="mb-1.5 grid grid-cols-7 text-center text-[11px] font-bold tracking-wide text-gray-500">
-  @for (weekday of weekdays; track weekday.value) {
+  @for (weekday of weekdays(); track weekday.value) {
     <span>{{ weekday.short }}</span>
   }
 </div>

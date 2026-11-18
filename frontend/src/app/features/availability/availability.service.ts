@@ -74,11 +74,11 @@ export class AvailabilityService {
     this.i18n.currentLang();
     const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
     return DAYS_OF_WEEK.map((day) => ({
-      value: day.value,
-      label: this.i18n.translate(`days.${day.value}.label`),
-      short: this.i18n.translate(`days.${day.value}.short`),
+      value: day,
+      label: this.i18n.translate(`days.${day}.label`),
+      short: this.i18n.translate(`days.${day}.short`),
       blocks: blocks
-        .filter((block) => block.dayOfWeek === day.value)
+        .filter((block) => block.dayOfWeek === day)
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
   });
@@ -90,14 +90,17 @@ export class AvailabilityService {
   );
   readonly weekError = resourceError(
     this.availabilityResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadWeek'),
   );
   readonly exceptionsError = resourceError(
     this.exceptionsResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadExceptions'),
   );
   readonly previewError = resourceError(
     this.previewResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadPreview'),
   );
 
@@ -125,6 +128,7 @@ export class AvailabilityService {
               day,
               message: apiErrorMessage(
                 error,
+                this.i18n,
                 this.i18n.translate('availability.errors.saveSchedule'),
               ),
             }),
@@ -197,7 +201,7 @@ export class AvailabilityService {
       .confirmThen(
         {
           title: this.i18n.translate('availability.confirm.removeBlockTitle'),
-          message: `${prefix} ${formatLongDate(exception.date).toLowerCase()}?`,
+          message: `${prefix} ${formatLongDate(exception.date, this.i18n.intlLocale()).toLowerCase()}?`,
           confirmLabel: this.i18n.translate('availability.confirm.removeLabel'),
         },
         () => this.api.removeException(exception.id),

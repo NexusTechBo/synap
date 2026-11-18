@@ -152,6 +152,7 @@ export class BookingService {
   );
   readonly patientsErrorMessage = resourceError(
     this.patientsResource,
+    this.i18n,
     this.i18n.translate('booking.errors.loadPatients'),
   );
   readonly doctors = computed(() => {
@@ -164,6 +165,7 @@ export class BookingService {
   );
   readonly slotsErrorMessage = resourceError(
     this.slotsResource,
+    this.i18n,
     this.i18n.translate('booking.errors.loadSlots'),
   );
   readonly canSubmit = computed(
@@ -260,7 +262,7 @@ export class BookingService {
     conflict: PatientActiveAppointmentConflict,
     attempt: BookingAttempt,
   ): ConfirmOptions {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     const status = this.i18n.translate(`statuses.${conflict.status}`).toLowerCase();
     const currentDate = formatLongDate(datePart(conflict.startTime), locale).toLowerCase();
     const newDate = formatLongDate(attempt.date, locale).toLowerCase();
@@ -306,7 +308,7 @@ export class BookingService {
   }
 
   private handleBookingFailure(error: unknown, fallback: string): void {
-    this.notifications.error(apiErrorMessage(error, fallback));
+    this.notifications.error(apiErrorMessage(error, this.i18n, fallback));
     if (!isSlotUnavailableError(error)) return;
     this._selectedSlot.set(null);
     this.slotsResource.reload();

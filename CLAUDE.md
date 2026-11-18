@@ -61,7 +61,7 @@ Los agentes de `.claude/agents/` no tienen detalles del proyecto: leen esta secc
 - **Backend**: JUnit 5 + Mockito.
   - Services: tests unitarios con `@ExtendWith(MockitoExtension.class)` en `src/test/.../service/impl/`.
   - Controllers: `@WebMvcTest(controllers = X.class, properties = "rate-limit.enabled=false")` + `@Import(SecurityConfig, JacksonConfig, LocaleConfig, ...)` + `@MockitoBean`. Tokens de prueba en `controller/SliceTokens`. Referencia: `controller/PatientControllerTest.java`.
-- **Frontend**: Vitest con `@angular/build:unit-test`; specs junto al archivo. Referencias: `core/api/appointments.api.spec.ts`, `core/auth/auth.guards.spec.ts`, `features/patients/patients-page.component.spec.ts`. **No** hay `@playwright/test` instalado y no se debe agregar; la verificación en navegador se hace con el Playwright MCP.
+- **Frontend**: Vitest con `@angular/build:unit-test`; los specs viven en `src/test/app/` replicando la estructura de `src/app/` (p. ej. `src/app/core/i18n/i18n.service.ts` → `src/test/app/core/i18n/i18n.service.spec.ts`) e importan el código con rutas relativas a `src/app`. Referencias: `src/test/app/core/api/appointments.api.spec.ts`, `src/test/app/core/auth/auth.guards.spec.ts`, `src/test/app/features/patients/patients-page.component.spec.ts`. **No** hay `@playwright/test` instalado y no se debe agregar; la verificación en navegador se hace con el Playwright MCP.
 
 ## Comandos
 
