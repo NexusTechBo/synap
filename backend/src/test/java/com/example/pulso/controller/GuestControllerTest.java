@@ -29,7 +29,7 @@ import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.SpecialtyService;
 import java.time.LocalDate;
@@ -72,7 +72,7 @@ class GuestControllerTest {
     private SpecialtyService specialtyService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;

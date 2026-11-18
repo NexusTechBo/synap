@@ -70,5 +70,6 @@ public interface PersonalRepository extends JpaRepository<Personal, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    boolean existsByIdAndActiveTrueAndRoleAndAlsoDoctor(Long id, ERole role, boolean alsoDoctor);
+    @Query("SELECT p.version FROM Personal p WHERE p.id = :id AND p.active = true")
+    Optional<Long> findVersionOfActiveById(@Param("id") Long id);
 }

@@ -1,11 +1,11 @@
 package com.example.pulso.middleware;
 
 import com.example.pulso.config.tenant.TenantContext;
+import com.example.pulso.enums.TokenStatus;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.RoleProfile;
-import com.example.pulso.security.SecurityUtils;
-import com.example.pulso.security.jwt.JwtClaims;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
+import com.example.pulso.security.profile.RoleProfile;
+import com.example.pulso.security.util.SecurityUtils;
 import com.example.pulso.util.LogKeys;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -27,7 +27,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
-    private final JwtUtil jwtUtil;
+    private final JwtUtils jwtUtil;
     private final ActiveUserChecker activeUserChecker;
 
     @Override
@@ -58,19 +58,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private void authenticate(HttpServletRequest request, Claims claims) {
-        var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
-        TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), JwtUtil.extractZone(claims), JwtUtil.extractCountry(claims));
-        var roles = JwtUtil.extractRoles(claims);
+        var clinicId = JwtUtils.extractClinicId(claims);
+        TenantContext.setCurrentTenant(clinicId, JwtUtils.extractClinicSlug(claims), JwtUtils.extractZone(claims), JwtUtils.extractCountry(claims));
+        var roles = JwtUtils.extractRoles(claims);
         var userId = Long.valueOf(claims.getSubject());
         var profile = RoleProfile.fromRoles(roles).orElse(null);
+        if (profile == null) {
+            log.warn("Token rejected: user {} in clinic {} has unsupported roles {}", userId, clinicId, roles);
+            return;
+        }
         try {
-            if (profile == null || !activeUserChecker.isActive(userId, profile)) {
-                log.warn(
-                        "Token rejected: user {} with roles {} in clinic {} is inactive or its roles changed",
-                        userId,
-                        roles,
-                        clinicId
-                );
+            var status = activeUserChecker.check(claims, profile);
+            if (status == TokenStatus.STALE) request.setAttribute(SecurityUtils.TOKEN_STALE_ATTRIBUTE, Boolean.TRUE);
+            if (status != TokenStatus.VALID) {
+                log.warn("Token rejected ({}): user {} with roles {} in clinic {}", status, userId, roles, clinicId);
                 return;
             }
         } catch (DataAccessException e) {
@@ -81,7 +82,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             );
             return;
         }
-        SecurityContextHolder.getContext().setAuthentication(SecurityUtils.authenticated(claims.getSubject(), roles));
+        SecurityContextHolder.getContext().setAuthentication(SecurityUtils.authenticated(
+                claims.getSubject(),
+                roles,
+                JwtUtils.extractSessionId(claims).orElse(null)
+        ));
         bindLogContext(
                 request,
                 clinicId,

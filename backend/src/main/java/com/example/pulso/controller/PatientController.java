@@ -3,7 +3,7 @@ package com.example.pulso.controller;
 import com.example.pulso.dto.patient.PatientRequest;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.dto.personal.PersonalResponse;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
 import com.example.pulso.service.PatientService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

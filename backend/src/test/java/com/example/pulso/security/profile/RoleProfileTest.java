@@ -1,4 +1,4 @@
-package com.example.pulso.security;
+package com.example.pulso.security.profile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,21 +17,21 @@ class RoleProfileTest {
     class ValidCombinations {
         static Stream<Arguments> validCombinations() {
             return Stream.of(
-                    Arguments.of(List.of("ADMINISTRATOR"), ERole.ADMINISTRATOR, false),
-                    Arguments.of(List.of("ADMINISTRATOR", "DOCTOR"), ERole.ADMINISTRATOR, true),
-                    Arguments.of(List.of("DOCTOR", "ADMINISTRATOR"), ERole.ADMINISTRATOR, true),
-                    Arguments.of(List.of("DOCTOR"), ERole.DOCTOR, false),
-                    Arguments.of(List.of("ASSISTANT"), ERole.ASSISTANT, false),
-                    Arguments.of(List.of("GUEST"), ERole.GUEST, false));
+                    Arguments.of(List.of("ADMINISTRATOR"), ERole.ADMINISTRATOR),
+                    Arguments.of(List.of("ADMINISTRATOR", "DOCTOR"), ERole.ADMINISTRATOR),
+                    Arguments.of(List.of("DOCTOR", "ADMINISTRATOR"), ERole.ADMINISTRATOR),
+                    Arguments.of(List.of("DOCTOR"), ERole.DOCTOR),
+                    Arguments.of(List.of("ASSISTANT"), ERole.ASSISTANT),
+                    Arguments.of(List.of("GUEST"), ERole.GUEST));
         }
 
         @ParameterizedTest
         @MethodSource("validCombinations")
-        void shouldResolveProfileWithPrimaryRoleAndDoctorFlag(
-                List<String> roles, ERole primary, boolean alsoDoctor) {
+        void shouldResolveProfileWithPrimaryRole(
+                List<String> roles, ERole primary) {
             var profile = RoleProfile.fromRoles(roles);
 
-            assertThat(profile).contains(new RoleProfile(primary, alsoDoctor));
+            assertThat(profile).contains(new RoleProfile(primary));
         }
     }
 
@@ -63,13 +63,13 @@ class RoleProfileTest {
     class IsGuest {
         @Test
         void shouldBeGuestWhenPrimaryRoleIsGuest() {
-            assertThat(new RoleProfile(ERole.GUEST, false).isGuest()).isTrue();
+            assertThat(new RoleProfile(ERole.GUEST).isGuest()).isTrue();
         }
 
         @ParameterizedTest
         @EnumSource(value = ERole.class, names = "GUEST", mode = EnumSource.Mode.EXCLUDE)
         void shouldNotBeGuestWhenPrimaryRoleIsStaff(ERole role) {
-            assertThat(new RoleProfile(role, false).isGuest()).isFalse();
+            assertThat(new RoleProfile(role).isGuest()).isFalse();
         }
     }
 }

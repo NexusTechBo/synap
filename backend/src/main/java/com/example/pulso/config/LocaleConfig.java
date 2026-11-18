@@ -29,7 +29,7 @@ public class LocaleConfig {
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource source = bundleMessageSource("messages", "notifications", HIBERNATE_VALIDATION_BUNDLE);
+        ResourceBundleMessageSource source = bundleMessageSource("messages", "notifications", "defaults", HIBERNATE_VALIDATION_BUNDLE);
         source.setUseCodeAsDefaultMessage(true);
         return source;
     }

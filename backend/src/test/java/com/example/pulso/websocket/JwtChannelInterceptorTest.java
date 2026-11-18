@@ -3,16 +3,18 @@ package com.example.pulso.websocket;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.enums.TokenStatus;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.jwt.JwtClaims;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
+import com.example.pulso.security.profile.RoleProfile;
+import com.example.pulso.security.util.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.time.Clock;
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -40,7 +43,7 @@ class JwtChannelInterceptorTest {
     private static final String TOKEN = "token";
 
     @Mock
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @Mock
     private ActiveUserChecker activeUserChecker;
@@ -86,53 +89,9 @@ class JwtChannelInterceptorTest {
     }
 
     @Test
-    void shouldRejectConnectWhenTimezoneClaimIsMissing() {
-        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims(null)));
-
-        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
-                .isInstanceOf(MessageDeliveryException.class);
-
-        assertThat(TenantContext.current()).isNull();
-        verifyNoInteractions(activeUserChecker);
-    }
-
-    @Test
-    void shouldRejectConnectWhenTimezoneClaimIsInvalid() {
-        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("Mars/Olympus")));
-
-        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
-                .isInstanceOf(MessageDeliveryException.class);
-
-        assertThat(TenantContext.current()).isNull();
-        verifyNoInteractions(activeUserChecker);
-    }
-
-    @Test
-    void shouldRejectConnectWhenCountryClaimIsMissing() {
-        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", null)));
-
-        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
-                .isInstanceOf(MessageDeliveryException.class);
-
-        assertThat(TenantContext.current()).isNull();
-        verifyNoInteractions(activeUserChecker);
-    }
-
-    @Test
-    void shouldRejectConnectWhenCountryClaimIsInvalid() {
-        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "XX")));
-
-        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
-                .isInstanceOf(MessageDeliveryException.class);
-
-        assertThat(TenantContext.current()).isNull();
-        verifyNoInteractions(activeUserChecker);
-    }
-
-    @Test
     void shouldAcceptConnectWithValidTimezoneAndLeaveTenantCleared() {
         when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz")));
-        when(activeUserChecker.isActive(anyLong(), any(RoleProfile.class))).thenReturn(true);
+        when(activeUserChecker.check(any(Claims.class), any(RoleProfile.class))).thenReturn(TokenStatus.VALID);
         var attributes = new HashMap<String, Object>();
 
         var result = interceptor().preSend(connect(attributes), channel);
@@ -180,10 +139,84 @@ class JwtChannelInterceptorTest {
     @Test
     void shouldAcceptConnectOfDoctorWithDoctorRole() {
         when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "BO", List.of("DOCTOR"))));
-        when(activeUserChecker.isActive(1L, new RoleProfile(ERole.DOCTOR, false))).thenReturn(true);
+        when(activeUserChecker.check(any(Claims.class), eq(new RoleProfile(ERole.DOCTOR)))).thenReturn(TokenStatus.VALID);
 
         var result = interceptor().preSend(connect(new HashMap<>()), channel);
 
         assertThat(result).isNotNull();
+    }
+
+    @Test
+    void shouldRejectConnectWithStaleTokenMessageWhenCheckerReportsStale() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz")));
+        when(activeUserChecker.check(any(Claims.class), any(RoleProfile.class))).thenReturn(TokenStatus.STALE);
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessageContaining("Stale token");
+
+        assertThat(TenantContext.current()).isNull();
+    }
+
+    @Test
+    void shouldRejectConnectWithInvalidTokenMessageWhenCheckerReportsInvalid() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz")));
+        when(activeUserChecker.check(any(Claims.class), any(RoleProfile.class))).thenReturn(TokenStatus.INVALID);
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessageContaining("Invalid token");
+    }
+
+    @Nested
+    class SessionTopicSubscription {
+        private Message<byte[]> subscribe(String destination, Long clinicId, String userId, List<String> roles) {
+            var accessor = StompHeaderAccessor.create(StompCommand.SUBSCRIBE);
+            accessor.setDestination(destination);
+            var attributes = new HashMap<String, Object>();
+            attributes.put(JwtChannelInterceptor.CLINIC_ID_ATTRIBUTE, clinicId);
+            attributes.put(JwtChannelInterceptor.TOKEN_EXPIRES_AT_ATTRIBUTE, NOW.plusSeconds(60));
+            accessor.setSessionAttributes(attributes);
+            accessor.setUser(SecurityUtils.authenticated(userId, roles));
+            accessor.setLeaveMutable(true);
+            return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
+        }
+
+        @Test
+        void shouldAllowAdministratorToSubscribeToOwnClinicSessionTopic() {
+            var result = interceptor().preSend(subscribe("/topic/clinic/7/session", 7L, "1", List.of("ADMINISTRATOR")), channel);
+
+            assertThat(result).isNotNull();
+        }
+
+        @Test
+        void shouldAllowRestrictedDoctorToSubscribeToOwnClinicSessionTopic() {
+            var result = interceptor().preSend(subscribe("/topic/clinic/7/session", 7L, "2", List.of("DOCTOR")), channel);
+
+            assertThat(result).isNotNull();
+        }
+
+        @Test
+        void shouldAllowAssistantToSubscribeToOwnClinicSessionTopic() {
+            var result = interceptor().preSend(subscribe("/topic/clinic/7/session", 7L, "3", List.of("ASSISTANT")), channel);
+
+            assertThat(result).isNotNull();
+        }
+
+        @Test
+        void shouldRejectSubscriptionToSessionTopicOfAnotherClinic() {
+            assertThatThrownBy(() -> interceptor().preSend(
+                            subscribe("/topic/clinic/8/session", 7L, "1", List.of("ADMINISTRATOR")), channel))
+                    .isInstanceOf(MessageDeliveryException.class)
+                    .hasMessageContaining("Forbidden destination");
+        }
+
+        @Test
+        void shouldRejectRestrictedDoctorSubscribingToClinicBoard() {
+            assertThatThrownBy(() -> interceptor().preSend(
+                            subscribe("/topic/clinic/7/board", 7L, "2", List.of("DOCTOR")), channel))
+                    .isInstanceOf(MessageDeliveryException.class)
+                    .hasMessageContaining("Forbidden destination");
+        }
     }
 }

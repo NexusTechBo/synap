@@ -5,7 +5,8 @@ import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.middleware.JwtAuthFilter;
 import com.example.pulso.middleware.RateLimitFilter;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
+import com.example.pulso.security.util.SecurityUtils;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +52,9 @@ public class SecurityConfig {
                                 req,
                                 res,
                                 HttpStatus.UNAUTHORIZED,
-                                MessageKeys.SECURITY_AUTHENTICATION_REQUIRED
+                                Boolean.TRUE.equals(req.getAttribute(SecurityUtils.TOKEN_STALE_ATTRIBUTE))
+                                        ? MessageKeys.AUTH_TOKEN_STALE
+                                        : MessageKeys.SECURITY_AUTHENTICATION_REQUIRED
                         ))
                         .accessDeniedHandler((req, res, _) -> errorResponseWriter.write(
                                 req,

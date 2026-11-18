@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ClinicSettingsApi } from '../../../../app/core/api/clinic-settings.api';
-import { ClinicRegionalSettings, LoginResponse } from '../../../../app/core/models/api.models';
+import { ClinicRegionalSettings } from '../../../../app/core/models/api.models';
 
 const SETTINGS: ClinicRegionalSettings = {
   country: 'BR',
@@ -36,14 +36,14 @@ describe('ClinicSettingsApi', () => {
   });
 
   it('updates the settings with PUT clinic/regional-settings and the request body', () => {
-    let result: LoginResponse | undefined;
+    let completed = false;
 
-    api.updateRegionalSettings(SETTINGS).subscribe((value) => (result = value));
+    api.updateRegionalSettings(SETTINGS).subscribe({ complete: () => (completed = true) });
     const req = http.expectOne('clinic/regional-settings');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(SETTINGS);
-    req.flush({ token: 'jwt' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
 
-    expect(result).toEqual({ token: 'jwt' });
+    expect(completed).toBe(true);
   });
 });

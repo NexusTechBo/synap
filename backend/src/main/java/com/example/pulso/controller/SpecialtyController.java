@@ -2,7 +2,7 @@ package com.example.pulso.controller;
 
 import com.example.pulso.dto.specialty.SpecialtyRequest;
 import com.example.pulso.dto.specialty.SpecialtyResponse;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
 import com.example.pulso.service.SpecialtyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

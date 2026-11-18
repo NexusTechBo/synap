@@ -132,16 +132,18 @@ describe('AuthService regional claims', () => {
       expect(auth.isAuthenticated()).toBe(false);
     });
 
-    it('removes a rejected stored token', () => {
-      createService(token({ roles: undefined, role: 'ADMINISTRATOR' }));
+    it('does not restore a rejected stored token', () => {
+      const auth = createService(token({ roles: undefined, role: 'ADMINISTRATOR' }));
 
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
+      expect(auth.session()).toBeNull();
     });
 
-    it('removes an expired stored token', () => {
-      createService(token({ exp: Math.floor(Date.now() / 1000) - 60 }));
+    it('keeps an expired stored token so the refresh cookie can be tried', () => {
+      const jwt = token({ exp: Math.floor(Date.now() / 1000) - 60 });
+      const auth = createService(jwt);
 
-      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
+      expect(auth.session()).toBeNull();
+      expect(localStorage.getItem(TOKEN_KEY)).toBe(jwt);
     });
 
     it('keeps a valid stored token', () => {

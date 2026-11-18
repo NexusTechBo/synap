@@ -90,7 +90,7 @@ class ClinicServiceImplTest {
 
     private static MessageSource messageSource() {
         var source = new ResourceBundleMessageSource();
-        source.setBasename("messages");
+        source.setBasename("defaults");
         source.setDefaultEncoding(StandardCharsets.UTF_8.name());
         source.setFallbackToSystemLocale(false);
         return source;

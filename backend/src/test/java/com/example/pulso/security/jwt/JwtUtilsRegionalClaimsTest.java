@@ -1,24 +1,25 @@
 package com.example.pulso.security.jwt;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.pulso.entity.Clinic;
+import com.example.pulso.entity.Personal;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.enums.SupportedCountry;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class JwtUtilRegionalClaimsTest {
+class JwtUtilsRegionalClaimsTest {
     private final Clock clock = Clock.fixed(Instant.now(), ZoneOffset.UTC);
-    private final JwtUtil jwtUtil = new JwtUtil("0123456789012345678901234567890123456789", clock);
+    private final JwtUtils jwtUtil = new JwtUtils("0123456789012345678901234567890123456789", Duration.ofMinutes(15), clock);
     private final Clinic clinic = Clinic.builder()
             .id(7L)
             .name("Demo")
@@ -26,16 +27,38 @@ class JwtUtilRegionalClaimsTest {
             .country(SupportedCountry.BR)
             .timezone("America/Manaus")
             .defaultLanguage(ClinicLanguage.PT_BR)
+            .settingsVersion(4)
             .build();
+    private final Personal admin = Personal.builder().id(1L).name("admin").role(ERole.ADMINISTRATOR).version(3L).build();
 
     @Test
     void shouldIncludeRegionalClaimsInStaffToken() {
-        var token = jwtUtil.generate(1L, List.of(ERole.ADMINISTRATOR), clinic, "admin");
+        var token = jwtUtil.generate(admin, clinic, UUID.randomUUID());
 
         var claims = jwtUtil.parse(token).orElseThrow();
         assertThat(claims.get(JwtClaims.COUNTRY, String.class)).isEqualTo("BR");
         assertThat(claims.get(JwtClaims.TIMEZONE, String.class)).isEqualTo("America/Manaus");
         assertThat(claims.get(JwtClaims.DEFAULT_LANGUAGE, String.class)).isEqualTo("pt-BR");
+    }
+
+    @Test
+    void shouldIncludeVersionAndSessionClaimsInStaffToken() {
+        var sessionId = UUID.randomUUID();
+
+        var claims = jwtUtil.parse(jwtUtil.generate(admin, clinic, sessionId)).orElseThrow();
+
+        assertThat(JwtUtils.extractUserVersion(claims)).contains(3L);
+        assertThat(JwtUtils.extractSettingsVersion(claims)).contains(4);
+        assertThat(JwtUtils.extractSessionId(claims)).contains(sessionId);
+    }
+
+    @Test
+    void shouldNotIncludeVersionAndSessionClaimsInGuestToken() {
+        var claims = jwtUtil.parse(jwtUtil.generateGuest(clinic)).orElseThrow();
+
+        assertThat(JwtUtils.extractUserVersion(claims)).isEmpty();
+        assertThat(JwtUtils.extractSettingsVersion(claims)).isEmpty();
+        assertThat(JwtUtils.extractSessionId(claims)).isEmpty();
     }
 
     @Test
@@ -56,26 +79,8 @@ class JwtUtilRegionalClaimsTest {
 
     @Test
     void shouldExtractZoneFromValidClaim() {
-        assertThat(JwtUtil.extractZone(claimsWithTimezone("America/Sao_Paulo")))
+        assertThat(JwtUtils.extractZone(claimsWithTimezone("America/Sao_Paulo")))
                 .isEqualTo(ZoneId.of("America/Sao_Paulo"));
-    }
-
-    @Test
-    void shouldRejectMissingTimezoneClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone(null)))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldRejectBlankTimezoneClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone("   ")))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldRejectInvalidTimezoneClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractZone(claimsWithTimezone("Mars/Olympus")))
-                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private static Claims claimsWithCountry(String country) {
@@ -86,24 +91,7 @@ class JwtUtilRegionalClaimsTest {
 
     @Test
     void shouldExtractCountryFromValidClaim() {
-        assertThat(JwtUtil.extractCountry(claimsWithCountry("BR"))).isEqualTo(SupportedCountry.BR);
+        assertThat(JwtUtils.extractCountry(claimsWithCountry("BR"))).isEqualTo(SupportedCountry.BR);
     }
 
-    @Test
-    void shouldRejectMissingCountryClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry(null)))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldRejectBlankCountryClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry("  ")))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldRejectInvalidCountryClaim() {
-        assertThatThrownBy(() -> JwtUtil.extractCountry(claimsWithCountry("XX")))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
 }

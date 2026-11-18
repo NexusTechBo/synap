@@ -1,7 +1,7 @@
 package com.example.pulso.controller;
 
 import com.example.pulso.dto.whatsapp.WhatsappStatusResponse;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
 import com.example.pulso.service.WhatsappExchangeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

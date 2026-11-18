@@ -22,6 +22,7 @@ describe('API interceptors', () => {
     token: ReturnType<typeof vi.fn>;
     isAuthenticated: ReturnType<typeof vi.fn>;
     expireSession: ReturnType<typeof vi.fn>;
+    refresh: ReturnType<typeof vi.fn>;
   };
   let guest: {
     ensureToken: ReturnType<typeof vi.fn>;
@@ -34,6 +35,7 @@ describe('API interceptors', () => {
       token: vi.fn(() => 'staff-token'),
       isAuthenticated: vi.fn(() => true),
       expireSession: vi.fn(),
+      refresh: vi.fn(() => of({ token: 'new-token' })),
     };
     guest = { ensureToken: vi.fn(() => of('guest-token')), clear: vi.fn(), fail: vi.fn() };
     TestBed.configureTestingModule({
@@ -102,18 +104,49 @@ describe('API interceptors', () => {
       req.flush({});
     });
 
-    it('expires the session and fails without sending when the token is expired', () => {
+    it('refreshes and sends the request with the new token when the token is expired', () => {
       auth.isAuthenticated.mockReturnValue(false);
+      let body: unknown;
+
+      http.get('patients').subscribe((b) => (body = b));
+
+      const req = controller.expectOne('/api/patients');
+      expect(auth.refresh).toHaveBeenCalledWith('staff-token');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer new-token');
+      req.flush({ ok: true });
+      expect(body).toEqual({ ok: true });
+    });
+
+    it('fails without sending when the token is expired and the refresh fails', () => {
+      auth.isAuthenticated.mockReturnValue(false);
+      const refreshError = new HttpErrorResponse({ status: 401 });
+      auth.refresh.mockReturnValue(throwError(() => refreshError));
       const outcome = captureError();
 
       http.get('patients').subscribe({ error: (e) => (outcome.error = e) });
 
       controller.expectNone('/api/patients');
-      expect(auth.expireSession).toHaveBeenCalledWith('staff-token');
-      expect(outcome.error?.status).toBe(401);
+      expect(outcome.error).toBe(refreshError);
     });
 
-    it('expires the session when a request with the token gets a 401', () => {
+    it('refreshes and retries once with the new token after a 401', () => {
+      let body: unknown;
+      http.get('patients').subscribe((b) => (body = b));
+
+      controller
+        .expectOne('/api/patients')
+        .flush(null, { status: 401, statusText: 'Unauthorized' });
+      const retry = controller.expectOne('/api/patients');
+
+      expect(auth.refresh).toHaveBeenCalledWith('staff-token');
+      expect(retry.request.headers.get('Authorization')).toBe('Bearer new-token');
+      retry.flush({ ok: true });
+      expect(body).toEqual({ ok: true });
+      expect(auth.expireSession).not.toHaveBeenCalled();
+    });
+
+    it('fails with the original 401 when the refresh fails', () => {
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 401 })));
       const outcome = captureError();
       http.get('patients').subscribe({ error: (e) => (outcome.error = e) });
 
@@ -121,8 +154,34 @@ describe('API interceptors', () => {
         .expectOne('/api/patients')
         .flush(null, { status: 401, statusText: 'Unauthorized' });
 
-      expect(auth.expireSession).toHaveBeenCalledWith('staff-token');
+      controller.expectNone('/api/patients');
       expect(outcome.error?.status).toBe(401);
+    });
+
+    it('expires the session when the retried request gets a 401 again', () => {
+      const outcome = captureError();
+      http.get('patients').subscribe({ error: (e) => (outcome.error = e) });
+
+      controller
+        .expectOne('/api/patients')
+        .flush(null, { status: 401, statusText: 'Unauthorized' });
+      controller
+        .expectOne('/api/patients')
+        .flush(null, { status: 401, statusText: 'Unauthorized' });
+
+      expect(auth.refresh).toHaveBeenCalledOnce();
+      expect(auth.expireSession).toHaveBeenCalledWith('new-token');
+      expect(outcome.error?.status).toBe(401);
+    });
+
+    it('does not attach the token nor retry on auth/refresh and auth/logout', () => {
+      for (const path of ['auth/refresh', 'auth/logout']) {
+        http.post(path, null).subscribe({ error: () => undefined });
+        const req = controller.expectOne(`/api/${path}`);
+        expect(req.request.headers.has('Authorization')).toBe(false);
+        req.flush(null, { status: 401, statusText: 'Unauthorized' });
+      }
+      expect(auth.refresh).not.toHaveBeenCalled();
     });
 
     it('keeps the session on other errors', () => {

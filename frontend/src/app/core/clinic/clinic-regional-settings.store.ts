@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import { ClinicSettingsApi } from '../api/clinic-settings.api';
 import { AuthService } from '../auth/auth.service';
 import { ClinicRegionalSettings } from '../models/api.models';
@@ -37,10 +37,8 @@ export class ClinicRegionalSettingsStore {
 
   update(settings: ClinicRegionalSettings): Observable<ClinicRegionalSettings> {
     return this.api.updateRegionalSettings(settings).pipe(
-      map(({ token }) => {
-        this.auth.replaceToken(token);
-        return this.auth.regionalSettings() ?? settings;
-      }),
+      switchMap(() => this.auth.refresh().pipe(catchError(() => of(null)))),
+      map(() => this.auth.regionalSettings() ?? settings),
     );
   }
 }

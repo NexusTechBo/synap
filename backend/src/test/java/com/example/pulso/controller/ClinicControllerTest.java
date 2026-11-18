@@ -20,7 +20,7 @@ import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
 import org.junit.jupiter.api.Nested;
@@ -54,7 +54,7 @@ class ClinicControllerTest {
     private ClinicActivationService clinicActivationService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;

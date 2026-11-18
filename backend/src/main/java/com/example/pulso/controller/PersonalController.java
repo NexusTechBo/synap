@@ -1,6 +1,5 @@
 package com.example.pulso.controller;
 
-import com.example.pulso.dto.login.LoginResponse;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.dto.personal.AssignAndRemoveRequest;
 import com.example.pulso.dto.personal.DoctorModeRequest;
@@ -9,9 +8,8 @@ import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalResponse;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.enums.ERole;
-import com.example.pulso.security.RoleExpressions;
-import com.example.pulso.security.SecurityUtils;
-import com.example.pulso.service.AuthService;
+import com.example.pulso.security.expression.RoleExpressions;
+import com.example.pulso.security.util.SecurityUtils;
 import com.example.pulso.service.DoctorPatientService;
 import com.example.pulso.service.PersonalService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,7 +34,6 @@ import org.springframework.web.bind.annotation.*;
 public class PersonalController {
     private final PersonalService personalService;
     private final DoctorPatientService doctorPatientService;
-    private final AuthService authService;
 
     @GetMapping("/doctors")
     @PreAuthorize(RoleExpressions.ADMINISTRATOR_OR_ASSISTANT)
@@ -86,16 +83,19 @@ public class PersonalController {
     @PreAuthorize(RoleExpressions.STAFF)
     @Operation(summary = "PUT /api/personal/update — update own profile (name, email, phone, password with current password)")
     public ResponseEntity<PersonalResponse> updateOwnProfile(@Valid @RequestBody PersonalProfileUpdateRequest request, Authentication auth) {
-        return ResponseEntity.ok(personalService.updateOwnProfile(SecurityUtils.extractUserId(auth), request));
+        return ResponseEntity.ok(personalService.updateOwnProfile(
+                SecurityUtils.extractUserId(auth),
+                SecurityUtils.extractSessionId(auth),
+                request
+        ));
     }
 
     @PutMapping("/me/doctor-mode")
     @PreAuthorize(RoleExpressions.ADMINISTRATOR)
-    @Operation(summary = "PUT /api/personal/me/doctor-mode — the administrator turns acting as a doctor on ({enabled: true, specialtyId}) or off; returns a new token with the updated roles")
-    public ResponseEntity<LoginResponse> updateDoctorMode(@Valid @RequestBody DoctorModeRequest request, Authentication auth) {
-        var userId = SecurityUtils.extractUserId(auth);
-        personalService.updateDoctorMode(userId, request);
-        return ResponseEntity.ok(authService.issueToken(userId));
+    @Operation(summary = "PUT /api/personal/me/doctor-mode — the administrator turns acting as a doctor on ({enabled: true, specialtyId}) or off; the client must refresh its session afterwards")
+    public ResponseEntity<Void> updateDoctorMode(@Valid @RequestBody DoctorModeRequest request, Authentication auth) {
+        personalService.updateDoctorMode(SecurityUtils.extractUserId(auth), request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{personalId}")
