@@ -1,4 +1,4 @@
-package com.example.pulso.websocket;
+package com.example.pulso.websocket.listener;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.enums.TokenStatus;
@@ -32,6 +32,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     private static final String FORBIDDEN_DESTINATION = "Forbidden destination";
     static final String CLINIC_ID_ATTRIBUTE = "clinicId";
     static final String TOKEN_EXPIRES_AT_ATTRIBUTE = "tokenExpiresAt";
+    static final String CLAIMS_ATTRIBUTE = "claims";
 
     private final JwtUtils jwtUtil;
     private final ActiveUserChecker activeUserChecker;
@@ -80,6 +81,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         if (attrs == null) throw new MessageDeliveryException(INVALID_TOKEN);
         attrs.put(CLINIC_ID_ATTRIBUTE, clinicId);
         attrs.put(TOKEN_EXPIRES_AT_ATTRIBUTE, claims.getExpiration().toInstant());
+        attrs.put(CLAIMS_ATTRIBUTE, claims);
         accessor.setUser(SecurityUtils.authenticated(claims.getSubject(), roles));
     }
 

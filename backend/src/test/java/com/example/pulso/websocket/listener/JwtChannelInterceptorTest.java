@@ -1,4 +1,4 @@
-package com.example.pulso.websocket;
+package com.example.pulso.websocket.listener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -99,6 +99,18 @@ class JwtChannelInterceptorTest {
         assertThat(result).isNotNull();
         assertThat(attributes).containsEntry(JwtChannelInterceptor.CLINIC_ID_ATTRIBUTE, 7L);
         assertThat(TenantContext.current()).isNull();
+    }
+
+    @Test
+    void shouldStoreClaimsInSessionAttributesAfterValidConnect() {
+        var claims = claims("America/La_Paz");
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims));
+        when(activeUserChecker.check(any(Claims.class), any(RoleProfile.class))).thenReturn(TokenStatus.VALID);
+        var attributes = new HashMap<String, Object>();
+
+        interceptor().preSend(connect(attributes), channel);
+
+        assertThat(attributes).containsEntry(JwtChannelInterceptor.CLAIMS_ATTRIBUTE, claims);
     }
 
     @Test

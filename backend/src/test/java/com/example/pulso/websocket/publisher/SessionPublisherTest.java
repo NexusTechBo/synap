@@ -1,4 +1,4 @@
-package com.example.pulso.websocket;
+package com.example.pulso.websocket.publisher;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.doThrow;

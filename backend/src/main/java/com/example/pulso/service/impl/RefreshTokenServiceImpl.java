@@ -10,12 +10,14 @@ import com.example.pulso.exception.UnauthorizedException;
 import com.example.pulso.repository.RefreshTokenRepository;
 import com.example.pulso.service.RefreshTokenService;
 import com.example.pulso.util.TokenUtils;
+import com.example.pulso.websocket.event.UserSessionsRevokedEvent;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,6 +30,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenProperties properties;
     private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public IssuedRefreshToken issue(Long clinicId, Long userId) {
@@ -77,6 +80,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     public void revokeAllForUser(Long clinicId, Long userId) {
         var revoked = refreshTokenRepository.revokeAllByUser(clinicId, userId, LocalDateTime.now(clock));
         log.info("Refresh tokens of user {} in clinic {} revoked: {}", userId, clinicId, revoked);
+        eventPublisher.publishEvent(new UserSessionsRevokedEvent(clinicId, userId, null));
     }
 
     @Override
@@ -84,6 +88,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var revoked = refreshTokenRepository.revokeAllByUserExceptFamily(
                 clinicId, userId, keepFamilyId, LocalDateTime.now(clock));
         log.info("Refresh tokens of user {} in clinic {} revoked except the current session: {}", userId, clinicId, revoked);
+        eventPublisher.publishEvent(new UserSessionsRevokedEvent(clinicId, userId, keepFamilyId));
     }
 
     @Override
