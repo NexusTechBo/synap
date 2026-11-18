@@ -14,6 +14,7 @@ import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.UnauthorizedException;
 import com.example.pulso.repository.RefreshTokenRepository;
 import com.example.pulso.util.TokenUtils;
+import com.example.pulso.websocket.event.UserSessionsRevokedEvent;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceImplTest {
@@ -41,6 +43,9 @@ class RefreshTokenServiceImplTest {
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private RefreshTokenServiceImpl service;
 
     @BeforeEach
@@ -48,7 +53,8 @@ class RefreshTokenServiceImplTest {
         service = new RefreshTokenServiceImpl(
                 refreshTokenRepository,
                 new RefreshTokenProperties(TTL, ABSOLUTE_TTL, "refresh_token", true, "0 0 3 * * *"),
-                CLOCK);
+                CLOCK,
+                eventPublisher);
     }
 
     private RefreshToken storedToken(LocalDateTime expiresAt, LocalDateTime familyExpiresAt, LocalDateTime revokedAt) {
@@ -259,6 +265,38 @@ class RefreshTokenServiceImplTest {
             service.revokeAllForUser(CLINIC_ID, USER_ID);
 
             verify(refreshTokenRepository).revokeAllByUser(CLINIC_ID, USER_ID, NOW);
+        }
+
+        @Test
+        void shouldPublishRevocationEventWithoutKeptSessionWhenRevokingAllTokensOfUser() {
+            service.revokeAllForUser(CLINIC_ID, USER_ID);
+
+            verify(eventPublisher).publishEvent(new UserSessionsRevokedEvent(CLINIC_ID, USER_ID, null));
+        }
+
+        @Test
+        void shouldPublishRevocationEventWithKeptSessionWhenRevokingAllExceptFamily() {
+            var keep = UUID.randomUUID();
+
+            service.revokeAllForUserExcept(CLINIC_ID, USER_ID, keep);
+
+            verify(eventPublisher).publishEvent(new UserSessionsRevokedEvent(CLINIC_ID, USER_ID, keep));
+        }
+
+        @Test
+        void shouldNotPublishRevocationEventWhenRevokingSingleFamily() {
+            service.revokeFamily(UUID.randomUUID());
+
+            verifyNoInteractions(eventPublisher);
+        }
+
+        @Test
+        void shouldNotPublishRevocationEventWhenRevokingFamilyOfToken() {
+            when(refreshTokenRepository.findFamilyIdByTokenHash(TokenUtils.hash(RAW))).thenReturn(Optional.of(UUID.randomUUID()));
+
+            service.revokeFamilyOfToken(RAW);
+
+            verifyNoInteractions(eventPublisher);
         }
 
         @Test

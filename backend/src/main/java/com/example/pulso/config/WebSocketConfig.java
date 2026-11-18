@@ -1,6 +1,6 @@
 package com.example.pulso.config;
 
-import com.example.pulso.websocket.JwtChannelInterceptor;
+import com.example.pulso.websocket.listener.JwtChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

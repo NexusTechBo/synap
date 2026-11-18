@@ -1,4 +1,4 @@
-package com.example.pulso.websocket;
+package com.example.pulso.websocket.publisher;
 
 import com.example.pulso.websocket.event.SessionRefreshEvent;
 import lombok.RequiredArgsConstructor;
