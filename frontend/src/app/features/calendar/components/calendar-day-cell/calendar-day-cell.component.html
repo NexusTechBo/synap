@@ -13,7 +13,7 @@
     class="text-[15.5px] {{
       selected()
         ? 'font-extrabold text-primary'
-        : day().iso === today
+        : day().iso === today()
           ? 'font-bold text-primary'
           : day().inCurrentMonth
             ? 'font-semibold text-gray-700'

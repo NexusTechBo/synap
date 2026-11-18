@@ -53,8 +53,8 @@
     <div class="mt-3.5 border-t border-white/60 pt-3.5">
       <button
         type="button"
-        (click)="pick(today)"
-        [disabled]="outOfBounds(today)"
+        (click)="pick(today())"
+        [disabled]="outOfBounds(today())"
         class="glass-panel rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-white/70 disabled:opacity-50"
       >
         {{ 'datePicker.today' | translate }}

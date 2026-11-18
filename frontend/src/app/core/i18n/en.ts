@@ -922,6 +922,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     },
     errors: {
       bookingFailed: 'Could not register booking',
+      slotNoLongerValid: 'The date changed. Please choose your time again.',
     },
   },
 

@@ -148,7 +148,7 @@
         </h2>
         <app-date-picker
           [ariaLabel]="'booking.schedule.dateAria' | translate"
-          [min]="booking.today"
+          [min]="booking.today()"
           [ngModel]="booking.selectedDate()"
           (ngModelChange)="booking.selectDate($event)"
         />

@@ -41,12 +41,13 @@ export class DatePickerComponent implements ControlValueAccessor {
   readonly id = input<string | null>(null);
 
   private readonly i18n = inject(I18nService);
-  protected readonly today = inject(ClinicClockService).today();
+  private readonly clock = inject(ClinicClockService);
+  protected readonly today = computed(() => this.clock.today());
   protected readonly positions = POPOVER_POSITIONS;
   protected readonly isOpen = signal(false);
   protected readonly disabled = signal(false);
   protected readonly value = signal<string | null>(null);
-  protected readonly viewDate = signal(parseIso(this.today));
+  protected readonly viewDate = signal(parseIso(this.clock.today()));
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -74,7 +75,7 @@ export class DatePickerComponent implements ControlValueAccessor {
   }
 
   protected open(): void {
-    this.viewDate.set(parseIso(this.value() ?? this.min() ?? this.today));
+    this.viewDate.set(parseIso(this.value() ?? this.min() ?? this.today()));
     this.isOpen.set(true);
   }
 

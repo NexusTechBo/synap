@@ -29,7 +29,7 @@ export class CalendarService {
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
   private readonly clock = inject(ClinicClockService);
-  private readonly today = this.clock.today();
+  private readonly today = computed(() => this.clock.today());
   private readonly _scope = signal<CalendarScope>('all');
 
   private readonly locale = computed(() => this.i18n.intlLocale());
@@ -44,7 +44,7 @@ export class CalendarService {
   );
   readonly selectedDate = computed(() => {
     const requested = this.dateParam();
-    return isIsoDate(requested) ? requested : this.today;
+    return isIsoDate(requested) ? requested : this.today();
   });
   private readonly monthKey = computed(() => this.selectedDate().slice(0, 7));
   private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
@@ -93,7 +93,7 @@ export class CalendarService {
   readonly selectedDayAppointments = computed(() =>
     this.resource.hasValue() ? (this.byDay().get(this.selectedDate()) ?? []) : null,
   );
-  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
+  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today());
 
   reload(): void {
     this.resource.reload();
@@ -106,7 +106,8 @@ export class CalendarService {
   select(iso: string): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { date: iso },
+      queryParams: { date: iso === this.today() ? null : iso },
+      queryParamsHandling: 'merge',
       replaceUrl: true,
     });
   }
@@ -114,11 +115,11 @@ export class CalendarService {
   shiftMonth(delta: number): void {
     const view = this.viewDate();
     const first = toIso(new Date(view.getFullYear(), view.getMonth() + delta, 1));
-    this.select(first.slice(0, 7) === this.today.slice(0, 7) ? this.today : first);
+    this.select(first.slice(0, 7) === this.today().slice(0, 7) ? this.today() : first);
   }
 
   goToday(): void {
-    this.select(this.today);
+    this.select(this.today());
   }
 
   openNewAppointment(): void {

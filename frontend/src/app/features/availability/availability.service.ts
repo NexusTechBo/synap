@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
@@ -30,7 +30,7 @@ import {
   ScheduleException,
   ScheduleExceptionRequest,
 } from '../../core/models/api.models';
-import { formatLongDate, formatTime } from '../../core/utils/calendar.util';
+import { formatLongDate, formatTime, notBefore } from '../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
@@ -51,13 +51,17 @@ export class AvailabilityService {
   private readonly doctorId = inject(AuthService).userId()!;
   private readonly clock = inject(ClinicClockService);
 
-  readonly today = this.clock.today();
-  private readonly _previewDate = signal(this.today);
+  readonly today = computed(() => this.clock.today());
+  private readonly _previewDate = linkedSignal<string, string>({
+    source: this.today,
+    computation: (today, previous) => (previous ? notBefore(previous.value, today) : today),
+  });
   readonly previewDate = this._previewDate.asReadonly();
 
   private readonly availabilityResource = rxResource({ stream: () => this.api.availabilities() });
   private readonly exceptionsResource = rxResource({
-    stream: () => this.api.exceptions(this.today),
+    params: () => this.today(),
+    stream: ({ params }) => this.api.exceptions(params),
   });
   private readonly previewResource = rxResource({
     params: () => this.previewDate(),

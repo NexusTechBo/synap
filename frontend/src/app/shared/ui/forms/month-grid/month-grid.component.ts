@@ -81,12 +81,13 @@ export class MonthGridComponent {
       short: this.i18n.translate(`days.${day}.short`),
     }));
   });
-  private readonly today = inject(ClinicClockService).today();
+  private readonly clock = inject(ClinicClockService);
+  private readonly today = computed(() => this.clock.today());
   private readonly active = signal<string | null>(null);
 
   protected readonly focusIso = computed(() => {
     const monthKey = toIso(this.month()).slice(0, 7);
-    const candidates = [this.active(), this.start(), this.today];
+    const candidates = [this.active(), this.start(), this.today()];
     return candidates.find((iso) => iso?.startsWith(monthKey)) ?? `${monthKey}-01`;
   });
 
@@ -107,13 +108,14 @@ export class MonthGridComponent {
   protected readonly weeks = computed<MonthGridDay[][]>(() => {
     const start = this.start();
     const end = this.end();
+    const today = this.today();
     const [lo, hi] = start && end ? [start, end].sort() : [null, null];
     return this.baseWeeks().map((week) =>
       week.map((day) => ({
         ...day,
         edge: day.iso === start || day.iso === end,
         inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
-        isToday: day.iso === this.today,
+        isToday: day.iso === today,
         disabled: this.outOfBounds(day.iso),
       })),
     );

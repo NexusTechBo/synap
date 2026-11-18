@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject, EMPTY, Subject, of, throwError } from 'rxjs';
 import { AppointmentsApi } from '../../../../app/core/api/appointments.api';
 import { BoardSocket } from '../../../../app/core/api/board.socket';
+import { ClinicClockService } from '../../../../app/core/clinic/clinic-clock.service';
 import { AppointmentBoard, AppointmentSummaryItem } from '../../../../app/core/models/api.models';
 import { addDays, toIso } from '../../../../app/core/utils/calendar.util';
 import { BoardService } from '../../../../app/features/board/board.service';
@@ -13,6 +14,13 @@ import { NotificationService } from '../../../../app/shared/services/notificatio
 const TODAY = toIso(new Date());
 const YESTERDAY = toIso(addDays(new Date(), -1));
 const TOMORROW = toIso(addDays(new Date(), 1));
+const IN_TWO_DAYS = toIso(addDays(new Date(), 2));
+const IN_SEVEN_DAYS = toIso(addDays(new Date(), 7));
+
+function localNow(): string {
+  const date = new Date();
+  return `${toIso(date)}T${date.toTimeString().slice(0, 8)}`;
+}
 
 function item(overrides: Partial<AppointmentSummaryItem> = {}): AppointmentSummaryItem {
   return {
@@ -54,6 +62,7 @@ describe('BoardService', () => {
   };
   let notifications: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
   let socket: FakeBoardSocket;
+  let clockToday: WritableSignal<string>;
 
   async function settle(): Promise<void> {
     TestBed.tick();
@@ -65,6 +74,7 @@ describe('BoardService', () => {
     actions = { confirm: vi.fn(() => EMPTY), cancel: vi.fn(() => EMPTY), openDetail: vi.fn() };
     notifications = { success: vi.fn(), error: vi.fn() };
     socket = new FakeBoardSocket();
+    clockToday = signal(TODAY);
     TestBed.configureTestingModule({
       providers: [
         BoardService,
@@ -72,6 +82,7 @@ describe('BoardService', () => {
         { provide: AppointmentActionsService, useValue: actions },
         { provide: NotificationService, useValue: notifications },
         { provide: BoardSocket, useValue: socket },
+        { provide: ClinicClockService, useValue: { today: () => clockToday(), now: localNow } },
       ],
     });
     service = TestBed.inject(BoardService);
@@ -114,6 +125,65 @@ describe('BoardService', () => {
       service.reload();
       await settle();
       expect(service.errorMessage()).toBe('No se pudo cargar el tablero');
+    });
+  });
+
+  describe('day rollover', () => {
+    it('moves the default range to the new day', async () => {
+      setup();
+      await settle();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(service.range()).toEqual({ from: TOMORROW, to: IN_SEVEN_DAYS });
+    });
+
+    it('reloads the board for the advanced default range', async () => {
+      setup();
+      await settle();
+      api.board.mockClear();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(api.board).toHaveBeenCalledOnce();
+      expect(api.board).toHaveBeenCalledWith({ from: TOMORROW, to: IN_SEVEN_DAYS });
+    });
+
+    it('advances the default range several days at once', async () => {
+      setup();
+      await settle();
+
+      clockToday.set(IN_TWO_DAYS);
+      await settle();
+
+      expect(service.range().from).toBe(IN_TWO_DAYS);
+    });
+
+    it('keeps a custom range when the day changes', async () => {
+      setup();
+      await settle();
+      service.setRange({ from: TODAY, to: TOMORROW });
+      await settle();
+      api.board.mockClear();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(service.range()).toEqual({ from: TODAY, to: TOMORROW });
+      expect(api.board).not.toHaveBeenCalled();
+    });
+
+    it('keeps a single-day range chosen by the user when the day changes', async () => {
+      setup();
+      await settle();
+      service.setRange({ from: TODAY, to: TODAY });
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(service.range()).toEqual({ from: TODAY, to: TODAY });
     });
   });
 

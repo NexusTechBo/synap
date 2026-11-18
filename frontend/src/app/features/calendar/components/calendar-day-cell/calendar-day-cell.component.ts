@@ -22,7 +22,8 @@ export class CalendarDayCellComponent {
 
   select = output<string>();
 
-  protected readonly today = inject(ClinicClockService).today();
+  private readonly clock = inject(ClinicClockService);
+  protected readonly today = computed(() => this.clock.today());
 
   protected readonly dotTones = computed(() => {
     const present = new Set((this.appointments() ?? []).map((appointment) => appointment.status));

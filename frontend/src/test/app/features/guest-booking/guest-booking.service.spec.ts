@@ -21,6 +21,7 @@ import { DATE_STRIP_DAYS } from '../../../../app/shared/ui/forms/date-strip/date
 const TODAY = toIso(new Date());
 const TOMORROW = toIso(addDays(new Date(), 1));
 const IN_TWO_DAYS = toIso(addDays(new Date(), 2));
+const IN_THREE_DAYS = toIso(addDays(new Date(), 3));
 const LAST_STRIP_DAY = toIso(addDays(new Date(), DATE_STRIP_DAYS - 1));
 const BEYOND_STRIP = toIso(addDays(new Date(), DATE_STRIP_DAYS + 5));
 
@@ -71,6 +72,7 @@ describe('GuestBookingService', () => {
     book: ReturnType<typeof vi.fn>;
   };
   let ready: WritableSignal<boolean>;
+  let clockToday: WritableSignal<string>;
 
   async function settle(): Promise<void> {
     TestBed.tick();
@@ -79,6 +81,7 @@ describe('GuestBookingService', () => {
 
   function setup(sessionReady = true): void {
     ready = signal(sessionReady);
+    clockToday = signal(TODAY);
     guestApi = {
       clinic: vi.fn(() => of({ name: 'Clínica Sur', slug: 'sur' })),
       specialties: vi.fn(() =>
@@ -96,7 +99,7 @@ describe('GuestBookingService', () => {
       providers: [
         GuestBookingService,
         { provide: GuestApi, useValue: guestApi },
-        { provide: ClinicClockService, useValue: { today: () => TODAY } },
+        { provide: ClinicClockService, useValue: { today: () => clockToday() } },
         { provide: GuestSessionService, useValue: { ready } },
       ],
     });
@@ -230,6 +233,163 @@ describe('GuestBookingService', () => {
       expect(service.selectedDoctor()).toBeNull();
       expect(service.selectedSlot()).toBeNull();
       expect(service.selectedDate()).toBe(TODAY);
+    });
+  });
+
+  describe('day rollover', () => {
+    const slotNoLongerValid = 'La fecha cambió. Elige nuevamente tu horario.';
+
+    async function reachSummaryOn(date: string): Promise<void> {
+      await settle();
+      service.selectDoctor(guestDoctor());
+      service.selectDate(date);
+      await settle();
+      service.selectSlot(service.slots()[0]);
+      service.setPatient(PATIENT);
+    }
+
+    it('exposes the new today', () => {
+      setup();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.today()).toBe(TOMORROW);
+    });
+
+    it('moves the selected date to the new today when it was today', () => {
+      setup();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedDate()).toBe(TOMORROW);
+    });
+
+    it('moves a selected date that became past to the new today', () => {
+      setup();
+      service.selectDate(TOMORROW);
+
+      clockToday.set(IN_TWO_DAYS);
+
+      expect(service.selectedDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('keeps a future date chosen by the user', () => {
+      setup();
+      service.selectDate(IN_THREE_DAYS);
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedDate()).toBe(IN_THREE_DAYS);
+    });
+
+    it('rejects selecting the previous day after the day changed', () => {
+      setup();
+      clockToday.set(TOMORROW);
+
+      service.selectDate(TODAY);
+
+      expect(service.selectedDate()).toBe(TOMORROW);
+    });
+
+    it('returns to the slot step with a message when the date advances from the patient step', async () => {
+      setup();
+      await settle();
+      service.selectDoctor(guestDoctor());
+      await settle();
+      service.selectSlot(service.slots()[0]);
+      expect(service.step()).toBe('patient');
+
+      clockToday.set(TOMORROW);
+
+      expect(service.step()).toBe('slot');
+      expect(service.stepNumber()).toBe(2);
+      expect(service.error()).toBe(slotNoLongerValid);
+    });
+
+    it('returns to the slot step with a message when the date advances from the summary', async () => {
+      setup();
+      await reachSummary();
+      expect(service.step()).toBe('summary');
+
+      clockToday.set(TOMORROW);
+
+      expect(service.step()).toBe('slot');
+      expect(service.selectedSlot()).toBeNull();
+      expect(service.error()).toBe(slotNoLongerValid);
+    });
+
+    it('goes back from the recovered slot step to the doctor step', async () => {
+      setup();
+      await reachSummary();
+      clockToday.set(TOMORROW);
+
+      service.back();
+
+      expect(service.step()).toBe('doctor');
+    });
+
+    it('clears the message once a new slot is chosen', async () => {
+      setup();
+      await reachSummary();
+      clockToday.set(TOMORROW);
+      await settle();
+
+      service.selectSlot(service.slots()[0]);
+
+      expect(service.step()).toBe('patient');
+      expect(service.error()).toBeNull();
+    });
+
+    it('keeps the summary step and slot when the selected date is still valid', async () => {
+      setup();
+      await reachSummaryOn(IN_TWO_DAYS);
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(service.step()).toBe('summary');
+      expect(service.selectedSlot()).not.toBeNull();
+      expect(service.error()).toBeNull();
+    });
+
+    it.each(['doctor', 'slot'] as const)('shows no message on the %s step', async (step) => {
+      setup();
+      await settle();
+      if (step === 'slot') service.selectDoctor(guestDoctor());
+
+      clockToday.set(TOMORROW);
+
+      expect(service.step()).toBe(step);
+      expect(service.error()).toBeNull();
+    });
+
+    it('keeps the done step after the day changes', async () => {
+      setup();
+      await reachSummary();
+      service.book();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.step()).toBe('done');
+      expect(service.error()).toBeNull();
+    });
+
+    it('requests the unavailable dates again for the new strip', async () => {
+      setup();
+      await settle();
+      service.selectDoctor(guestDoctor());
+      await settle();
+      guestApi.unavailableDates.mockClear();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(guestApi.unavailableDates).toHaveBeenCalledOnce();
+      expect(guestApi.unavailableDates).toHaveBeenCalledWith(
+        10,
+        TOMORROW,
+        toIso(addDays(new Date(), DATE_STRIP_DAYS)),
+      );
     });
   });
 
