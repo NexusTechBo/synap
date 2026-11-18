@@ -2,7 +2,6 @@ package com.example.pulso.notification.event;
 
 import com.example.pulso.enums.ERole;
 import java.util.Locale;
-import org.jspecify.annotations.NonNull;
 
 public record StaffCreatedEvent(
         String email,

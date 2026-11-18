@@ -1,9 +1,9 @@
 package com.example.pulso.config.tenant;
 
-import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.example.pulso.enums.SupportedCountry;
 import java.time.ZoneId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;

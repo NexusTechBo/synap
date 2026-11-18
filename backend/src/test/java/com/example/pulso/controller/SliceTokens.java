@@ -1,11 +1,11 @@
 package com.example.pulso.controller;
 
-import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.jwt.JwtClaims;
 import com.example.pulso.security.jwt.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -20,6 +20,7 @@ final class SliceTokens {
     static final String ASSISTANT_TOKEN = "assistant-token";
     static final String DOCTOR_TOKEN = "doctor-token";
     static final String GUEST_TOKEN = "guest-token";
+    static final String LEGACY_ROLE_GUEST_TOKEN = "legacy-role-guest-token";
     static final String NO_TIMEZONE_TOKEN = "no-timezone-token";
     static final String NO_COUNTRY_TOKEN = "no-country-token";
     static final String INVALID_COUNTRY_TOKEN = "invalid-country-token";
@@ -30,18 +31,29 @@ final class SliceTokens {
     private SliceTokens() {}
 
     static void givenStandardTokens(JwtUtil jwtUtil, ActiveUserChecker activeUserChecker) {
-        givenToken(jwtUtil, ADMIN_TOKEN, ADMIN_ID, "ADMINISTRATOR", List.of("ADMINISTRATOR"));
-        givenToken(jwtUtil, ASSISTANT_TOKEN, ASSISTANT_ID, "ASSISTANT", List.of("ASSISTANT"));
-        givenToken(jwtUtil, DOCTOR_TOKEN, DOCTOR_ID, "DOCTOR", List.of("DOCTOR"));
-        givenToken(jwtUtil, GUEST_TOKEN, 0L, "GUEST", List.of());
-        when(activeUserChecker.isActive(anyLong(), anyString(), anyCollection()))
+        givenToken(jwtUtil, ADMIN_TOKEN, ADMIN_ID, List.of("ADMINISTRATOR"));
+        givenToken(jwtUtil, ASSISTANT_TOKEN, ASSISTANT_ID, List.of("ASSISTANT"));
+        givenToken(jwtUtil, DOCTOR_TOKEN, DOCTOR_ID, List.of("DOCTOR"));
+        givenToken(jwtUtil, GUEST_TOKEN, 0L, List.of("GUEST"));
+        when(activeUserChecker.isActive(anyLong(), any(RoleProfile.class)))
                 .thenReturn(true);
+    }
+
+    static void givenLegacyRoleOnlyGuestToken(JwtUtil jwtUtil) {
+        var claims = Jwts.claims()
+                .subject("0")
+                .add("role", "GUEST")
+                .add(JwtClaims.CLINIC_ID, 7L)
+                .add(JwtClaims.CLINIC_SLUG, "demo")
+                .add(JwtClaims.TIMEZONE, "America/La_Paz")
+                .add(JwtClaims.COUNTRY, "BO")
+                .build();
+        when(jwtUtil.parse(LEGACY_ROLE_GUEST_TOKEN)).thenReturn(Optional.of(claims));
     }
 
     static void givenTokenWithoutTimezone(JwtUtil jwtUtil) {
         var claims = Jwts.claims()
                 .subject(Long.toString(ADMIN_ID))
-                .add(JwtClaims.ROLE, "ADMINISTRATOR")
                 .add(JwtClaims.ROLES, List.of("ADMINISTRATOR"))
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
@@ -60,7 +72,6 @@ final class SliceTokens {
     private static Claims claimsWithCountry(String country) {
         var builder = Jwts.claims()
                 .subject(Long.toString(ADMIN_ID))
-                .add(JwtClaims.ROLE, "ADMINISTRATOR")
                 .add(JwtClaims.ROLES, List.of("ADMINISTRATOR"))
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
@@ -73,15 +84,14 @@ final class SliceTokens {
         return builder.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
-    private static void givenToken(JwtUtil jwtUtil, String token, long userId, String role, List<String> roles) {
+    private static void givenToken(JwtUtil jwtUtil, String token, long userId, List<String> roles) {
         var builder = Jwts.claims()
                 .subject(Long.toString(userId))
-                .add(JwtClaims.ROLE, role)
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
                 .add(JwtClaims.TIMEZONE, "America/La_Paz")
                 .add(JwtClaims.COUNTRY, "BO");
-        if (!roles.isEmpty()) builder.add(JwtClaims.ROLES, roles);
+        builder.add(JwtClaims.ROLES, roles);
         when(jwtUtil.parse(token)).thenReturn(Optional.of(builder.build()));
     }
 }

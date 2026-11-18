@@ -59,8 +59,7 @@ export interface LoginResponse {
 
 export interface TokenPayload {
   sub: string;
-  role: Role;
-  roles?: Role[];
+  roles?: string[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -110,11 +109,6 @@ export interface ClinicRegionalSettings {
   country: CountryCode;
   timezone: string;
   defaultLanguage: ClinicLanguage;
-}
-
-export interface ClinicRegionalSettingsUpdateResponse {
-  settings: ClinicRegionalSettings;
-  token: string;
 }
 
 export interface ClinicCreatedResponse {
@@ -336,7 +330,7 @@ export interface ScheduleException extends Omit<ScheduleExceptionRequest, 'cance
 
 export interface GuestTokenPayload {
   sub: string;
-  role: string;
+  roles?: string[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
@@ -347,11 +341,6 @@ export interface GuestTokenPayload {
 
 export interface GuestSessionRequest {
   slug: string;
-}
-
-export interface GuestSessionResponse {
-  token: string;
-  expiresAt: string;
 }
 
 export interface GuestClinic {

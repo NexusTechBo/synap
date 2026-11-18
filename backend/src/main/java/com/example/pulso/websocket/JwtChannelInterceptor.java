@@ -1,9 +1,9 @@
 package com.example.pulso.websocket;
 
 import com.example.pulso.config.tenant.TenantContext;
-import com.example.pulso.enums.ERole;
 import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.SecurityUtils;
 import com.example.pulso.security.jwt.JwtClaims;
 import com.example.pulso.security.jwt.JwtUtil;
@@ -55,12 +55,11 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         var attrs = accessor.getSessionAttributes();
         if (token == null) throw new MessageDeliveryException("Missing bearer token");
         var claims = jwtUtil.parse(token).orElseThrow(() -> new MessageDeliveryException(INVALID_TOKEN));
-        if (ERole.GUEST.name().equals(claims.get(JwtClaims.ROLE, String.class)))
-            throw new MessageDeliveryException("Guests cannot connect");
+        var roles = JwtUtil.extractRoles(claims);
+        var profile = RoleProfile.fromRoles(roles).orElseThrow(() -> new MessageDeliveryException(INVALID_TOKEN));
+        if (profile.isGuest()) throw new MessageDeliveryException("Guests cannot connect");
         if (claims.getExpiration() == null) throw new MessageDeliveryException(INVALID_TOKEN);
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
-        var role = claims.get(JwtClaims.ROLE, String.class);
-        var roles = JwtUtil.extractRoles(claims);
         ZoneId zone;
         SupportedCountry country;
         try {
@@ -71,11 +70,11 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
         }
         TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), zone, country);
         try {
-            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), role, roles)) {
+            if (!activeUserChecker.isActive(Long.valueOf(claims.getSubject()), profile)) {
                 log.warn(
-                        "STOMP CONNECT rejected: user {} with role {} in clinic {} is inactive or its role changed",
+                        "STOMP CONNECT rejected: user {} with roles {} in clinic {} is inactive or its roles changed",
                         claims.getSubject(),
-                        role,
+                        roles,
                         clinicId);
                 throw new MessageDeliveryException(INVALID_TOKEN);
             }

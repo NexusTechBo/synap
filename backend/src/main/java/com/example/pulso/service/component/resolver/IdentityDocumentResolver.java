@@ -14,10 +14,9 @@ public class IdentityDocumentResolver {
     private final Map<SupportedCountry, DocumentValidator> validators = new EnumMap<>(SupportedCountry.class);
 
     public IdentityDocumentResolver(List<DocumentValidator> documentValidators) {
-        for (var validator : documentValidators) {
+        for (var validator : documentValidators)
             if (validators.put(validator.country(), validator) != null)
                 throw new IllegalStateException("Duplicate document validator for country " + validator.country());
-        }
         var missing = Arrays.stream(SupportedCountry.values())
                 .filter(country -> !validators.containsKey(country))
                 .toList();

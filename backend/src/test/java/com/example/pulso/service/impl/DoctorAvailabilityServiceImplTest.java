@@ -1,6 +1,5 @@
 package com.example.pulso.service.impl;
 
-import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +17,7 @@ import com.example.pulso.entity.DoctorAvailability;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.ScheduleException;
 import com.example.pulso.enums.AppointmentStatus;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.MessageKeys;

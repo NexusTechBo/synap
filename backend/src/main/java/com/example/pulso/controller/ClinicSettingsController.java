@@ -2,7 +2,7 @@ package com.example.pulso.controller;
 
 import com.example.pulso.dto.clinic.ClinicRegionalSettingsRequest;
 import com.example.pulso.dto.clinic.ClinicRegionalSettingsResponse;
-import com.example.pulso.dto.clinic.ClinicRegionalSettingsUpdateResponse;
+import com.example.pulso.dto.login.LoginResponse;
 import com.example.pulso.security.RoleExpressions;
 import com.example.pulso.security.SecurityUtils;
 import com.example.pulso.service.AuthService;
@@ -33,12 +33,11 @@ public class ClinicSettingsController {
 
     @PutMapping
     @PreAuthorize(RoleExpressions.ADMINISTRATOR)
-    @Operation(summary = "Update the regional settings of the current workspace (administrator only); returns the saved settings and a new token carrying the updated country, time zone and language")
-    public ResponseEntity<ClinicRegionalSettingsUpdateResponse> updateRegionalSettings(
+    @Operation(summary = "Update the regional settings of the current workspace (administrator only); returns a new token carrying the updated country, time zone and language")
+    public ResponseEntity<LoginResponse> updateRegionalSettings(
             @Valid @RequestBody ClinicRegionalSettingsRequest request,
             Authentication auth) {
-        var settings = clinicSettingsService.updateRegionalSettings(request);
-        var token = authService.issueToken(SecurityUtils.extractUserId(auth)).token();
-        return ResponseEntity.ok(new ClinicRegionalSettingsUpdateResponse(settings, token));
+        clinicSettingsService.updateRegionalSettings(request);
+        return ResponseEntity.ok(authService.issueToken(SecurityUtils.extractUserId(auth)));
     }
 }

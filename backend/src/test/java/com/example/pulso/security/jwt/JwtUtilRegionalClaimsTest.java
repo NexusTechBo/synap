@@ -7,12 +7,12 @@ import com.example.pulso.entity.Clinic;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.enums.SupportedCountry;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ class JwtUtilRegionalClaimsTest {
 
     @Test
     void shouldIncludeRegionalClaimsInStaffToken() {
-        var token = jwtUtil.generate(1L, ERole.ADMINISTRATOR, List.of(ERole.ADMINISTRATOR), clinic, "admin");
+        var token = jwtUtil.generate(1L, List.of(ERole.ADMINISTRATOR), clinic, "admin");
 
         var claims = jwtUtil.parse(token).orElseThrow();
         assertThat(claims.get(JwtClaims.COUNTRY, String.class)).isEqualTo("BR");
@@ -40,7 +40,7 @@ class JwtUtilRegionalClaimsTest {
 
     @Test
     void shouldIncludeRegionalClaimsInGuestToken() {
-        var token = jwtUtil.generateGuest(clinic, clock.instant().plus(JwtUtil.GUEST_TTL));
+        var token = jwtUtil.generateGuest(clinic);
 
         var claims = jwtUtil.parse(token).orElseThrow();
         assertThat(claims.get(JwtClaims.COUNTRY, String.class)).isEqualTo("BR");

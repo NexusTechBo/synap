@@ -1,7 +1,7 @@
 package com.example.pulso.controller;
 
-import static com.example.pulso.controller.SliceTokens.ADMIN_TOKEN;
 import static com.example.pulso.controller.SliceTokens.ADMIN_ID;
+import static com.example.pulso.controller.SliceTokens.ADMIN_TOKEN;
 import static com.example.pulso.controller.SliceTokens.ASSISTANT_TOKEN;
 import static com.example.pulso.controller.SliceTokens.DOCTOR_TOKEN;
 import static com.example.pulso.controller.SliceTokens.INVALID_COUNTRY_TOKEN;
@@ -9,6 +9,7 @@ import static com.example.pulso.controller.SliceTokens.NO_COUNTRY_TOKEN;
 import static com.example.pulso.controller.SliceTokens.NO_TIMEZONE_TOKEN;
 import static com.example.pulso.controller.SliceTokens.as;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -141,17 +142,13 @@ class ClinicSettingsControllerTest {
     @Nested
     class UpdateRegionalSettings {
         @Test
-        void shouldReturnUpdatedSettingsAndNewTokenForAdministrator() throws Exception {
-            when(clinicSettingsService.updateRegionalSettings(any()))
-                    .thenReturn(new ClinicRegionalSettingsResponse("BR", "America/Manaus", "pt-BR"));
+        void shouldReturnNewTokenForAdministrator() throws Exception {
             when(authService.issueToken(ADMIN_ID)).thenReturn(new LoginResponse("fresh-token"));
 
             mvc.perform(as(ADMIN_TOKEN, put(URL)).contentType(MediaType.APPLICATION_JSON).content(BODY))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.settings.country").value("BR"))
-                    .andExpect(jsonPath("$.settings.timezone").value("America/Manaus"))
-                    .andExpect(jsonPath("$.settings.defaultLanguage").value("pt-BR"))
-                    .andExpect(jsonPath("$.token").value("fresh-token"));
+                    .andExpect(jsonPath("$.token").value("fresh-token"))
+                    .andExpect(jsonPath("$.settings").doesNotExist());
 
             var order = inOrder(clinicSettingsService, authService);
             order.verify(clinicSettingsService)
@@ -196,8 +193,8 @@ class ClinicSettingsControllerTest {
 
         @Test
         void shouldReturnSpanishBadRequestWhenServiceRejectsCountry() throws Exception {
-            when(clinicSettingsService.updateRegionalSettings(any()))
-                    .thenThrow(new BadRequestException(MessageKeys.REGION_COUNTRY_UNSUPPORTED, "AR"));
+            doThrow(new BadRequestException(MessageKeys.REGION_COUNTRY_UNSUPPORTED, "AR"))
+                    .when(clinicSettingsService).updateRegionalSettings(any());
 
             mvc.perform(as(ADMIN_TOKEN, put(URL)).contentType(MediaType.APPLICATION_JSON).content(BODY))
                     .andExpect(status().isBadRequest())
@@ -206,8 +203,8 @@ class ClinicSettingsControllerTest {
 
         @Test
         void shouldReturnEnglishBadRequestWhenAcceptLanguageIsEnglish() throws Exception {
-            when(clinicSettingsService.updateRegionalSettings(any()))
-                    .thenThrow(new BadRequestException(MessageKeys.REGION_TIMEZONE_INVALID, "America/La_Paz", "BR"));
+            doThrow(new BadRequestException(MessageKeys.REGION_TIMEZONE_INVALID, "America/La_Paz", "BR"))
+                    .when(clinicSettingsService).updateRegionalSettings(any());
 
             mvc.perform(as(ADMIN_TOKEN, put(URL))
                             .header("Accept-Language", "en")

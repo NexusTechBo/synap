@@ -16,8 +16,8 @@ import com.example.pulso.mapper.ClinicSettingsMapperImpl;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
-import java.util.Optional;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,12 +68,8 @@ class ClinicSettingsServiceImplTest {
 
     @Test
     void shouldUpdateCurrentClinicSettings() {
-        var response = service.updateRegionalSettings(
-                new ClinicRegionalSettingsRequest("BR", "America/Manaus", "pt-BR"));
+        service.updateRegionalSettings(new ClinicRegionalSettingsRequest("BR", "America/Manaus", "pt-BR"));
 
-        assertThat(response.country()).isEqualTo("BR");
-        assertThat(response.timezone()).isEqualTo("America/Manaus");
-        assertThat(response.defaultLanguage()).isEqualTo("pt-BR");
         assertThat(clinic.getCountry()).isEqualTo(SupportedCountry.BR);
         assertThat(clinic.getTimezone()).isEqualTo("America/Manaus");
         assertThat(clinic.getDefaultLanguage()).isEqualTo(ClinicLanguage.PT_BR);

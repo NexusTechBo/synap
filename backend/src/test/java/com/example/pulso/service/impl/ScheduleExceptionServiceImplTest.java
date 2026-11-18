@@ -1,6 +1,5 @@
 package com.example.pulso.service.impl;
 
-import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.entry;
@@ -9,8 +8,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -24,8 +23,7 @@ import com.example.pulso.entity.ScheduleException;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
-import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
-import org.springframework.context.i18n.LocaleContextHolder;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
@@ -33,12 +31,13 @@ import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.mapper.ScheduleExceptionMapper;
-import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.repository.AppointmentRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -60,6 +59,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 class ScheduleExceptionServiceImplTest {

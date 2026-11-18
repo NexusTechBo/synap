@@ -37,11 +37,10 @@ export class ClinicRegionalSettingsStore {
 
   update(settings: ClinicRegionalSettings): Observable<ClinicRegionalSettings> {
     return this.api.updateRegionalSettings(settings).pipe(
-      tap(({ token, settings: saved }) => {
+      map(({ token }) => {
         this.auth.replaceToken(token);
-        this.current.set(saved);
+        return this.auth.regionalSettings() ?? settings;
       }),
-      map(({ settings: saved }) => saved),
     );
   }
 }

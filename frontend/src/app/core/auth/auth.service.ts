@@ -13,11 +13,11 @@ import {
   TokenPayload,
 } from '../models/api.models';
 import { HOME_URL, SESSION_ACCESS, SessionAccess } from '../navigation/navigation';
+import { isRole } from './roles';
 
 interface Session {
   token: string;
   userId: number;
-  role: Role;
   roles: Role[];
   clinicId: number;
   clinicName: string;
@@ -55,11 +55,12 @@ function decodeSession(token: string | null): Session | null {
   if (!token) return null;
   try {
     const payload = jwtDecode<TokenPayload>(token);
+    const roles = (payload.roles ?? []).filter(isRole);
+    if (!roles.length || !payload.username) return null;
     const session: Session = {
       token,
       userId: Number(payload.sub),
-      role: payload.role,
-      roles: payload.roles?.length ? payload.roles : [payload.role],
+      roles,
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
       clinicSlug: payload.clinicSlug,
@@ -75,17 +76,23 @@ function decodeSession(token: string | null): Session | null {
   }
 }
 
+function restoreSession(): Session | null {
+  const token = readStorage(TOKEN_KEY);
+  const session = decodeSession(token);
+  if (token && !session) writeStorage(TOKEN_KEY, null);
+  return session;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
   private readonly zone = inject(NgZone);
 
-  private readonly _session = signal<Session | null>(decodeSession(readStorage(TOKEN_KEY)));
+  private readonly _session = signal<Session | null>(restoreSession());
   private expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
   readonly session = this._session.asReadonly();
-  readonly role = computed(() => this._session()?.role ?? null);
   readonly roles = computed<readonly Role[]>(() => this._session()?.roles ?? []);
   readonly restrictedToOwnData = computed(
     () => this.hasRole('DOCTOR') && !this.hasRole('ADMINISTRATOR'),

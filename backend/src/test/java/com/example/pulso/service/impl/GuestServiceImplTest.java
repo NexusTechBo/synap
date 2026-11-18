@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.config.tenant.TenantContext;
-import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.dto.appointment.AppointmentRequest;
 import com.example.pulso.dto.appointment.AppointmentResponse;
 import com.example.pulso.dto.doctoravailability.DoctorUnavailableDatesResponse;
@@ -20,6 +19,7 @@ import com.example.pulso.dto.guest.GuestPatientRequest;
 import com.example.pulso.dto.patient.PatientRequest;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.entity.Personal;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
@@ -39,15 +39,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)

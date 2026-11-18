@@ -5,10 +5,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -35,6 +33,7 @@ import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.jwt.JwtClaims;
 import com.example.pulso.security.jwt.JwtUtil;
 import com.example.pulso.service.AppointmentService;
@@ -99,24 +98,23 @@ class AppointmentControllerTest {
 
     @BeforeEach
     void setUpTokens() {
-        givenToken(ADMIN_TOKEN, ADMIN_ID, "ADMINISTRATOR", List.of("ADMINISTRATOR"));
-        givenToken(DOCTOR_TOKEN, DOCTOR_ID, "DOCTOR", List.of("DOCTOR"));
-        givenToken(ADMIN_DOCTOR_TOKEN, ADMIN_DOCTOR_ID, "ADMINISTRATOR", List.of("ADMINISTRATOR", "DOCTOR"));
-        givenToken(ASSISTANT_TOKEN, ASSISTANT_ID, "ASSISTANT", List.of("ASSISTANT"));
-        givenToken(GUEST_TOKEN, 0L, "GUEST", List.of());
-        when(activeUserChecker.isActive(anyLong(), anyString(), anyCollection()))
+        givenToken(ADMIN_TOKEN, ADMIN_ID, List.of("ADMINISTRATOR"));
+        givenToken(DOCTOR_TOKEN, DOCTOR_ID, List.of("DOCTOR"));
+        givenToken(ADMIN_DOCTOR_TOKEN, ADMIN_DOCTOR_ID, List.of("ADMINISTRATOR", "DOCTOR"));
+        givenToken(ASSISTANT_TOKEN, ASSISTANT_ID, List.of("ASSISTANT"));
+        givenToken(GUEST_TOKEN, 0L, List.of("GUEST"));
+        when(activeUserChecker.isActive(anyLong(), any(RoleProfile.class)))
                 .thenReturn(true);
     }
 
-    private void givenToken(String token, long userId, String role, List<String> roles) {
+    private void givenToken(String token, long userId, List<String> roles) {
         var builder = Jwts.claims()
                 .subject(Long.toString(userId))
-                .add(JwtClaims.ROLE, role)
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
                 .add(JwtClaims.TIMEZONE, "America/La_Paz")
                 .add(JwtClaims.COUNTRY, "BO");
-        if (!roles.isEmpty()) builder.add(JwtClaims.ROLES, roles);
+        builder.add(JwtClaims.ROLES, roles);
         when(jwtUtil.parse(token)).thenReturn(Optional.of(builder.build()));
     }
 
@@ -317,7 +315,7 @@ class AppointmentControllerTest {
 
         @Test
         void shouldReturnUnauthorizedWhenUserIsNoLongerActive() throws Exception {
-            when(activeUserChecker.isActive(eq(DOCTOR_ID), anyString(), anyCollection()))
+            when(activeUserChecker.isActive(eq(DOCTOR_ID), any(RoleProfile.class)))
                     .thenReturn(false);
 
             mvc.perform(as(DOCTOR_TOKEN, patch("/api/appointments/30/reschedule"))

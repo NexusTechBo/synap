@@ -105,7 +105,6 @@ public class AuthServiceImpl implements AuthService {
             log.info("Login succeeded for user {} in clinic {}", personal.getId(), clinic.getId());
             return new LoginResponse(jwtUtil.generate(
                     personal.getId(),
-                    personal.getRole(),
                     personal.getRoles(),
                     clinic, personal.getName()
             ));
@@ -132,7 +131,6 @@ public class AuthServiceImpl implements AuthService {
         var clinic = currentClinicProvider.getCurrentClinic();
         return new LoginResponse(jwtUtil.generate(
                 personal.getId(),
-                personal.getRole(),
                 personal.getRoles(),
                 clinic,
                 personal.getName()

@@ -2,8 +2,8 @@ package com.example.pulso.mapper;
 
 import com.example.pulso.dto.appointment.AppointmentResponse;
 import com.example.pulso.dto.guest.GuestAppointmentResponse;
-import com.example.pulso.dto.guest.GuestDoctorResponse;
 import com.example.pulso.dto.guest.GuestClinicResponse;
+import com.example.pulso.dto.guest.GuestDoctorResponse;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.Personal;
 import java.util.List;

@@ -3,11 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { GuestApi } from '../../../../app/core/api/guest.api';
 import { GuestSessionService } from '../../../../app/core/auth/guest-session.service';
-import {
-  ApiError,
-  GuestSessionResponse,
-  GuestTokenPayload,
-} from '../../../../app/core/models/api.models';
+import { ApiError, GuestTokenPayload, LoginResponse } from '../../../../app/core/models/api.models';
 
 const GUEST_TOKEN_KEY = 'scheduler.guestToken';
 const SLUG = 'clinicacentral';
@@ -23,7 +19,7 @@ function base64Url(value: object): string {
 function guestToken(overrides: Partial<GuestTokenPayload> = {}): string {
   const payload: GuestTokenPayload = {
     sub: 'guest',
-    role: 'GUEST',
+    roles: ['GUEST'],
     clinicId: 1,
     clinicName: 'Clinica Central',
     clinicSlug: SLUG,
@@ -33,8 +29,8 @@ function guestToken(overrides: Partial<GuestTokenPayload> = {}): string {
   return `${base64Url({ alg: 'HS256', typ: 'JWT' })}.${base64Url(payload)}.signature`;
 }
 
-function sessionResponse(token = guestToken()): GuestSessionResponse {
-  return { token, expiresAt: new Date(Date.now() + 3600_000).toISOString() };
+function sessionResponse(token = guestToken()): LoginResponse {
+  return { token };
 }
 
 function httpError(status: number, body: Partial<ApiError> | null = null, headers?: HttpHeaders) {
@@ -61,6 +57,24 @@ describe('GuestSessionService', () => {
     guestApi.createSession.mockReturnValue(throwError(() => error));
     service.start(SLUG);
   }
+
+  describe('stored token', () => {
+    it('does not accept a staff token as a guest session', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ roles: ['ADMINISTRATOR'] }));
+
+      service.start(SLUG);
+
+      expect(guestApi.createSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not accept a token without roles', () => {
+      sessionStorage.setItem(GUEST_TOKEN_KEY, guestToken({ roles: undefined }));
+
+      service.start(SLUG);
+
+      expect(guestApi.createSession).toHaveBeenCalledTimes(1);
+    });
+  });
 
   describe('country', () => {
     it('is null before any session exists', () => {
@@ -163,7 +177,7 @@ describe('GuestSessionService', () => {
     });
 
     it('stays released when a pending session resolves after release and returns on start', () => {
-      const response = new Subject<GuestSessionResponse>();
+      const response = new Subject<LoginResponse>();
       guestApi.createSession.mockReturnValue(response);
       service.start(SLUG);
 
@@ -259,7 +273,7 @@ describe('GuestSessionService', () => {
     });
 
     it('stays loading while the session request is in flight', () => {
-      guestApi.createSession.mockReturnValue(new Subject<GuestSessionResponse>());
+      guestApi.createSession.mockReturnValue(new Subject<LoginResponse>());
 
       service.start(SLUG);
 
@@ -268,7 +282,7 @@ describe('GuestSessionService', () => {
     });
 
     it('shares a single in-flight request between concurrent callers', () => {
-      const response = new Subject<GuestSessionResponse>();
+      const response = new Subject<LoginResponse>();
       guestApi.createSession.mockReturnValue(response);
       service.start(SLUG);
 

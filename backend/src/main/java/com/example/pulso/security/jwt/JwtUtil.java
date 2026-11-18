@@ -9,9 +9,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.DateTimeException;
-import java.time.Instant;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
@@ -36,11 +35,10 @@ public class JwtUtil {
         this.clock = clock;
     }
 
-    public String generate(Long userId, ERole role, Collection<ERole> roles, Clinic clinic, String userName) {
+    public String generate(Long userId, Collection<ERole> roles, Clinic clinic, String userName) {
         var now = clock.instant();
         return Jwts.builder()
                 .subject(userId.toString())
-                .claim(JwtClaims.ROLE, role.name())
                 .claim(JwtClaims.ROLES, roles.stream().map(ERole::name).sorted().toList())
                 .claim(JwtClaims.CLINIC_ID, clinic.getId())
                 .claim(JwtClaims.CLINIC_NAME, clinic.getName())
@@ -55,18 +53,19 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateGuest(Clinic clinic, Instant expiresAt) {
+    public String generateGuest(Clinic clinic) {
+        var now = clock.instant();
         return Jwts.builder()
                 .subject(GUEST_SUBJECT)
-                .claim(JwtClaims.ROLE, ERole.GUEST.name())
+                .claim(JwtClaims.ROLES, List.of(ERole.GUEST.name()))
                 .claim(JwtClaims.CLINIC_ID, clinic.getId())
                 .claim(JwtClaims.CLINIC_NAME, clinic.getName())
                 .claim(JwtClaims.CLINIC_SLUG, clinic.getSlug())
                 .claim(JwtClaims.COUNTRY, clinic.getCountry().name())
                 .claim(JwtClaims.TIMEZONE, clinic.getTimezone())
                 .claim(JwtClaims.DEFAULT_LANGUAGE, clinic.getDefaultLanguage().code())
-                .issuedAt(Date.from(clock.instant()))
-                .expiration(Date.from(expiresAt))
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plus(GUEST_TTL)))
                 .signWith(key)
                 .compact();
     }
@@ -101,9 +100,7 @@ public class JwtUtil {
     }
 
     public static List<String> extractRoles(Claims claims) {
-        var role = claims.get(JwtClaims.ROLE, String.class);
-        if (!(claims.get(JwtClaims.ROLES) instanceof Collection<?> roles) || roles.isEmpty())
-            return role == null ? List.of() : List.of(role);
+        if (!(claims.get(JwtClaims.ROLES) instanceof Collection<?> roles)) return List.of();
         return roles.stream().filter(Objects::nonNull).map(Object::toString).toList();
     }
 }

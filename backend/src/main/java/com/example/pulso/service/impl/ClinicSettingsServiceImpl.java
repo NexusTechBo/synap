@@ -25,7 +25,7 @@ public class ClinicSettingsServiceImpl implements ClinicSettingsService {
 
     @Override
     @Transactional
-    public ClinicRegionalSettingsResponse updateRegionalSettings(ClinicRegionalSettingsRequest request) {
+    public void updateRegionalSettings(ClinicRegionalSettingsRequest request) {
         var settings = regionalSettingsResolver.resolveStrict(
                 request.country(),
                 request.timezone(),
@@ -35,6 +35,5 @@ public class ClinicSettingsServiceImpl implements ClinicSettingsService {
         clinic.setCountry(settings.country());
         clinic.setTimezone(settings.timezone());
         clinic.setDefaultLanguage(settings.language());
-        return clinicSettingsMapper.toRegionalSettingsResponse(clinic);
     }
 }

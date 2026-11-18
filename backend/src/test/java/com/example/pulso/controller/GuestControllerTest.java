@@ -159,6 +159,18 @@ class GuestControllerTest {
         }
 
         @Test
+        void shouldReturnUnauthorizedWhenGuestTokenOnlyHasLegacyRoleClaim() throws Exception {
+            SliceTokens.givenLegacyRoleOnlyGuestToken(jwtUtil);
+
+            mvc.perform(as(SliceTokens.LEGACY_ROLE_GUEST_TOKEN, get(UNAVAILABLE_DATES_PATH))
+                            .param("from", "2026-11-06")
+                            .param("to", "2026-11-19"))
+                    .andExpect(status().isUnauthorized());
+
+            verifyNoInteractions(guestService);
+        }
+
+        @Test
         void shouldReturnUnauthorizedWhenThereIsNoToken() throws Exception {
             mvc.perform(get(UNAVAILABLE_DATES_PATH).param("from", "2026-11-06").param("to", "2026-11-19"))
                     .andExpect(status().isUnauthorized());

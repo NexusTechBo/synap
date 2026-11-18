@@ -30,7 +30,7 @@ describe('ClinicRegionalSettingsStore', () => {
   let claims: ReturnType<typeof signal<ClinicRegionalSettings | null>>;
 
   beforeEach(() => {
-    replaceToken.mockClear();
+    replaceToken.mockReset();
     claims = signal<ClinicRegionalSettings | null>(FROM_CLAIMS);
     TestBed.configureTestingModule({
       providers: [
@@ -74,22 +74,34 @@ describe('ClinicRegionalSettingsStore', () => {
     expect(store.hasError()).toBe(false);
   });
 
-  it('update() sends PUT and stores the response as the new value', async () => {
+  it('update() sends PUT and takes the new value from the refreshed token claims', async () => {
+    const fromToken = { ...FROM_SERVER, timezone: 'America/Manaus' };
+    replaceToken.mockImplementation(() => claims.set(fromToken));
     let result: ClinicRegionalSettings | undefined;
 
     store.update(FROM_SERVER).subscribe((value) => (result = value));
     const req = http.expectOne('clinic/regional-settings');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual(FROM_SERVER);
-    req.flush({ settings: { ...FROM_SERVER, timezone: 'America/Manaus' }, token: 'new-jwt' });
+    req.flush({ token: 'new-jwt' });
 
-    expect(result?.timezone).toBe('America/Manaus');
-    expect(store.settings()).toEqual({ ...FROM_SERVER, timezone: 'America/Manaus' });
+    expect(result).toEqual(fromToken);
+    expect(store.settings()).toEqual(fromToken);
+  });
+
+  it('update() falls back to the submitted value when the token has no regional claims', () => {
+    replaceToken.mockImplementation(() => claims.set(null));
+    let result: ClinicRegionalSettings | undefined;
+
+    store.update(FROM_SERVER).subscribe((value) => (result = value));
+    http.expectOne('clinic/regional-settings').flush({ token: 'new-jwt' });
+
+    expect(result).toEqual(FROM_SERVER);
   });
 
   it('update() replaces the session token with the one returned by the server', () => {
     store.update(FROM_SERVER).subscribe();
-    http.expectOne('clinic/regional-settings').flush({ settings: FROM_SERVER, token: 'new-jwt' });
+    http.expectOne('clinic/regional-settings').flush({ token: 'new-jwt' });
 
     expect(replaceToken).toHaveBeenCalledExactlyOnceWith('new-jwt');
   });

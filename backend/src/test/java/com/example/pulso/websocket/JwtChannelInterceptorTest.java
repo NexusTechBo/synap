@@ -2,14 +2,15 @@ package com.example.pulso.websocket;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.config.tenant.TenantContext;
+import com.example.pulso.enums.ERole;
 import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.jwt.JwtClaims;
 import com.example.pulso.security.jwt.JwtUtil;
 import io.jsonwebtoken.Claims;
@@ -61,10 +62,13 @@ class JwtChannelInterceptorTest {
     }
 
     private Claims claims(String timezone, String country) {
+        return claims(timezone, country, List.of("ADMINISTRATOR"));
+    }
+
+    private Claims claims(String timezone, String country, List<String> roles) {
         var builder = Jwts.claims()
                 .subject("1")
-                .add(JwtClaims.ROLE, "ADMINISTRATOR")
-                .add(JwtClaims.ROLES, List.of("ADMINISTRATOR"))
+                .add(JwtClaims.ROLES, roles)
                 .add(JwtClaims.CLINIC_ID, 7L)
                 .add(JwtClaims.CLINIC_SLUG, "demo")
                 .expiration(Date.from(NOW.plusSeconds(3600)));
@@ -128,7 +132,7 @@ class JwtChannelInterceptorTest {
     @Test
     void shouldAcceptConnectWithValidTimezoneAndLeaveTenantCleared() {
         when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz")));
-        when(activeUserChecker.isActive(anyLong(), anyString(), anyCollection())).thenReturn(true);
+        when(activeUserChecker.isActive(anyLong(), any(RoleProfile.class))).thenReturn(true);
         var attributes = new HashMap<String, Object>();
 
         var result = interceptor().preSend(connect(attributes), channel);
@@ -136,5 +140,50 @@ class JwtChannelInterceptorTest {
         assertThat(result).isNotNull();
         assertThat(attributes).containsEntry(JwtChannelInterceptor.CLINIC_ID_ATTRIBUTE, 7L);
         assertThat(TenantContext.current()).isNull();
+    }
+
+    @Test
+    void shouldRejectConnectWithInvalidTokenWhenRolesAreNotAllowedCombination() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "BO", List.of("ASSISTANT", "DOCTOR"))));
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessageContaining("Invalid token");
+
+        assertThat(TenantContext.current()).isNull();
+        verifyNoInteractions(activeUserChecker);
+    }
+
+    @Test
+    void shouldRejectConnectWithInvalidTokenWhenRolesAreEmpty() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "BO", List.of())));
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessageContaining("Invalid token");
+
+        verifyNoInteractions(activeUserChecker);
+    }
+
+    @Test
+    void shouldRejectGuestConnectBeforeSettingTenant() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "BO", List.of("GUEST"))));
+
+        assertThatThrownBy(() -> interceptor().preSend(connect(new HashMap<>()), channel))
+                .isInstanceOf(MessageDeliveryException.class)
+                .hasMessageContaining("Guests cannot connect");
+
+        assertThat(TenantContext.current()).isNull();
+        verifyNoInteractions(activeUserChecker);
+    }
+
+    @Test
+    void shouldAcceptConnectOfDoctorWithDoctorRole() {
+        when(jwtUtil.parse(TOKEN)).thenReturn(Optional.of(claims("America/La_Paz", "BO", List.of("DOCTOR"))));
+        when(activeUserChecker.isActive(1L, new RoleProfile(ERole.DOCTOR, false))).thenReturn(true);
+
+        var result = interceptor().preSend(connect(new HashMap<>()), channel);
+
+        assertThat(result).isNotNull();
     }
 }

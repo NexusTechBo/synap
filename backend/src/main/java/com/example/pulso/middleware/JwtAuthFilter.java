@@ -1,8 +1,8 @@
 package com.example.pulso.middleware;
 
 import com.example.pulso.config.tenant.TenantContext;
-import com.example.pulso.enums.ERole;
 import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.RoleProfile;
 import com.example.pulso.security.SecurityUtils;
 import com.example.pulso.security.jwt.JwtClaims;
 import com.example.pulso.security.jwt.JwtUtil;
@@ -60,15 +60,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private void authenticate(HttpServletRequest request, Claims claims) {
         var clinicId = claims.get(JwtClaims.CLINIC_ID, Long.class);
         TenantContext.setCurrentTenant(clinicId, claims.get(JwtClaims.CLINIC_SLUG, String.class), JwtUtil.extractZone(claims), JwtUtil.extractCountry(claims));
-        var role = claims.get(JwtClaims.ROLE, String.class);
         var roles = JwtUtil.extractRoles(claims);
         var userId = Long.valueOf(claims.getSubject());
+        var profile = RoleProfile.fromRoles(roles).orElse(null);
         try {
-            if (!activeUserChecker.isActive(userId, role, roles)) {
+            if (profile == null || !activeUserChecker.isActive(userId, profile)) {
                 log.warn(
-                        "Token rejected: user {} with role {} in clinic {} is inactive or its role changed",
+                        "Token rejected: user {} with roles {} in clinic {} is inactive or its roles changed",
                         userId,
-                        role,
+                        roles,
                         clinicId
                 );
                 return;
@@ -85,8 +85,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         bindLogContext(
                 request,
                 clinicId,
-                ERole.GUEST.name().equals(role) ? LogKeys.GUEST_USER : claims.getSubject(),
-                role
+                profile.isGuest() ? LogKeys.GUEST_USER : claims.getSubject(),
+                profile.primary().name()
         );
     }
 
