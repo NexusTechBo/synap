@@ -28,7 +28,7 @@ export class DashboardService {
   private readonly today = this.clock.today();
   private readonly weekStart = startOfWeek(parseIso(this.today));
 
-  private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
+  private readonly locale = computed(() => this.i18n.intlLocale());
 
   private readonly weekResource = rxResource({
     stream: () =>
@@ -41,6 +41,7 @@ export class DashboardService {
   readonly isWeekLoading = this.weekResource.isLoading;
   readonly weekErrorMessage = resourceError(
     this.weekResource,
+    this.i18n,
     this.i18n.translate('dashboard.errorLoad'),
   );
 

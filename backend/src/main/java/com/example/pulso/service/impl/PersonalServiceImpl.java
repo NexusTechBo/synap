@@ -26,6 +26,7 @@ import com.example.pulso.service.PersonalService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.util.Utils;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final ApplicationEventPublisher eventPublisher;
     private final ClinicTimeProvider clinicTimeProvider;
     private final IdentityDocumentResolver identityDocumentResolver;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -108,7 +110,8 @@ public class PersonalServiceImpl implements PersonalService {
                 saved.getUsername(),
                 request.password(),
                 saved.getRole(),
-                clinic.getName()
+                clinic.getName(),
+                clinicLocaleResolver.resolve(clinic)
         ));
         return personalMapper.toResponse(saved);
     }

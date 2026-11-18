@@ -83,12 +83,12 @@ export class DateRangePickerComponent implements ControlValueAccessor {
   private onTouched: () => void = () => {};
 
   protected readonly label = computed(() => {
-    this.i18n.currentLang();
+    const locale = this.i18n.intlLocale();
     const range = this.value();
     if (!range) return this.i18n.translate('dateRangePicker.placeholder');
     return range.from === range.to
-      ? formatShortDate(range.from)
-      : `${formatShortDate(range.from)} – ${formatShortDate(range.to)}`;
+      ? formatShortDate(range.from, locale)
+      : `${formatShortDate(range.from, locale)} – ${formatShortDate(range.to, locale)}`;
   });
 
   writeValue(value: DateRange | null): void {

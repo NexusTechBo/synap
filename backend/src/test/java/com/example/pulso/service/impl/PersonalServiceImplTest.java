@@ -21,11 +21,16 @@ import com.example.pulso.service.component.document.BrazilianCpfValidator;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.notification.event.StaffCreatedEvent;
+import java.util.Locale;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.AppointmentStatus;
+import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ForbiddenException;
@@ -104,7 +109,8 @@ class PersonalServiceImplTest {
                 doctorAvailabilityRepository,
                 eventPublisher,
                 new ClinicTimeProvider(CLOCK),
-                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator()))
+                new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator())),
+                new ClinicLocaleResolver(currentClinicProvider)
         );
     }
 
@@ -149,13 +155,48 @@ class PersonalServiceImplTest {
 
         private void givenClinic() {
             when(currentClinicProvider.getCurrentClinic())
-                    .thenReturn(Clinic.builder().name("Demo").slug("demo").build());
+                    .thenReturn(Clinic.builder().name("Demo").slug("demo").defaultLanguage(ClinicLanguage.ES).build());
         }
 
         private Personal savedPersonal() {
             var captor = ArgumentCaptor.forClass(Personal.class);
             verify(personalRepository).save(captor.capture());
             return captor.getValue();
+        }
+
+        private StaffCreatedEvent createWithClinicLanguage(ClinicLanguage language) {
+            when(currentClinicProvider.getCurrentClinic())
+                    .thenReturn(Clinic.builder().name("Demo").slug("demo").defaultLanguage(language).build());
+            when(personalRepository.save(any(Personal.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            service.createPersonal(request(null));
+
+            var captor = ArgumentCaptor.forClass(StaffCreatedEvent.class);
+            verify(eventPublisher).publishEvent(captor.capture());
+            return captor.getValue();
+        }
+
+        @Test
+        void shouldPublishStaffCreatedEventWithEnglishLocaleWhenClinicLanguageIsEnglish() {
+            assertThat(createWithClinicLanguage(ClinicLanguage.EN).locale()).isEqualTo(Locale.ENGLISH);
+        }
+
+        @Test
+        void shouldPublishStaffCreatedEventWithSpanishLocaleWhenClinicLanguageIsPortuguese() {
+            assertThat(createWithClinicLanguage(ClinicLanguage.PT_BR).locale())
+                    .isEqualTo(Locale.forLanguageTag("es"));
+        }
+
+        @Test
+        void shouldIgnoreRequestLocaleWhenPublishingStaffCreatedEvent() {
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+
+            try {
+                assertThat(createWithClinicLanguage(ClinicLanguage.ES).locale())
+                        .isEqualTo(Locale.forLanguageTag("es"));
+            } finally {
+                LocaleContextHolder.resetLocaleContext();
+            }
         }
 
         @Test
@@ -364,7 +405,7 @@ class PersonalServiceImplTest {
 
         private void givenClinic() {
             when(currentClinicProvider.getCurrentClinic())
-                    .thenReturn(Clinic.builder().name("Demo").slug("demo").build());
+                    .thenReturn(Clinic.builder().name("Demo").slug("demo").defaultLanguage(ClinicLanguage.ES).build());
         }
 
         @Test

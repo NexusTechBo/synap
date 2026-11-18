@@ -7,7 +7,7 @@
   [attr.aria-pressed]="selectedId() === null"
   (click)="select.emit(null)"
 >
-  Todas
+  {{ 'shared.specialtyFilter.all' | translate }}
 </button>
 @for (specialty of specialties(); track specialty.id) {
   <button

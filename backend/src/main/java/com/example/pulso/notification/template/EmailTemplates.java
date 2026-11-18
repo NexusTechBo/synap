@@ -1,147 +1,182 @@
 package com.example.pulso.notification.template;
 
-import com.example.pulso.config.LocaleConfig;
-import com.example.pulso.enums.ERole;
 import com.example.pulso.notification.EmailContent;
 import com.example.pulso.notification.event.AppointmentNotificationEvent;
 import com.example.pulso.notification.event.ClinicActivatedEvent;
 import com.example.pulso.notification.event.ClinicActivationEvent;
 import com.example.pulso.notification.event.StaffCreatedEvent;
-import com.example.pulso.util.DateTimeUtils;
 import com.example.pulso.util.Utils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-public final class EmailTemplates {
-    private static final DateTimeFormatter DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", LocaleConfig.SPANISH);
+@Component
+@RequiredArgsConstructor
+public class EmailTemplates {
+    private final NotificationTexts texts;
 
-    private EmailTemplates() {}
-
-    public static EmailContent staffCredentials(StaffCreatedEvent event) {
-        var subject = "Tu cuenta en " + clinicLabel(event.clinicName());
+    public EmailContent staffCredentials(StaffCreatedEvent event) {
+        var locale = event.locale();
+        var clinic = texts.clinicLabel(event.clinicName(), locale);
+        var subject = texts.get(locale, "notification.email.staffCredentials.subject", clinic);
         var body = """
-                <p>Hola %s,</p>
-                <p>Se creó tu cuenta en <strong>%s</strong>. Estos son tus datos de acceso:</p>
+                <p>%s</p>
+                <p>%s</p>
                 <table cellpadding="4">
-                  <tr><td><strong>Usuario:</strong></td><td>%s</td></tr>
-                  <tr><td><strong>Contraseña:</strong></td><td>%s</td></tr>
-                  <tr><td><strong>Rol:</strong></td><td>%s</td></tr>
+                  %s
+                  %s
+                  %s
                 </table>
-                <p>Te recomendamos cambiar tu contraseña después de iniciar sesión por primera vez.</p>
+                <p>%s</p>
                 """.formatted(
-                        Utils.escapeHtml(event.name()),
-                        Utils.escapeHtml(clinicLabel(event.clinicName())),
-                        Utils.escapeHtml(event.username()),
-                        Utils.escapeHtml(event.rawPassword()),
-                        Utils.escapeHtml(roleLabel(event.role())));
-        return new EmailContent(subject, layout(body));
+                        greeting(locale, event.name()),
+                        texts.get(locale, "notification.email.staffCredentials.intro", Utils.escapeHtml(clinic)),
+                        row(texts.label(locale, "user"), event.username()),
+                        row(texts.label(locale, "password"), event.rawPassword()),
+                        row(texts.label(locale, "role"), texts.roleLabel(event.role(), locale)),
+                        texts.get(locale, "notification.email.staffCredentials.advice"));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent clinicActivation(ClinicActivationEvent event, String frontendUrl) {
-        var clinic = clinicLabel(event.clinicName());
-        var subject = "Activa tu espacio de trabajo " + clinic;
+    public EmailContent clinicActivation(ClinicActivationEvent event, String frontendUrl) {
+        var locale = event.locale();
+        var clinic = texts.clinicLabel(event.clinicName(), locale);
+        var subject = texts.get(locale, "notification.email.clinicActivation.subject", clinic);
         var link = frontendUrl + "/activar?token=" + URLEncoder.encode(event.token(), StandardCharsets.UTF_8);
         var body = """
-                <p>Hola %s,</p>
-                <p>Gracias por registrar <strong>%s</strong>. Para activar tu espacio de trabajo y poder iniciar sesión, confirma tu correo con el siguiente botón:</p>
+                <p>%s</p>
+                <p>%s</p>
                 %s
-                <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
-                <p>Este enlace vence en 48 horas. Si no solicitaste este registro, puedes ignorar este correo.</p>
+                <p>%s<br>%s</p>
+                <p>%s</p>
                 """.formatted(
-                        Utils.escapeHtml(event.adminName()),
-                        Utils.escapeHtml(clinic),
-                        button(link, "Activar espacio de trabajo"),
-                        anchor(link));
-        return new EmailContent(subject, layout(body));
+                        greeting(locale, event.adminName()),
+                        texts.get(locale, "notification.email.clinicActivation.intro", Utils.escapeHtml(clinic)),
+                        button(link, texts.get(locale, "notification.email.clinicActivation.button")),
+                        texts.get(locale, "notification.email.linkFallback"),
+                        anchor(link),
+                        texts.get(locale, "notification.email.clinicActivation.expiry"));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent clinicWelcome(ClinicActivatedEvent event, String frontendUrl) {
-        var clinic = clinicLabel(event.clinicName());
-        var subject = "Tu espacio de trabajo " + clinic + " está activo";
+    public EmailContent clinicWelcome(ClinicActivatedEvent event, String frontendUrl) {
+        var locale = event.locale();
+        var clinic = texts.clinicLabel(event.clinicName(), locale);
+        var subject = texts.get(locale, "notification.email.clinicWelcome.subject", clinic);
         var link = frontendUrl + "/login";
         var body = """
-                <p>Hola %s,</p>
-                <p>Tu espacio de trabajo <strong>%s</strong> ya está activo. Ya puedes iniciar sesión con tu usuario:</p>
+                <p>%s</p>
+                <p>%s</p>
                 <table cellpadding="4">%s</table>
                 %s
-                <p>Si el botón no funciona, copia y pega este enlace en tu navegador:<br>%s</p>
+                <p>%s<br>%s</p>
                 """.formatted(
-                        Utils.escapeHtml(event.adminName()),
-                        Utils.escapeHtml(clinic),
-                        row("Usuario", event.adminUsername()),
-                        button(link, "Iniciar sesión"),
+                        greeting(locale, event.adminName()),
+                        texts.get(locale, "notification.email.clinicWelcome.intro", Utils.escapeHtml(clinic)),
+                        row(texts.label(locale, "user"), event.adminUsername()),
+                        button(link, texts.get(locale, "notification.email.clinicWelcome.button")),
+                        texts.get(locale, "notification.email.linkFallback"),
                         anchor(link));
-        return new EmailContent(subject, layout(body));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent appointmentConfirmed(AppointmentNotificationEvent event, String recipientName) {
-        var subject = "Cita confirmada - " + clinicLabel(event.clinicName());
+    public EmailContent appointmentConfirmed(AppointmentNotificationEvent event, String recipientName) {
+        var locale = event.locale();
+        var subject = texts.get(
+                locale,
+                "notification.email.appointmentConfirmed.subject",
+                texts.clinicLabel(event.clinicName(), locale));
         var body = """
-                <p>Hola %s,</p>
-                <p>La siguiente cita fue <strong>confirmada</strong>:</p>
+                <p>%s</p>
+                <p>%s</p>
                 %s
-                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event));
-        return new EmailContent(subject, layout(body));
+                """.formatted(
+                        greeting(locale, recipientName),
+                        texts.get(locale, "notification.email.appointmentConfirmed.intro"),
+                        appointmentDetails(event));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent appointmentCancelled(AppointmentNotificationEvent event, String recipientName) {
-        var subject = "Cita cancelada - " + clinicLabel(event.clinicName());
+    public EmailContent appointmentCancelled(AppointmentNotificationEvent event, String recipientName) {
+        var locale = event.locale();
+        var subject = texts.get(
+                locale,
+                "notification.email.appointmentCancelled.subject",
+                texts.clinicLabel(event.clinicName(), locale));
         var reason = StringUtils.hasText(event.cancellationReason())
-                ? "<p><strong>Motivo:</strong> " + Utils.escapeHtml(event.cancellationReason()) + "</p>"
+                ? "<p><strong>" + texts.label(locale, "reason") + ":</strong> "
+                        + Utils.escapeHtml(event.cancellationReason()) + "</p>"
                 : "";
         var body = """
-                <p>Hola %s,</p>
-                <p>La siguiente cita fue <strong>cancelada</strong>:</p>
+                <p>%s</p>
+                <p>%s</p>
                 %s
                 %s
-                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event), reason);
-        return new EmailContent(subject, layout(body));
+                """.formatted(
+                        greeting(locale, recipientName),
+                        texts.get(locale, "notification.email.appointmentCancelled.intro"),
+                        appointmentDetails(event),
+                        reason);
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent appointmentRescheduled(AppointmentNotificationEvent event, String recipientName) {
-        var subject = "Cita reprogramada - " + clinicLabel(event.clinicName());
+    public EmailContent appointmentRescheduled(AppointmentNotificationEvent event, String recipientName) {
+        var locale = event.locale();
+        var subject = texts.get(
+                locale,
+                "notification.email.appointmentRescheduled.subject",
+                texts.clinicLabel(event.clinicName(), locale));
         var body = """
-                <p>Hola %s,</p>
-                <p>Tu cita fue <strong>reprogramada</strong>. Estos son los nuevos datos:</p>
+                <p>%s</p>
+                <p>%s</p>
                 %s
-                <p>La cita queda <strong>pendiente de confirmación</strong>; te avisaremos cuando el espacio de trabajo la confirme.</p>
-                """.formatted(Utils.escapeHtml(recipientName), appointmentDetails(event));
-        return new EmailContent(subject, layout(body));
+                <p>%s</p>
+                """.formatted(
+                        greeting(locale, recipientName),
+                        texts.get(locale, "notification.email.appointmentRescheduled.intro"),
+                        appointmentDetails(event),
+                        texts.get(locale, "notification.email.appointmentRescheduled.pending"));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static EmailContent doctorGuestAppointment(AppointmentNotificationEvent event) {
-        var subject = "Nueva cita agendada - " + clinicLabel(event.clinicName());
+    public EmailContent doctorGuestAppointment(AppointmentNotificationEvent event) {
+        var locale = event.locale();
+        var subject = texts.get(
+                locale,
+                "notification.email.doctorGuestAppointment.subject",
+                texts.clinicLabel(event.clinicName(), locale));
         var body = """
-                <p>Hola Dr./Dra. %s,</p>
-                <p>Un paciente ha agendado una nueva cita desde el portal público:</p>
+                <p>%s</p>
+                <p>%s</p>
                 %s
-                <p>Recuerda que la cita se encuentra <strong>pendiente de confirmación</strong>.</p>
-                """.formatted(Utils.escapeHtml(event.doctorName()), appointmentDetails(event));
-        return new EmailContent(subject, layout(body));
+                <p>%s</p>
+                """.formatted(
+                        texts.get(locale, "notification.email.doctorGreeting", Utils.escapeHtml(event.doctorName())),
+                        texts.get(locale, "notification.email.doctorGuestAppointment.intro"),
+                        appointmentDetails(event),
+                        texts.get(locale, "notification.email.doctorGuestAppointment.pending"));
+        return new EmailContent(subject, layout(body, locale));
     }
 
-    public static String formatDate(LocalDateTime dateTime) {
-        return dateTime.format(DATE_FORMATTER);
+    private String greeting(Locale locale, String name) {
+        return texts.get(locale, "notification.email.greeting", Utils.escapeHtml(name));
     }
 
-    public static String formatTime(LocalDateTime dateTime) {
-        return dateTime.format(DateTimeUtils.TIME);
-    }
-
-    private static String appointmentDetails(AppointmentNotificationEvent event) {
-        var specialtyRow = StringUtils.hasText(event.specialtyName()) ? row("Especialidad", event.specialtyName()) : "";
-        var time = formatTime(event.startTime()) + (event.endTime() != null ? " - " + formatTime(event.endTime()) : "");
+    private String appointmentDetails(AppointmentNotificationEvent event) {
+        var locale = event.locale();
+        var specialtyRow = StringUtils.hasText(event.specialtyName())
+                ? row(texts.label(locale, "specialty"), event.specialtyName())
+                : "";
         return "<table cellpadding=\"4\">"
-                + row("Espacio de trabajo", clinicLabel(event.clinicName()))
-                + row("Doctor", event.doctorName())
+                + row(texts.label(locale, "workspace"), texts.clinicLabel(event.clinicName(), locale))
+                + row(texts.label(locale, "doctor"), event.doctorName())
                 + specialtyRow
-                + row("Paciente", event.patientName())
-                + row("Fecha", formatDate(event.startTime()))
-                + row("Hora", time)
+                + row(texts.label(locale, "patient"), event.patientName())
+                + row(texts.label(locale, "date"), texts.formatDate(event.startTime(), locale))
+                + row(texts.label(locale, "time"), texts.formatTimeRange(event.startTime(), event.endTime()))
                 + "</table>";
     }
 
@@ -161,31 +196,16 @@ public final class EmailTemplates {
         return "<a href=\"" + url + "\">" + url + "</a>";
     }
 
-    private static String layout(String body) {
+    private String layout(String body, Locale locale) {
         return """
                 <!DOCTYPE html>
-                <html lang="es">
+                <html lang="%s">
                 <head><meta charset="UTF-8"></head>
                 <body style="font-family: Arial, sans-serif; color: #1f2937;">
                 %s
-                <p style="color: #6b7280; font-size: 12px;">Este es un mensaje automático, por favor no respondas a este correo.</p>
+                <p style="color: #6b7280; font-size: 12px;">%s</p>
                 </body>
                 </html>
-                """.formatted(body);
-    }
-
-    private static String clinicLabel(String clinicName) {
-        var name = clinicName == null ? null : Utils.stripControlChars(clinicName).strip();
-        return StringUtils.hasText(name) ? name : "el espacio de trabajo";
-    }
-
-    private static String roleLabel(ERole role) {
-        if (role == null) return "";
-        return switch (role) {
-            case ADMINISTRATOR -> "Administrador";
-            case DOCTOR -> "Doctor";
-            case ASSISTANT -> "Asistente";
-            case GUEST -> "Invitado";
-        };
+                """.formatted(locale.getLanguage(), body, texts.get(locale, "notification.email.footer"));
     }
 }

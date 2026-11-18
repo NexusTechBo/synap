@@ -16,6 +16,7 @@ import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.ScheduleExceptionService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +40,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
     private final ScheduleExceptionMapper mapper;
     private final ClinicTimeProvider clinicTimeProvider;
     private final MessageSource messageSource;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     @Transactional
@@ -115,7 +116,7 @@ public class ScheduleExceptionServiceImpl implements ScheduleExceptionService {
 
     private String cancellationReason(String reason) {
         return reason == null || reason.isBlank()
-                ? messageSource.getMessage(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON, null, LocaleContextHolder.getLocale())
+                ? messageSource.getMessage(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON, null, clinicLocaleResolver.resolveCurrent())
                 : reason;
     }
 

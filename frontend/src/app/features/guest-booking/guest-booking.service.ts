@@ -25,7 +25,6 @@ import {
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { createCooldown } from '../../core/utils/cooldown.util';
-import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { DATE_STRIP_DAYS } from '../../shared/ui/forms/date-strip/date-strip.component';
 import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
 
@@ -117,6 +116,7 @@ export class GuestBookingService {
   );
   readonly clinicErrorMessage = resourceError(
     this.clinicResource,
+    this.i18n,
     this.i18n.translate('guestBooking.clinicLoadError'),
   );
   readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
@@ -130,16 +130,25 @@ export class GuestBookingService {
   );
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
-    LOAD_ERROR.specialties,
+    this.i18n,
+    this.i18n.translate('errors.loadSpecialties'),
   );
   readonly doctors = computed(() =>
     this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
   );
-  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
+  readonly doctorsErrorMessage = resourceError(
+    this.doctorsResource,
+    this.i18n,
+    this.i18n.translate('errors.loadDoctors'),
+  );
   readonly slots = computed(() =>
     this.slotsResource.hasValue() ? this.slotsResource.value() : [],
   );
-  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
+  readonly slotsErrorMessage = resourceError(
+    this.slotsResource,
+    this.i18n,
+    this.i18n.translate('errors.loadSlots'),
+  );
   private readonly selectedDateHasNoSlots = computed(
     () =>
       !this.slotsResource.isLoading() &&
@@ -245,6 +254,7 @@ export class GuestBookingService {
   ): Observable<never> {
     const message = apiErrorMessage(
       error,
+      this.i18n,
       this.i18n.translate('guestBooking.errors.bookingFailed'),
     );
     const retryAfter = retryAfterSeconds(error);

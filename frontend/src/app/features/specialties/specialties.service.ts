@@ -41,7 +41,7 @@ export class SpecialtiesService {
       }),
       catchError((error) => {
         this.notifications.error(
-          apiErrorMessage(error, this.i18n.translate('specialties.errors.create')),
+          apiErrorMessage(error, this.i18n, this.i18n.translate('specialties.errors.create')),
         );
         return EMPTY;
       }),

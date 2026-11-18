@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -17,10 +18,14 @@ import static org.mockito.Mockito.when;
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionRequest;
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionResponse;
+import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.ScheduleException;
 import com.example.pulso.enums.AppointmentStatus;
+import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import org.springframework.context.i18n.LocaleContextHolder;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
@@ -28,6 +33,7 @@ import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.mapper.ScheduleExceptionMapper;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.repository.AppointmentRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
@@ -82,11 +88,16 @@ class ScheduleExceptionServiceImplTest {
     @Mock
     private MessageSource messageSource;
 
+    @Mock
+    private CurrentClinicProvider currentClinicProvider;
+
     private ScheduleExceptionServiceImpl service;
 
     @BeforeEach
     void setUp() {
         TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
+        lenient().when(currentClinicProvider.getCurrentClinic())
+                .thenReturn(Clinic.builder().defaultLanguage(ClinicLanguage.ES).build());
         service = new ScheduleExceptionServiceImpl(
                 scheduleExceptionRepository,
                 personalRepository,
@@ -94,12 +105,14 @@ class ScheduleExceptionServiceImplTest {
                 appointmentService,
                 mapper,
                 new ClinicTimeProvider(CLOCK),
-                messageSource
+                messageSource,
+                new ClinicLocaleResolver(currentClinicProvider)
         );
     }
 
     @AfterEach
     void tearDown() {
+        LocaleContextHolder.resetLocaleContext();
         TenantContext.clear();
     }
 
@@ -150,7 +163,8 @@ class ScheduleExceptionServiceImplTest {
                     appointmentService,
                     mapper,
                     new ClinicTimeProvider(Clock.fixed(INSTANT, ZoneOffset.UTC)),
-                    messageSource
+                    messageSource,
+                    new ClinicLocaleResolver(currentClinicProvider)
             );
         }
 
@@ -384,6 +398,26 @@ class ScheduleExceptionServiceImplTest {
             service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, true));
 
             verify(appointmentService).cancelDoctorAppointmentsInRange(eq(DOCTOR_ID), any(), any(), eq("default"));
+        }
+
+        @Test
+        void shouldResolveDefaultReasonInClinicLanguageIgnoringRequestLocale() {
+            when(currentClinicProvider.getCurrentClinic())
+                    .thenReturn(Clinic.builder().defaultLanguage(ClinicLanguage.EN).build());
+            LocaleContextHolder.setLocale(Locale.forLanguageTag("es"));
+            givenDoctor();
+            givenAffected(1L);
+            givenSaveReturnsArgument();
+            when(messageSource.getMessage(
+                    eq(MessageKeys.SCHEDULE_EXCEPTION_DEFAULT_CANCELLATION_REASON),
+                    isNull(),
+                    eq(Locale.ENGLISH)
+            )).thenReturn("Doctor blocked this slot");
+
+            service.addDoctorScheduleException(DOCTOR_ID, fullDay(FUTURE_DATE, null, true));
+
+            verify(appointmentService).cancelDoctorAppointmentsInRange(
+                    eq(DOCTOR_ID), any(), any(), eq("Doctor blocked this slot"));
         }
 
         @Test

@@ -41,6 +41,7 @@ export class ProfileService {
 
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
+    this.i18n,
     this.i18n.translate('profile.errors.load'),
   );
   readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
@@ -90,7 +91,11 @@ export class ProfileService {
         tap((cancelled) => this.notifications.success(this.disabledMessage(cancelled))),
         catchError((error) => {
           this.notifications.error(
-            apiErrorMessage(error, this.i18n.translate('profile.errors.disableDoctorMode')),
+            apiErrorMessage(
+              error,
+              this.i18n,
+              this.i18n.translate('profile.errors.disableDoctorMode'),
+            ),
           );
           return EMPTY;
         }),

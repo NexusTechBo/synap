@@ -1,0 +1,30 @@
+import { firstName, initials } from '../../../../app/core/utils/labels.util';
+
+describe('labels.util', () => {
+  describe('firstName', () => {
+    it('skips the doctor title', () => {
+      expect(firstName('Dra. Lucía Ruiz')).toBe('Lucía');
+      expect(firstName('dr Juan Gómez')).toBe('Juan');
+    });
+
+    it('returns the first word of a plain name', () => {
+      expect(firstName('Ana Pérez')).toBe('Ana');
+    });
+  });
+
+  describe('initials', () => {
+    it('builds two uppercase initials skipping the title', () => {
+      expect(initials('Dr. juan gómez')).toBe('JG');
+    });
+
+    it('uses one initial for a single word', () => {
+      expect(initials('Ana')).toBe('A');
+    });
+
+    it('returns a placeholder for empty names', () => {
+      expect(initials(null)).toBe('?');
+      expect(initials('')).toBe('?');
+      expect(initials('   ')).toBe('?');
+    });
+  });
+});

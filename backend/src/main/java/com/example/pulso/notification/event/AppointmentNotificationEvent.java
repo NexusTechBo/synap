@@ -3,6 +3,7 @@ package com.example.pulso.notification.event;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.notification.NotificationChannel;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -21,7 +22,8 @@ public record AppointmentNotificationEvent(
         LocalDateTime startTime,
         LocalDateTime endTime,
         String cancellationReason,
-        Set<NotificationChannel> channels
+        Set<NotificationChannel> channels,
+        Locale locale
 ) {
     public static final Set<NotificationChannel> ALL_CHANNELS = Set.of(NotificationChannel.values());
     public static final Set<NotificationChannel> WHATSAPP_ONLY = Set.of(NotificationChannel.WHATSAPP);

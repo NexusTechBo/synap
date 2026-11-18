@@ -42,7 +42,9 @@ export class LoginService {
           }
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter);
-          this.notifications.error(apiErrorMessage(error, this.i18n.translate('login.loginError')));
+          this.notifications.error(
+            apiErrorMessage(error, this.i18n, this.i18n.translate('login.loginError')),
+          );
         },
       });
   }

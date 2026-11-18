@@ -1,6 +1,8 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 
 export type SupportedLang = 'es' | 'en';
+
+const INTL_LOCALES: Record<SupportedLang, string> = { es: 'es-ES', en: 'en-US' };
 
 type TranslationDictionary = Record<string, unknown>;
 
@@ -8,30 +10,16 @@ type TranslationDictionary = Record<string, unknown>;
   providedIn: 'root',
 })
 export class I18nService {
-  private readonly defaultLang: SupportedLang = this.detectInitialLang();
-
-  readonly currentLang = signal<SupportedLang>(this.defaultLang);
+  readonly currentLang = signal<SupportedLang>(
+    navigator.language.slice(0, 2) === 'es' ? 'es' : 'en',
+  );
+  readonly intlLocale = computed(() => INTL_LOCALES[this.currentLang()]);
   private readonly loaded = signal<Partial<Record<SupportedLang, TranslationDictionary>>>({});
   private readonly pending = new Map<SupportedLang, Promise<void>>();
 
-  private detectInitialLang(): SupportedLang {
-    const saved = localStorage.getItem('lang');
-    if (saved === 'es' || saved === 'en') {
-      return saved;
-    }
-    const browserLang = navigator.language.slice(0, 2);
-    return browserLang === 'es' ? 'es' : 'en';
-  }
-
   init(): Promise<void> {
+    document.documentElement.lang = this.currentLang();
     return this.loadDictionary(this.currentLang());
-  }
-
-  async setLanguage(lang: SupportedLang): Promise<void> {
-    if (this.currentLang() === lang && this.loaded()[lang]) return;
-    await this.loadDictionary(lang);
-    this.currentLang.set(lang);
-    localStorage.setItem('lang', lang);
   }
 
   translate(key: string): string {

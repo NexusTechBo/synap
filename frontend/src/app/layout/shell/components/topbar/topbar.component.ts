@@ -27,9 +27,7 @@ export class TopbarComponent {
   menu = output<void>();
 
   protected readonly today = computed(() => {
-    const lang = this.i18n.currentLang();
-    const locale = lang === 'es' ? 'es-BO' : 'en-US';
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(this.i18n.intlLocale(), {
       timeZone: this.clock.timezone(),
       weekday: 'long',
       day: 'numeric',

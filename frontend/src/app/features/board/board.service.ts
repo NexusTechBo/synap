@@ -43,7 +43,11 @@ export class BoardService {
   readonly isLoading = this.resource.isLoading;
   readonly showDates = computed(() => this.range().from !== this.range().to);
   readonly hasData = computed(() => this.resource.hasValue());
-  readonly errorMessage = resourceError(this.resource, this.i18n.translate('board.errors.load'));
+  readonly errorMessage = resourceError(
+    this.resource,
+    this.i18n,
+    this.i18n.translate('board.errors.load'),
+  );
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
     return APPOINTMENT_STATUSES.map((status) => {

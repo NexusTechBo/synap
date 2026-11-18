@@ -3,7 +3,7 @@ import { ES_TRANSLATIONS } from './app/core/i18n/es';
 import { I18nService } from './app/core/i18n/i18n.service';
 
 beforeEach(() => {
-  localStorage.setItem('lang', 'es');
+  vi.spyOn(navigator, 'language', 'get').mockReturnValue('es-BO');
   TestBed.configureTestingModule({
     providers: [
       {

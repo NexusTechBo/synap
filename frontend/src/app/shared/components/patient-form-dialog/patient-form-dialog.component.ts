@@ -77,7 +77,7 @@ export class PatientFormDialogComponent {
         next: (saved) => this.ref.close(saved),
         error: (error) =>
           this.error.set(
-            apiErrorMessage(error, this.i18n.translate('patients.formDialog.saveError')),
+            apiErrorMessage(error, this.i18n, this.i18n.translate('patients.formDialog.saveError')),
           ),
       });
   }

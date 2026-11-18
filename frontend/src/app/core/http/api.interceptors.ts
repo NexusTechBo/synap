@@ -10,6 +10,7 @@ import { catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { GuestSessionService } from '../auth/guest-session.service';
+import { I18nService } from '../i18n/i18n.service';
 
 const GUEST_PATH = 'guest/';
 const PUBLIC_PATHS = ['public/', 'auth/login', 'clinics/activate', 'clinics/activation/resend'];
@@ -18,6 +19,12 @@ const REGISTER_PATH = 'clinics';
 export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   if (/^(https?:)?\/\//.test(req.url) || req.url.startsWith('/')) return next(req);
   return next(req.clone({ url: environment.apiUrl + req.url }));
+};
+
+export const languageInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!req.url.startsWith(environment.apiUrl)) return next(req);
+  const lang = inject(I18nService).currentLang();
+  return next(req.clone({ setHeaders: { 'Accept-Language': lang } }));
 };
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {

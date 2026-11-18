@@ -157,7 +157,7 @@ export class StaffFormDialogComponent {
     request.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: () => this.ref.close(),
       error: (error) =>
-        this.error.set(apiErrorMessage(error, this.i18n.translate('staff.errors.save'))),
+        this.error.set(apiErrorMessage(error, this.i18n, this.i18n.translate('staff.errors.save'))),
     });
   }
 }

@@ -37,6 +37,7 @@ export class AssignDoctorService {
   );
   readonly assignedErrorMessage = resourceError(
     this.assignedResource,
+    this.i18n,
     this.i18n.translate('patients.assignDoctorDialog.loadError'),
   );
   readonly assignableDoctors = computed(() => {
@@ -87,7 +88,7 @@ export class AssignDoctorService {
           this._changed.set(true);
           this.assignedResource.reload();
         },
-        error: (error) => this.notifications.error(apiErrorMessage(error)),
+        error: (error) => this.notifications.error(apiErrorMessage(error, this.i18n)),
       });
   }
 }

@@ -18,6 +18,7 @@ public class LocaleConfig {
     public static final Locale SPANISH = Locale.forLanguageTag("es");
     public static final Locale ENGLISH = Locale.ENGLISH;
     public static final List<Locale> SUPPORTED_LOCALES = List.of(SPANISH, ENGLISH);
+    private static final String HIBERNATE_VALIDATION_BUNDLE = "org.hibernate.validator.ValidationMessages";
 
     @Bean
     public LocaleResolver localeResolver() {
@@ -29,7 +30,7 @@ public class LocaleConfig {
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource source = bundleMessageSource();
+        ResourceBundleMessageSource source = bundleMessageSource("messages", "notifications", HIBERNATE_VALIDATION_BUNDLE);
         source.setUseCodeAsDefaultMessage(true);
         return source;
     }
@@ -37,13 +38,13 @@ public class LocaleConfig {
     @Bean
     public LocalValidatorFactoryBean getValidator() {
         LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
-        bean.setValidationMessageSource(bundleMessageSource());
+        bean.setValidationMessageSource(bundleMessageSource("messages", HIBERNATE_VALIDATION_BUNDLE));
         return bean;
     }
 
-    private static ResourceBundleMessageSource bundleMessageSource() {
+    private static ResourceBundleMessageSource bundleMessageSource(String... basenames) {
         ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-        source.setBasenames("messages", "org.hibernate.validator.ValidationMessages");
+        source.setBasenames(basenames);
         source.setDefaultEncoding("UTF-8");
         source.setFallbackToSystemLocale(false);
         return source;

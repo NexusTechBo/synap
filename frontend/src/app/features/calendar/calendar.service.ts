@@ -32,7 +32,7 @@ export class CalendarService {
   private readonly today = this.clock.today();
   private readonly _scope = signal<CalendarScope>('all');
 
-  private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
+  private readonly locale = computed(() => this.i18n.intlLocale());
 
   readonly canFilterMine = computed(
     () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
@@ -63,7 +63,11 @@ export class CalendarService {
     stream: ({ params }) => this.api.calendar(params),
   });
   readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, this.i18n.translate('calendar.errorLoad'));
+  readonly errorMessage = resourceError(
+    this.resource,
+    this.i18n,
+    this.i18n.translate('calendar.errorLoad'),
+  );
 
   private readonly byDay = computed(() => {
     const result = new Map<string, AppointmentSummaryItem[]>();

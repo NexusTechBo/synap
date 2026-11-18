@@ -4,8 +4,6 @@ export interface CalendarDay {
   inCurrentMonth: boolean;
 }
 
-const LOCALE = 'es-ES';
-
 function pad(value: number): string {
   return value.toString().padStart(2, '0');
 }
@@ -62,17 +60,17 @@ export function buildMonthMatrix(year: number, month: number): CalendarDay[][] {
   return weeks;
 }
 
-export function formatMonthLabel(date: Date, locale: string = LOCALE): string {
+export function formatMonthLabel(date: Date, locale: string): string {
   return capitalize(date.toLocaleDateString(locale, { month: 'long', year: 'numeric' }));
 }
 
-export function formatDayLabel(iso: string, locale: string = LOCALE): string {
+export function formatDayLabel(iso: string, locale: string): string {
   return capitalize(
     parseIso(iso).toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' }),
   );
 }
 
-export function formatLongDate(iso: string, locale: string = LOCALE): string {
+export function formatLongDate(iso: string, locale: string): string {
   return capitalize(
     parseIso(iso).toLocaleDateString(locale, {
       weekday: 'long',
@@ -83,15 +81,15 @@ export function formatLongDate(iso: string, locale: string = LOCALE): string {
   );
 }
 
-export function formatWeekdayShort(date: Date, locale: string = LOCALE): string {
+export function formatWeekdayShort(date: Date, locale: string): string {
   return date.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '');
 }
 
-export function formatMonthShort(date: Date, locale: string = LOCALE): string {
+export function formatMonthShort(date: Date, locale: string): string {
   return date.toLocaleDateString(locale, { month: 'short' }).replace('.', '');
 }
 
-export function formatShortDate(iso: string, locale: string = LOCALE): string {
+export function formatShortDate(iso: string, locale: string): string {
   return parseIso(iso).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 

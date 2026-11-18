@@ -124,7 +124,8 @@
                       class="btn btn-sm btn-danger max-2xl:h-9 max-2xl:w-9 max-2xl:px-0"
                       [attr.title]="'appointments.actions.cancel' | translate"
                       [attr.aria-label]="
-                        'Cancelar cita de ' +
+                        ('appointments.actions.cancelFor' | translate) +
+                        ' ' +
                         row.patientName +
                         ', ' +
                         (row.dayLabel | lowercase) +

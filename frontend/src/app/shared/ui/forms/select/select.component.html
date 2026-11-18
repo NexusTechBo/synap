@@ -20,7 +20,7 @@
     <app-ui-icon [name]="icon" class="h-4 w-4 shrink-0 text-gray-500" [strokeWidth]="2" />
   }
   <span class="flex-1 truncate" [class.text-gray-400]="!selected()">{{
-    selected()?.label ?? placeholder()
+    selected()?.label ?? placeholderText()
   }}</span>
   <app-ui-icon
     name="chevronDown"
