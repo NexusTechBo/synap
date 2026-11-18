@@ -59,12 +59,12 @@ export class ExceptionFormDialogComponent {
   private readonly injector = inject(Injector);
   protected readonly ref = inject(DialogRef);
 
-  protected readonly today = this.availability.today;
+  protected readonly minDate = this.availability.today;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    date: [this.today, Validators.required],
+    date: [this.availability.today(), Validators.required],
     isFullDayBlock: [true],
     startTime: ['09:00'],
     endTime: ['10:00', exceptionEndAfterStart],

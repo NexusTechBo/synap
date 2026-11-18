@@ -19,11 +19,11 @@ const TODAY = toIso(new Date());
 describe('ExceptionFormDialogComponent', () => {
   let fixture: ComponentFixture<ExceptionFormDialogComponent>;
   let element: HTMLElement;
-  let availability: { addException: ReturnType<typeof vi.fn>; today: string };
+  let availability: { addException: ReturnType<typeof vi.fn>; today: () => string };
   let dialogRef: { id: string; close: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
-    availability = { addException: vi.fn(() => of(undefined)), today: TODAY };
+    availability = { addException: vi.fn(() => of(undefined)), today: () => TODAY };
     dialogRef = { id: 'exception-dialog', close: vi.fn() };
     TestBed.configureTestingModule({
       imports: [ExceptionFormDialogComponent],

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { EMPTY, Observable, of, throwError } from 'rxjs';
 import { AgendaApi } from '../../../../app/core/api/agenda.api';
@@ -7,12 +7,14 @@ import { AuthService } from '../../../../app/core/auth/auth.service';
 import { ClinicClockService } from '../../../../app/core/clinic/clinic-clock.service';
 import { API_ERROR_CODES } from '../../../../app/core/http/api-error';
 import { Availability, ScheduleException } from '../../../../app/core/models/api.models';
-import { toIso } from '../../../../app/core/utils/calendar.util';
+import { addDays, toIso } from '../../../../app/core/utils/calendar.util';
 import { AvailabilityService } from '../../../../app/features/availability/availability.service';
 import { ConfirmService } from '../../../../app/shared/services/confirm.service';
 import { NotificationService } from '../../../../app/shared/services/notification.service';
 
 const TODAY = toIso(new Date());
+const TOMORROW = toIso(addDays(new Date(), 1));
+const IN_TWO_DAYS = toIso(addDays(new Date(), 2));
 
 const PARTIAL_REQUEST = {
   date: '2026-11-12',
@@ -72,6 +74,7 @@ describe('AvailabilityService', () => {
   >;
   let confirm: { ask: ReturnType<typeof vi.fn>; confirmThen: ReturnType<typeof vi.fn> };
   let notifications: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+  let clockToday: WritableSignal<string>;
 
   async function settle(): Promise<void> {
     TestBed.tick();
@@ -108,12 +111,13 @@ describe('AvailabilityService', () => {
     };
     confirm = { ask: vi.fn(() => of(true)), confirmThen: vi.fn(() => EMPTY) };
     notifications = { success: vi.fn(), error: vi.fn() };
+    clockToday = signal(TODAY);
     TestBed.configureTestingModule({
       providers: [
         AvailabilityService,
         { provide: AgendaApi, useValue: api },
         { provide: AuthService, useValue: { userId: signal(10) } },
-        { provide: ClinicClockService, useValue: { today: () => TODAY } },
+        { provide: ClinicClockService, useValue: { today: () => clockToday() } },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
       ],
@@ -145,6 +149,55 @@ describe('AvailabilityService', () => {
       await settle();
       expect(service.previewDate()).toBe('2026-11-20');
       expect(api.availableSlots).toHaveBeenLastCalledWith(10, '2026-11-20');
+    });
+  });
+
+  describe('day rollover', () => {
+    it('exposes the new today', () => {
+      clockToday.set(TOMORROW);
+
+      expect(service.today()).toBe(TOMORROW);
+    });
+
+    it('loads the exceptions again from the new today', async () => {
+      api.exceptions.mockClear();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(api.exceptions).toHaveBeenCalledOnce();
+      expect(api.exceptions).toHaveBeenCalledWith(TOMORROW);
+    });
+
+    it('moves the preview date to the new today when it was today', () => {
+      clockToday.set(TOMORROW);
+
+      expect(service.previewDate()).toBe(TOMORROW);
+    });
+
+    it('loads the preview slots of the new today', async () => {
+      api.availableSlots.mockClear();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(api.availableSlots).toHaveBeenCalledWith(10, TOMORROW);
+    });
+
+    it('moves a preview date that became past to the new today', () => {
+      service.setPreviewDate(TOMORROW);
+
+      clockToday.set(IN_TWO_DAYS);
+
+      expect(service.previewDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('keeps a future preview date chosen by the user', () => {
+      service.setPreviewDate('2099-01-01');
+
+      clockToday.set(TOMORROW);
+
+      expect(service.previewDate()).toBe('2099-01-01');
     });
   });
 

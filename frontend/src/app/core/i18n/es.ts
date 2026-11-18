@@ -922,6 +922,7 @@ export const ES_TRANSLATIONS = {
     },
     errors: {
       bookingFailed: 'No se pudo registrar la reserva',
+      slotNoLongerValid: 'La fecha cambió. Elige nuevamente tu horario.',
     },
   },
 

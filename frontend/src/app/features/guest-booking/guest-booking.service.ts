@@ -20,6 +20,7 @@ import {
 import {
   addDays,
   formatTime,
+  notBefore,
   parseIso,
   toIso,
   toLocalDateTime,
@@ -42,7 +43,10 @@ export class GuestBookingService {
   );
 
   private readonly _step = signal<GuestBookingStep>('doctor');
-  readonly step = this._step.asReadonly();
+  readonly step = computed<GuestBookingStep>(() => {
+    const step = this._step();
+    return (step === 'patient' || step === 'summary') && !this._selectedSlot() ? 'slot' : step;
+  });
   readonly totalSteps = GUEST_BOOKING_STEPS.length - 1;
 
   private readonly _error = signal<string | null>(null);
@@ -53,7 +57,10 @@ export class GuestBookingService {
 
   private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
-  private readonly _selectedDate = linkedSignal(() => this.today());
+  private readonly _selectedDate = linkedSignal<string, string>({
+    source: this.today,
+    computation: (today, previous) => (previous ? notBefore(previous.value, today) : today),
+  });
   readonly selectedDate = this._selectedDate.asReadonly();
   private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
     source: () => [this._selectedDoctor()?.id, this._selectedDate()],
@@ -101,10 +108,12 @@ export class GuestBookingService {
   private readonly unavailableDatesResource = rxResource({
     params: () => {
       const doctorId = this._selectedDoctor()?.id;
-      return this.active() && doctorId ? { doctorId } : undefined;
+      return this.active() && doctorId
+        ? { doctorId, from: this.today(), to: this.lastStripDay() }
+        : undefined;
     },
     stream: ({ params }) =>
-      this.guestApi.unavailableDates(params.doctorId, this.today(), this.lastStripDay()).pipe(
+      this.guestApi.unavailableDates(params.doctorId, params.from, params.to).pipe(
         map((response) => response.unavailableDates),
         tap((dates) => this.jumpToFirstAvailableDate(dates)),
       ),
@@ -119,11 +128,14 @@ export class GuestBookingService {
     this.i18n,
     this.i18n.translate('guestBooking.clinicLoadError'),
   );
-  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
+  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this.step()) + 1);
   readonly error = computed(
     () =>
       this._error() ??
-      (this.cooldown.active() && this._step() === 'summary' ? this._rateLimitMessage() : null),
+      (this.step() !== this._step()
+        ? this.i18n.translate('guestBooking.errors.slotNoLongerValid')
+        : null) ??
+      (this.cooldown.active() && this.step() === 'summary' ? this._rateLimitMessage() : null),
   );
   readonly specialties = computed(() =>
     this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
@@ -212,8 +224,8 @@ export class GuestBookingService {
   }
 
   back(): void {
-    const index = GUEST_BOOKING_STEPS.indexOf(this._step());
-    if (index > 0 && this._step() !== 'done') this.goTo(GUEST_BOOKING_STEPS[index - 1]);
+    const index = GUEST_BOOKING_STEPS.indexOf(this.step());
+    if (index > 0 && this.step() !== 'done') this.goTo(GUEST_BOOKING_STEPS[index - 1]);
   }
 
   bookAnother(): void {

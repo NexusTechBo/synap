@@ -25,16 +25,17 @@ export class DashboardService {
   private readonly actions = inject(AppointmentActionsService);
   private readonly i18n = inject(I18nService);
   private readonly clock = inject(ClinicClockService);
-  private readonly today = this.clock.today();
-  private readonly weekStart = startOfWeek(parseIso(this.today));
+  private readonly today = computed(() => this.clock.today());
+  private readonly weekStart = computed(() => startOfWeek(parseIso(this.today())));
 
   private readonly locale = computed(() => this.i18n.intlLocale());
 
   private readonly weekResource = rxResource({
-    stream: () =>
+    params: () => ({ today: this.today(), weekStart: this.weekStart() }),
+    stream: ({ params: { weekStart } }) =>
       this.appointmentsApi.board({
-        from: toIso(this.weekStart),
-        to: toIso(addDays(this.weekStart, 6)),
+        from: toIso(weekStart),
+        to: toIso(addDays(weekStart, 6)),
       }),
   });
 
@@ -48,15 +49,17 @@ export class DashboardService {
   readonly todayAppointments = computed<AppointmentSummaryItem[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
     if (!board) return [];
+    const today = this.today();
     return [...board.PENDING, ...board.CONFIRMED]
-      .filter((appointment) => appointment.appointmentDate === this.today)
+      .filter((appointment) => appointment.appointmentDate === today)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   });
 
   private readonly upcomingPending = computed<AppointmentSummaryItem[]>(() => {
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
     if (!board) return [];
-    return board.PENDING.filter((appointment) => appointment.appointmentDate >= this.today).sort(
+    const today = this.today();
+    return board.PENDING.filter((appointment) => appointment.appointmentDate >= today).sort(
       (a, b) =>
         a.appointmentDate.localeCompare(b.appointmentDate) ||
         a.startTime.localeCompare(b.startTime),
@@ -65,12 +68,13 @@ export class DashboardService {
   readonly pendingCount = computed(() => this.upcomingPending().length);
   readonly pendingToConfirm = computed(() => {
     const locale = this.locale();
+    const today = this.today();
     return this.upcomingPending()
       .slice(0, PENDING_LIMIT)
       .map((appointment) => ({
         appointment,
         dayLabel:
-          appointment.appointmentDate === this.today
+          appointment.appointmentDate === today
             ? this.i18n.translate('dashboard.todayLabel')
             : formatShortDate(appointment.appointmentDate, locale),
       }));
@@ -78,9 +82,11 @@ export class DashboardService {
 
   readonly weekDays = computed<WeekDayStats[]>(() => {
     const locale = this.locale();
+    const today = this.today();
+    const weekStart = this.weekStart();
     const board = this.weekResource.hasValue() ? this.weekResource.value() : undefined;
     return Array.from({ length: 7 }, (_, i) => {
-      const date = addDays(this.weekStart, i);
+      const date = addDays(weekStart, i);
       const iso = toIso(date);
       const count = (items: AppointmentSummaryItem[] | undefined) =>
         items?.filter((appointment) => appointment.appointmentDate === iso).length ?? 0;
@@ -91,7 +97,7 @@ export class DashboardService {
         iso,
         weekday: formatWeekdayShort(date, locale),
         day: date.getDate(),
-        isToday: iso === this.today,
+        isToday: iso === today,
         confirmed,
         pending,
         cancelled,

@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, debounceTime, merge, skip } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
@@ -20,6 +20,10 @@ import { NotificationService } from '../../shared/services/notification.service'
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
 import { BoardColumn } from './board.model';
 
+function defaultRange(today: string): DateRange {
+  return { from: today, to: toIso(addDays(parseIso(today), 6)) };
+}
+
 @Injectable()
 export class BoardService {
   private readonly api = inject(AppointmentsApi);
@@ -29,9 +33,16 @@ export class BoardService {
   private readonly i18n = inject(I18nService);
   private readonly clock = inject(ClinicClockService);
 
-  private readonly _range = signal<DateRange>({
-    from: this.clock.today(),
-    to: toIso(addDays(parseIso(this.clock.today()), 6)),
+  private readonly today = computed(() => this.clock.today());
+  private readonly _range = linkedSignal<string, DateRange>({
+    source: this.today,
+    computation: (today, previous) => {
+      const next = defaultRange(today);
+      if (!previous) return next;
+      const previousDefault = defaultRange(previous.source);
+      const { from, to } = previous.value;
+      return from === previousDefault.from && to === previousDefault.to ? next : previous.value;
+    },
   });
   readonly range = this._range.asReadonly();
 

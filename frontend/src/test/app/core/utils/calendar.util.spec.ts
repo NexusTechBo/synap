@@ -14,6 +14,7 @@ import {
   formatTimeRange,
   formatWeekdayShort,
   isIsoDate,
+  notBefore,
   parseIso,
   startOfWeek,
   timeSlots,
@@ -51,6 +52,24 @@ describe('calendar.util', () => {
 
     it('round-trips an ISO date', () => {
       expect(toIso(parseIso('2024-02-29'))).toBe('2024-02-29');
+    });
+  });
+
+  describe('notBefore', () => {
+    it('raises a date earlier than the minimum to the minimum', () => {
+      expect(notBefore('2026-11-16', '2026-11-18')).toBe('2026-11-18');
+    });
+
+    it('keeps a date equal to the minimum', () => {
+      expect(notBefore('2026-11-18', '2026-11-18')).toBe('2026-11-18');
+    });
+
+    it('keeps a date later than the minimum', () => {
+      expect(notBefore('2026-12-01', '2026-11-18')).toBe('2026-12-01');
+    });
+
+    it('compares across month and year boundaries', () => {
+      expect(notBefore('2026-12-31', '2027-01-01')).toBe('2027-01-01');
     });
   });
 

@@ -1,4 +1,4 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, WritableSignal, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { EMPTY, of, throwError } from 'rxjs';
 import { AppointmentsApi } from '../../../../app/core/api/appointments.api';
@@ -102,6 +102,84 @@ describe('DashboardService', () => {
       await settle();
 
       expect(api.board).toHaveBeenCalledWith({ from: '2026-11-16', to: '2026-11-22' });
+    });
+
+    describe('day rollover', () => {
+      let clockToday: WritableSignal<string>;
+
+      async function setupOn(today: string, data: AppointmentBoard = board()): Promise<void> {
+        clockToday = signal(today);
+        api = { board: vi.fn(() => of(data)) };
+        TestBed.configureTestingModule({
+          providers: [
+            DashboardService,
+            { provide: AppointmentsApi, useValue: api },
+            { provide: AppointmentActionsService, useValue: {} },
+            { provide: ClinicClockService, useValue: { today: () => clockToday() } },
+          ],
+        });
+        service = TestBed.inject(DashboardService);
+        await settle();
+      }
+
+      it('loads the next week when the day crosses into it', async () => {
+        await setupOn('2026-11-22');
+        api.board.mockClear();
+
+        clockToday.set('2026-11-23');
+        await settle();
+
+        expect(api.board).toHaveBeenCalledOnce();
+        expect(api.board).toHaveBeenCalledWith({ from: '2026-11-23', to: '2026-11-29' });
+      });
+
+      it('loads the board again when the day changes inside the same week', async () => {
+        await setupOn('2026-11-18');
+        api.board.mockClear();
+
+        clockToday.set('2026-11-19');
+        await settle();
+
+        expect(api.board).toHaveBeenCalledOnce();
+        expect(api.board).toHaveBeenCalledWith({ from: '2026-11-16', to: '2026-11-22' });
+      });
+
+      it('moves the today appointments and highlighted week day to the new day', async () => {
+        await setupOn(
+          '2026-11-18',
+          board({
+            PENDING: [
+              item({ id: 1, appointmentDate: '2026-11-18' }),
+              item({ id: 2, appointmentDate: '2026-11-19' }),
+            ],
+          }),
+        );
+        expect(service.todayAppointments().map((a) => a.id)).toEqual([1]);
+
+        clockToday.set('2026-11-19');
+        await settle();
+
+        expect(service.todayAppointments().map((a) => a.id)).toEqual([2]);
+        expect(service.weekDays().find((day) => day.isToday)?.iso).toBe('2026-11-19');
+      });
+
+      it('drops the appointments of past days from the pending list', async () => {
+        await setupOn(
+          '2026-11-18',
+          board({
+            PENDING: [
+              item({ id: 1, appointmentDate: '2026-11-18' }),
+              item({ id: 2, appointmentDate: '2026-11-19' }),
+            ],
+          }),
+        );
+        expect(service.pendingCount()).toBe(2);
+
+        clockToday.set('2026-11-19');
+        await settle();
+
+        expect(service.pendingCount()).toBe(1);
+      });
     });
   });
 

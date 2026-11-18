@@ -38,6 +38,7 @@ import {
   formatLongDate,
   formatTime,
   isIsoDate,
+  notBefore,
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
@@ -71,7 +72,7 @@ export class BookingService {
   private readonly clock = inject(ClinicClockService);
 
   readonly ownDataOnly = this.auth.restrictedToOwnData();
-  readonly today = this.clock.today();
+  readonly today = computed(() => this.clock.today());
 
   private readonly _patientSearch = signal('');
   private readonly _selectedPatient = signal<Patient | null>(null);
@@ -120,9 +121,17 @@ export class BookingService {
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
   );
-  private readonly _selectedDate = linkedSignal(() => {
-    const requested = this.dateParam();
-    return isIsoDate(requested) && requested >= this.today ? requested : this.today;
+  private readonly _selectedDate = linkedSignal<
+    { requested: string | null | undefined; today: string },
+    string
+  >({
+    source: () => ({ requested: this.dateParam(), today: this.today() }),
+    computation: ({ requested, today }, previous) => {
+      if (previous && previous.source.requested === requested) {
+        return notBefore(previous.value, today);
+      }
+      return isIsoDate(requested) && requested >= today ? requested : today;
+    },
   });
   readonly selectedDate = this._selectedDate.asReadonly();
   private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
@@ -207,7 +216,7 @@ export class BookingService {
   }
 
   selectDate(iso: string): void {
-    if (iso && iso >= this.today) this._selectedDate.set(iso);
+    if (iso && iso >= this.today()) this._selectedDate.set(iso);
   }
 
   selectSlot(slot: TimeSlot): void {

@@ -7,27 +7,43 @@ import { TopbarComponent } from '../../../../../../app/layout/shell/components/t
 describe('TopbarComponent', () => {
   const timezone = signal('Pacific/Auckland');
   const hour = signal(9);
+  const clockTick = signal(0);
 
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-11-17T14:00:00Z'));
     timezone.set('Pacific/Auckland');
     hour.set(9);
+    clockTick.set(0);
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: ClinicClockService, useValue: { timezone, hour: () => hour() } },
+        {
+          provide: ClinicClockService,
+          useValue: {
+            timezone,
+            hour: () => hour(),
+            today: () => {
+              clockTick();
+              return new Intl.DateTimeFormat('en-CA', { timeZone: timezone() }).format(new Date());
+            },
+          },
+        },
       ],
     });
   });
 
   afterEach(() => vi.useRealTimers());
 
-  function render() {
+  function renderFixture() {
     const fixture = TestBed.createComponent(TopbarComponent);
     fixture.componentRef.setInput('userName', 'Ana Pérez');
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return fixture;
+  }
+
+  function render() {
+    return renderFixture().nativeElement as HTMLElement;
   }
 
   it('shows the date of the clinic timezone instead of the system one', () => {
@@ -38,6 +54,30 @@ describe('TopbarComponent', () => {
     timezone.set('Pacific/Pago_Pago');
 
     expect(render().textContent).toContain('17 de noviembre');
+  });
+
+  it('updates the date when the clinic day changes', () => {
+    const fixture = renderFixture();
+    expect(fixture.nativeElement.textContent).toContain('18 de noviembre');
+
+    vi.setSystemTime(new Date('2026-11-18T14:00:00Z'));
+    clockTick.update((value) => value + 1);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('19 de noviembre');
+  });
+
+  it('updates the greeting when the clinic hour changes', () => {
+    const fixture = renderFixture();
+    expect(fixture.nativeElement.textContent).toContain('Buenos días');
+
+    hour.set(14);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Buenas tardes');
+
+    hour.set(19);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Buenas noches');
   });
 
   it.each([

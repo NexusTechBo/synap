@@ -32,6 +32,7 @@ interface Setup {
 
 const TODAY = toIso(new Date());
 const TOMORROW = toIso(addDays(new Date(), 1));
+const IN_TWO_DAYS = toIso(addDays(new Date(), 2));
 
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
@@ -127,6 +128,7 @@ describe('BookingService', () => {
   let notifications: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
+  let clockToday: WritableSignal<string>;
 
   async function settle(): Promise<void> {
     TestBed.tick();
@@ -153,6 +155,7 @@ describe('BookingService', () => {
     notifications = { success: vi.fn(), error: vi.fn() };
     confirm = { ask: vi.fn() };
     router = { navigate: vi.fn(() => Promise.resolve(true)) };
+    clockToday = signal(TODAY);
 
     TestBed.configureTestingModule({
       providers: [
@@ -166,7 +169,7 @@ describe('BookingService', () => {
           },
         },
         { provide: AppointmentsApi, useValue: appointmentsApi },
-        { provide: ClinicClockService, useValue: { today: () => TODAY } },
+        { provide: ClinicClockService, useValue: { today: () => clockToday() } },
         { provide: AgendaApi, useValue: agendaApi },
         { provide: PatientsApi, useValue: patientsApi },
         { provide: SpecialtiesStore, useValue: specialtiesStore },
@@ -238,6 +241,100 @@ describe('BookingService', () => {
     it('cannot submit until doctor, slot and patient are selected', () => {
       setup();
       expect(service.canSubmit()).toBe(false);
+    });
+  });
+
+  describe('day rollover', () => {
+    it('exposes the new today', () => {
+      setup();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.today()).toBe(TOMORROW);
+    });
+
+    it('moves the selected date to the new today when it was today', () => {
+      setup();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedDate()).toBe(TOMORROW);
+    });
+
+    it('moves a selected date that became past to the new today', () => {
+      setup();
+      service.selectDate(TOMORROW);
+
+      clockToday.set(IN_TWO_DAYS);
+
+      expect(service.selectedDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('keeps a future date chosen by the user', () => {
+      setup();
+      service.selectDate(IN_TWO_DAYS);
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('keeps a future date from the query param', () => {
+      setup({ dateParam: IN_TWO_DAYS });
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('moves a query param date that became past to the new today', () => {
+      setup({ dateParam: TOMORROW });
+
+      clockToday.set(IN_TWO_DAYS);
+
+      expect(service.selectedDate()).toBe(IN_TWO_DAYS);
+    });
+
+    it('rejects selecting the previous day after the day changed', () => {
+      setup();
+      clockToday.set(TOMORROW);
+
+      service.selectDate(TODAY);
+
+      expect(service.selectedDate()).toBe(TOMORROW);
+    });
+
+    it('accepts selecting the new today after the day changed', () => {
+      setup();
+      clockToday.set(TOMORROW);
+      service.selectDate(IN_TWO_DAYS);
+
+      service.selectDate(TOMORROW);
+
+      expect(service.selectedDate()).toBe(TOMORROW);
+    });
+
+    it('clears the selected slot when the date advances', async () => {
+      setup();
+      service.selectDoctor(doctor());
+      await settle();
+      service.selectSlot(service.slots()[0]);
+      expect(service.selectedSlot()).not.toBeNull();
+
+      clockToday.set(TOMORROW);
+
+      expect(service.selectedSlot()).toBeNull();
+    });
+
+    it('loads the slots of the new today', async () => {
+      setup();
+      service.selectDoctor(doctor());
+      await settle();
+
+      clockToday.set(TOMORROW);
+      await settle();
+
+      expect(agendaApi.availableSlots).toHaveBeenLastCalledWith(10, TOMORROW);
     });
   });
 
