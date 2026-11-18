@@ -1,8 +1,9 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, debounceTime, merge, skip } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { BoardSocket } from '../../core/api/board.socket';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentStatus, AppointmentSummaryItem } from '../../core/models/api.models';
@@ -12,12 +13,16 @@ import {
   canConfirmAppointment,
   hasAppointmentStarted,
 } from '../../core/utils/appointment.util';
-import { addDays, toIso } from '../../core/utils/calendar.util';
+import { addDays, parseIso, toIso } from '../../core/utils/calendar.util';
 import { APPOINTMENT_STATUSES, STATUS_STYLE } from '../../core/utils/labels.util';
 import { AppointmentActionsService } from '../../shared/services/appointment-actions.service';
 import { NotificationService } from '../../shared/services/notification.service';
 import { DateRange } from '../../shared/ui/forms/date-range-picker/date-range-picker.component';
 import { BoardColumn } from './board.model';
+
+function defaultRange(today: string): DateRange {
+  return { from: today, to: toIso(addDays(parseIso(today), 6)) };
+}
 
 @Injectable()
 export class BoardService {
@@ -26,10 +31,18 @@ export class BoardService {
   private readonly notifications = inject(NotificationService);
   private readonly socket = inject(BoardSocket);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
-  private readonly _range = signal<DateRange>({
-    from: toIso(new Date()),
-    to: toIso(addDays(new Date(), 6)),
+  private readonly today = computed(() => this.clock.today());
+  private readonly _range = linkedSignal<string, DateRange>({
+    source: this.today,
+    computation: (today, previous) => {
+      const next = defaultRange(today);
+      if (!previous) return next;
+      const previousDefault = defaultRange(previous.source);
+      const { from, to } = previous.value;
+      return from === previousDefault.from && to === previousDefault.to ? next : previous.value;
+    },
   });
   readonly range = this._range.asReadonly();
 
@@ -41,14 +54,19 @@ export class BoardService {
   readonly isLoading = this.resource.isLoading;
   readonly showDates = computed(() => this.range().from !== this.range().to);
   readonly hasData = computed(() => this.resource.hasValue());
-  readonly errorMessage = resourceError(this.resource, this.i18n.translate('board.errors.load'));
+  readonly errorMessage = resourceError(
+    this.resource,
+    this.i18n,
+    this.i18n.translate('board.errors.load'),
+  );
   readonly columns = computed<BoardColumn[]>(() => {
     const board = this.resource.hasValue() ? this.resource.value() : undefined;
     return APPOINTMENT_STATUSES.map((status) => {
       const appointments = [...(board?.[status] ?? [])];
       const pastIds: Record<number, true> = {};
+      const now = this.clock.now();
       for (const appointment of appointments) {
-        if (hasAppointmentStarted(appointmentStartDateTime(appointment)))
+        if (hasAppointmentStarted(appointmentStartDateTime(appointment), now))
           pastIds[appointment.id] = true;
       }
       return {
@@ -84,11 +102,11 @@ export class BoardService {
     const start = appointmentStartDateTime(appointment);
     let action: Observable<unknown> | null = null;
     if (target === 'CONFIRMED' && status === 'PENDING') {
-      if (!canConfirmAppointment(status, start)) return this.rejectPast();
+      if (!canConfirmAppointment(status, start, this.clock.now())) return this.rejectPast();
       action = this.actions.confirm(id, clientName, start);
     }
     if (target === 'CANCELLED') {
-      if (!canCancelAppointment(status, start)) return this.rejectPast();
+      if (!canCancelAppointment(status, start, this.clock.now())) return this.rejectPast();
       action = this.actions.cancel(id, clientName, start);
     }
 

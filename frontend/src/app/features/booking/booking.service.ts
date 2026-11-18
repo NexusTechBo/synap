@@ -19,6 +19,7 @@ import { PatientsApi } from '../../core/api/patients.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   apiErrorMessage,
   isSlotUnavailableError,
@@ -26,14 +27,34 @@ import {
   staffActiveAppointmentConflict,
 } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { Patient, Staff, TimeSlot } from '../../core/models/api.models';
-import { formatTime, isIsoDate, toIso, toLocalDateTime } from '../../core/utils/calendar.util';
+import {
+  Patient,
+  PatientActiveAppointmentConflict,
+  Staff,
+  TimeSlot,
+} from '../../core/models/api.models';
+import {
+  datePart,
+  formatLongDate,
+  formatTime,
+  isIsoDate,
+  notBefore,
+  toLocalDateTime,
+} from '../../core/utils/calendar.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { BookingAttempt, DoctorOption } from './booking.model';
-import { rescheduleConfirmOptions } from './booking.util';
+import { ConfirmOptions } from '../../shared/ui/confirm-dialog/confirm-dialog.component';
 
 const PATIENT_RESULTS = 20;
+
+type DoctorOption = Pick<Staff, 'id' | 'name' | 'specialtyId' | 'specialtyName'>;
+
+interface BookingAttempt {
+  doctor: DoctorOption;
+  patient: Patient;
+  date: string;
+  startDateTime: string;
+}
 
 @Injectable()
 export class BookingService {
@@ -48,9 +69,10 @@ export class BookingService {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
 
   readonly ownDataOnly = this.auth.restrictedToOwnData();
-  readonly today = toIso(new Date());
+  readonly today = computed(() => this.clock.today());
 
   private readonly _patientSearch = signal('');
   private readonly _selectedPatient = signal<Patient | null>(null);
@@ -99,9 +121,17 @@ export class BookingService {
   private readonly dateParam = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(map((params) => params.get('date'))),
   );
-  private readonly _selectedDate = linkedSignal(() => {
-    const requested = this.dateParam();
-    return isIsoDate(requested) && requested >= this.today ? requested : this.today;
+  private readonly _selectedDate = linkedSignal<
+    { requested: string | null | undefined; today: string },
+    string
+  >({
+    source: () => ({ requested: this.dateParam(), today: this.today() }),
+    computation: ({ requested, today }, previous) => {
+      if (previous && previous.source.requested === requested) {
+        return notBefore(previous.value, today);
+      }
+      return isIsoDate(requested) && requested >= today ? requested : today;
+    },
   });
   readonly selectedDate = this._selectedDate.asReadonly();
   private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
@@ -131,6 +161,7 @@ export class BookingService {
   );
   readonly patientsErrorMessage = resourceError(
     this.patientsResource,
+    this.i18n,
     this.i18n.translate('booking.errors.loadPatients'),
   );
   readonly doctors = computed(() => {
@@ -143,6 +174,7 @@ export class BookingService {
   );
   readonly slotsErrorMessage = resourceError(
     this.slotsResource,
+    this.i18n,
     this.i18n.translate('booking.errors.loadSlots'),
   );
   readonly canSubmit = computed(
@@ -184,7 +216,7 @@ export class BookingService {
   }
 
   selectDate(iso: string): void {
-    if (iso && iso >= this.today) this._selectedDate.set(iso);
+    if (iso && iso >= this.today()) this._selectedDate.set(iso);
   }
 
   selectSlot(slot: TimeSlot): void {
@@ -235,6 +267,28 @@ export class BookingService {
       });
   }
 
+  private rescheduleConfirmOptions(
+    conflict: PatientActiveAppointmentConflict,
+    attempt: BookingAttempt,
+  ): ConfirmOptions {
+    const locale = this.i18n.intlLocale();
+    const status = this.i18n.translate(`statuses.${conflict.status}`).toLowerCase();
+    const currentDate = formatLongDate(datePart(conflict.startTime), locale).toLowerCase();
+    const newDate = formatLongDate(attempt.date, locale).toLowerCase();
+
+    return {
+      title: this.i18n.translate('booking.rescheduleConfirm.title'),
+      message:
+        `${attempt.patient.name} ${this.i18n.translate('booking.rescheduleConfirm.alreadyHas')} ${status} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.withDoctor')} ${attempt.doctor.name} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.onDate')} ${currentDate} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.atTime')} ${formatTime(conflict.startTime)}. ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.questionPrefix')} ${newDate} ` +
+        `${this.i18n.translate('booking.rescheduleConfirm.atTime')} ${formatTime(attempt.startDateTime)}?`,
+      confirmLabel: this.i18n.translate('booking.rescheduleConfirm.confirmLabel'),
+    };
+  }
+
   private recoverFromBookingError(error: unknown, attempt: BookingAttempt): Observable<string> {
     const conflict = staffActiveAppointmentConflict(error);
     if (!conflict) {
@@ -242,7 +296,7 @@ export class BookingService {
       return EMPTY;
     }
     this._submitting.set(false);
-    return this.confirm.ask(rescheduleConfirmOptions(conflict, attempt, this.i18n)).pipe(
+    return this.confirm.ask(this.rescheduleConfirmOptions(conflict, attempt)).pipe(
       filter(Boolean),
       tap(() => this._submitting.set(true)),
       switchMap(() =>
@@ -263,7 +317,7 @@ export class BookingService {
   }
 
   private handleBookingFailure(error: unknown, fallback: string): void {
-    this.notifications.error(apiErrorMessage(error, fallback));
+    this.notifications.error(apiErrorMessage(error, this.i18n, fallback));
     if (!isSlotUnavailableError(error)) return;
     this._selectedSlot.set(null);
     this.slotsResource.reload();

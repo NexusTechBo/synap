@@ -1,7 +1,7 @@
 package com.example.pulso.controller;
 
 import com.example.pulso.dto.guest.GuestSessionRequest;
-import com.example.pulso.dto.guest.GuestSessionResponse;
+import com.example.pulso.dto.login.LoginResponse;
 import com.example.pulso.service.GuestSessionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -28,7 +28,7 @@ public class GuestSessionController {
             summary = "POST /api/public/guest/session — short-lived GUEST token for an active workspace's public booking page (public)",
             description = "Rate limited per client IP; when exceeded it responds 429 with a Retry-After header (seconds)."
     )
-    public ResponseEntity<GuestSessionResponse> createGuestSession(@Valid @RequestBody GuestSessionRequest request) {
+    public ResponseEntity<LoginResponse> createGuestSession(@Valid @RequestBody GuestSessionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(guestSessionService.createGuestSession(request));
     }
 }

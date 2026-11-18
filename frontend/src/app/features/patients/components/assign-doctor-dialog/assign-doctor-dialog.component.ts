@@ -11,8 +11,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { filter, merge } from 'rxjs';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { Patient } from '../../../../core/models/api.models';
-import { specialtyLabel } from '../../../../core/utils/labels.util';
 import { InitialsPipe } from '../../../../shared/pipes/initials.pipe';
 import { SpecialtyLabelPipe } from '../../../../shared/pipes/specialty-label.pipe';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -50,6 +50,7 @@ export interface AssignDoctorData {
 export class AssignDoctorDialogComponent {
   private readonly removeButtons = viewChildren<ElementRef<HTMLButtonElement>>('removeButton');
 
+  private readonly i18n = inject(I18nService);
   protected readonly assignment = inject(AssignDoctorService);
   private readonly ref = inject<DialogRef<boolean>>(DialogRef);
 
@@ -60,7 +61,7 @@ export class AssignDoctorDialogComponent {
   protected readonly doctorOptions = computed<SelectOption<number>[]>(() =>
     this.assignment.assignableDoctors().map((doctor) => ({
       value: doctor.id,
-      label: `${doctor.name} · ${specialtyLabel(doctor.specialtyName)}`,
+      label: `${doctor.name} · ${doctor.specialtyName ?? this.i18n.translate('shared.noSpecialty')}`,
     })),
   );
 

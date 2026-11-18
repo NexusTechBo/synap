@@ -1,0 +1,173 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef, signal } from '@angular/core';
+import { of, throwError } from 'rxjs';
+
+import { TestBed } from '@angular/core/testing';
+import { AuthService } from '../../../../app/core/auth/auth.service';
+import { ClinicRegionalSettingsStore } from '../../../../app/core/clinic/clinic-regional-settings.store';
+import { ClinicRegionalSettings } from '../../../../app/core/models/api.models';
+
+const FROM_CLAIMS: ClinicRegionalSettings = {
+  country: 'BO',
+  timezone: 'America/La_Paz',
+  defaultLanguage: 'es',
+};
+const FROM_SERVER: ClinicRegionalSettings = {
+  country: 'BR',
+  timezone: 'America/Sao_Paulo',
+  defaultLanguage: 'pt-BR',
+};
+
+describe('ClinicRegionalSettingsStore', () => {
+  async function settle(): Promise<void> {
+    TestBed.tick();
+    await TestBed.inject(ApplicationRef).whenStable();
+  }
+
+  let store: ClinicRegionalSettingsStore;
+  let http: HttpTestingController;
+  const refresh = vi.fn();
+  let claims: ReturnType<typeof signal<ClinicRegionalSettings | null>>;
+
+  beforeEach(() => {
+    refresh.mockReset();
+    refresh.mockReturnValue(of(null));
+    claims = signal<ClinicRegionalSettings | null>(FROM_CLAIMS);
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AuthService,
+          useValue: { regionalSettings: claims, session: signal({ clinicId: 1 }), refresh },
+        },
+      ],
+    });
+    store = TestBed.inject(ClinicRegionalSettingsStore);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => http.verify());
+
+  it('seeds the settings from the session claims without any request', async () => {
+    TestBed.tick();
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(store.settings()).toEqual(FROM_CLAIMS);
+    http.expectNone('clinic/regional-settings');
+  });
+
+  it('is null when the session has no regional claims', async () => {
+    claims.set(null);
+
+    expect(store.settings()).toBeNull();
+  });
+
+  it('load() replaces the seed with the GET response', async () => {
+    store.load();
+    TestBed.tick();
+    const req = http.expectOne('clinic/regional-settings');
+    expect(req.request.method).toBe('GET');
+    req.flush(FROM_SERVER);
+    await settle();
+
+    expect(store.settings()).toEqual(FROM_SERVER);
+    expect(store.hasError()).toBe(false);
+  });
+
+  it('update() sends PUT and takes the new value from the refreshed session claims', async () => {
+    const fromToken = { ...FROM_SERVER, timezone: 'America/Manaus' };
+    refresh.mockImplementation(() => {
+      claims.set(fromToken);
+      return of(null);
+    });
+    let result: ClinicRegionalSettings | undefined;
+
+    store.update(FROM_SERVER).subscribe((value) => (result = value));
+    const req = http.expectOne('clinic/regional-settings');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(FROM_SERVER);
+    req.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(result).toEqual(fromToken);
+    expect(store.settings()).toEqual(fromToken);
+  });
+
+  it('update() falls back to the submitted value when the token has no regional claims', () => {
+    refresh.mockImplementation(() => {
+      claims.set(null);
+      return of(null);
+    });
+    let result: ClinicRegionalSettings | undefined;
+
+    store.update(FROM_SERVER).subscribe((value) => (result = value));
+    http
+      .expectOne('clinic/regional-settings')
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(result).toEqual(FROM_SERVER);
+  });
+
+  it('update() refreshes the session after the PUT succeeds', () => {
+    store.update(FROM_SERVER).subscribe();
+    http
+      .expectOne('clinic/regional-settings')
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it('update() tolerates a failing session refresh and falls back to the submitted value', () => {
+    refresh.mockReturnValue(throwError(() => new Error('down')));
+    claims.set(null);
+    let result: ClinicRegionalSettings | undefined;
+    let failed = false;
+
+    store.update(FROM_SERVER).subscribe({
+      next: (value) => (result = value),
+      error: () => (failed = true),
+    });
+    http
+      .expectOne('clinic/regional-settings')
+      .flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(failed).toBe(false);
+    expect(result).toEqual(FROM_SERVER);
+  });
+
+  it('keeps the previous value when update() fails', async () => {
+    let failed = false;
+
+    store.update(FROM_SERVER).subscribe({ error: () => (failed = true) });
+    http
+      .expectOne('clinic/regional-settings')
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    await settle();
+
+    expect(failed).toBe(true);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(store.settings()).toEqual(FROM_CLAIMS);
+  });
+
+  it('exposes the load error and load() retries after it', async () => {
+    store.load();
+    TestBed.tick();
+    http
+      .expectOne('clinic/regional-settings')
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    await settle();
+
+    expect(store.hasError()).toBe(true);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(store.settings()).toEqual(FROM_CLAIMS);
+
+    store.load();
+    TestBed.tick();
+    http.expectOne('clinic/regional-settings').flush(FROM_SERVER);
+    await settle();
+
+    expect(store.hasError()).toBe(false);
+    expect(store.settings()).toEqual(FROM_SERVER);
+  });
+});

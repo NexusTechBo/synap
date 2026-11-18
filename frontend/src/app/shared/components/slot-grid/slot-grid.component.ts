@@ -16,7 +16,7 @@ export class SlotGridComponent {
   readonly selected = input<TimeSlot | null>(null);
   readonly loading = input(false);
   readonly errorMessage = input<string | null>(null);
-  readonly emptyTitle = input('Sin horarios libres');
+  readonly emptyTitle = input.required<string>();
   readonly emptyMessage = input<string>();
   readonly select = output<TimeSlot>();
   readonly retry = output<void>();

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../core/models/api.models';
@@ -27,10 +28,11 @@ export class CalendarService {
   private readonly route = inject(ActivatedRoute);
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
-  private readonly today = toIso(new Date());
+  private readonly clock = inject(ClinicClockService);
+  private readonly today = computed(() => this.clock.today());
   private readonly _scope = signal<CalendarScope>('all');
 
-  private readonly locale = computed(() => (this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES'));
+  private readonly locale = computed(() => this.i18n.intlLocale());
 
   readonly canFilterMine = computed(
     () => this.auth.hasRole('ADMINISTRATOR') && this.auth.hasRole('DOCTOR'),
@@ -42,7 +44,7 @@ export class CalendarService {
   );
   readonly selectedDate = computed(() => {
     const requested = this.dateParam();
-    return isIsoDate(requested) ? requested : this.today;
+    return isIsoDate(requested) ? requested : this.today();
   });
   private readonly monthKey = computed(() => this.selectedDate().slice(0, 7));
   private readonly viewDate = computed(() => parseIso(`${this.monthKey()}-01`));
@@ -61,7 +63,11 @@ export class CalendarService {
     stream: ({ params }) => this.api.calendar(params),
   });
   readonly isLoading = this.resource.isLoading;
-  readonly errorMessage = resourceError(this.resource, this.i18n.translate('calendar.errorLoad'));
+  readonly errorMessage = resourceError(
+    this.resource,
+    this.i18n,
+    this.i18n.translate('calendar.errorLoad'),
+  );
 
   private readonly byDay = computed(() => {
     const result = new Map<string, AppointmentSummaryItem[]>();
@@ -87,7 +93,7 @@ export class CalendarService {
   readonly selectedDayAppointments = computed(() =>
     this.resource.hasValue() ? (this.byDay().get(this.selectedDate()) ?? []) : null,
   );
-  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today);
+  readonly canCreateOnSelected = computed(() => this.selectedDate() >= this.today());
 
   reload(): void {
     this.resource.reload();
@@ -100,7 +106,8 @@ export class CalendarService {
   select(iso: string): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { date: iso },
+      queryParams: { date: iso === this.today() ? null : iso },
+      queryParamsHandling: 'merge',
       replaceUrl: true,
     });
   }
@@ -108,11 +115,11 @@ export class CalendarService {
   shiftMonth(delta: number): void {
     const view = this.viewDate();
     const first = toIso(new Date(view.getFullYear(), view.getMonth() + delta, 1));
-    this.select(first.slice(0, 7) === this.today.slice(0, 7) ? this.today : first);
+    this.select(first.slice(0, 7) === this.today().slice(0, 7) ? this.today() : first);
   }
 
   goToday(): void {
-    this.select(this.today);
+    this.select(this.today());
   }
 
   openNewAppointment(): void {

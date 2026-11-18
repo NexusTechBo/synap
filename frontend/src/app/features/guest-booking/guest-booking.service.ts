@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, catchError, finalize, ignoreElements, map, tap } from 'rxjs';
 import { GuestApi } from '../../core/api/guest.api';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   apiErrorMessage,
   isSlotUnavailableError,
@@ -19,12 +20,12 @@ import {
 import {
   addDays,
   formatTime,
+  notBefore,
   parseIso,
   toIso,
   toLocalDateTime,
 } from '../../core/utils/calendar.util';
 import { createCooldown } from '../../core/utils/cooldown.util';
-import { LOAD_ERROR } from '../../core/utils/messages.util';
 import { DATE_STRIP_DAYS } from '../../shared/ui/forms/date-strip/date-strip.component';
 import { GUEST_BOOKING_STEPS, GuestBookingStep } from './guest-booking.model';
 
@@ -33,13 +34,19 @@ export class GuestBookingService {
   private readonly guestApi = inject(GuestApi);
   private readonly guestSession = inject(GuestSessionService);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
   private readonly cooldown = createCooldown();
 
-  readonly today = toIso(new Date());
-  private readonly lastStripDay = toIso(addDays(parseIso(this.today), DATE_STRIP_DAYS - 1));
+  readonly today = computed(() => this.clock.today());
+  private readonly lastStripDay = computed(() =>
+    toIso(addDays(parseIso(this.today()), DATE_STRIP_DAYS - 1)),
+  );
 
   private readonly _step = signal<GuestBookingStep>('doctor');
-  readonly step = this._step.asReadonly();
+  readonly step = computed<GuestBookingStep>(() => {
+    const step = this._step();
+    return (step === 'patient' || step === 'summary') && !this._selectedSlot() ? 'slot' : step;
+  });
   readonly totalSteps = GUEST_BOOKING_STEPS.length - 1;
 
   private readonly _error = signal<string | null>(null);
@@ -50,7 +57,10 @@ export class GuestBookingService {
 
   private readonly _selectedDoctor = signal<GuestDoctor | null>(null);
   readonly selectedDoctor = this._selectedDoctor.asReadonly();
-  private readonly _selectedDate = signal(this.today);
+  private readonly _selectedDate = linkedSignal<string, string>({
+    source: this.today,
+    computation: (today, previous) => (previous ? notBefore(previous.value, today) : today),
+  });
   readonly selectedDate = this._selectedDate.asReadonly();
   private readonly _selectedSlot = linkedSignal<unknown, TimeSlot | null>({
     source: () => [this._selectedDoctor()?.id, this._selectedDate()],
@@ -98,10 +108,12 @@ export class GuestBookingService {
   private readonly unavailableDatesResource = rxResource({
     params: () => {
       const doctorId = this._selectedDoctor()?.id;
-      return this.active() && doctorId ? { doctorId } : undefined;
+      return this.active() && doctorId
+        ? { doctorId, from: this.today(), to: this.lastStripDay() }
+        : undefined;
     },
     stream: ({ params }) =>
-      this.guestApi.unavailableDates(params.doctorId, this.today, this.lastStripDay).pipe(
+      this.guestApi.unavailableDates(params.doctorId, params.from, params.to).pipe(
         map((response) => response.unavailableDates),
         tap((dates) => this.jumpToFirstAvailableDate(dates)),
       ),
@@ -113,29 +125,42 @@ export class GuestBookingService {
   );
   readonly clinicErrorMessage = resourceError(
     this.clinicResource,
+    this.i18n,
     this.i18n.translate('guestBooking.clinicLoadError'),
   );
-  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this._step()) + 1);
+  readonly stepNumber = computed(() => GUEST_BOOKING_STEPS.indexOf(this.step()) + 1);
   readonly error = computed(
     () =>
       this._error() ??
-      (this.cooldown.active() && this._step() === 'summary' ? this._rateLimitMessage() : null),
+      (this.step() !== this._step()
+        ? this.i18n.translate('guestBooking.errors.slotNoLongerValid')
+        : null) ??
+      (this.cooldown.active() && this.step() === 'summary' ? this._rateLimitMessage() : null),
   );
   readonly specialties = computed(() =>
     this.specialtiesResource.hasValue() ? this.specialtiesResource.value() : [],
   );
   readonly specialtiesErrorMessage = resourceError(
     this.specialtiesResource,
-    LOAD_ERROR.specialties,
+    this.i18n,
+    this.i18n.translate('errors.loadSpecialties'),
   );
   readonly doctors = computed(() =>
     this.doctorsResource.hasValue() ? this.doctorsResource.value() : [],
   );
-  readonly doctorsErrorMessage = resourceError(this.doctorsResource, LOAD_ERROR.doctors);
+  readonly doctorsErrorMessage = resourceError(
+    this.doctorsResource,
+    this.i18n,
+    this.i18n.translate('errors.loadDoctors'),
+  );
   readonly slots = computed(() =>
     this.slotsResource.hasValue() ? this.slotsResource.value() : [],
   );
-  readonly slotsErrorMessage = resourceError(this.slotsResource, LOAD_ERROR.slots);
+  readonly slotsErrorMessage = resourceError(
+    this.slotsResource,
+    this.i18n,
+    this.i18n.translate('errors.loadSlots'),
+  );
   private readonly selectedDateHasNoSlots = computed(
     () =>
       !this.slotsResource.isLoading() &&
@@ -185,7 +210,7 @@ export class GuestBookingService {
   }
 
   selectDate(iso: string): void {
-    if (iso && iso >= this.today) this._selectedDate.set(iso);
+    if (iso && iso >= this.today()) this._selectedDate.set(iso);
   }
 
   selectSlot(slot: TimeSlot): void {
@@ -199,14 +224,14 @@ export class GuestBookingService {
   }
 
   back(): void {
-    const index = GUEST_BOOKING_STEPS.indexOf(this._step());
-    if (index > 0 && this._step() !== 'done') this.goTo(GUEST_BOOKING_STEPS[index - 1]);
+    const index = GUEST_BOOKING_STEPS.indexOf(this.step());
+    if (index > 0 && this.step() !== 'done') this.goTo(GUEST_BOOKING_STEPS[index - 1]);
   }
 
   bookAnother(): void {
     this._result.set(null);
     this._selectedDoctor.set(null);
-    this._selectedDate.set(this.today);
+    this._selectedDate.set(this.today());
     this.goTo('doctor');
   }
 
@@ -241,6 +266,7 @@ export class GuestBookingService {
   ): Observable<never> {
     const message = apiErrorMessage(
       error,
+      this.i18n,
       this.i18n.translate('guestBooking.errors.bookingFailed'),
     );
     const retryAfter = retryAfterSeconds(error);
@@ -293,7 +319,7 @@ export class GuestBookingService {
     const unavailable = new Set(unavailableDates);
     if (!unavailable.has(this._selectedDate())) return;
     for (let i = 0; i < DATE_STRIP_DAYS; i++) {
-      const iso = toIso(addDays(parseIso(this.today), i));
+      const iso = toIso(addDays(parseIso(this.today()), i));
       if (!unavailable.has(iso)) {
         this._selectedDate.set(iso);
         return;

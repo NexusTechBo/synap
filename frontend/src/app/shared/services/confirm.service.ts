@@ -2,6 +2,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, inject } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, switchMap, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import {
   ConfirmDialogComponent,
   ConfirmOptions,
@@ -12,6 +13,7 @@ import { NotificationService } from './notification.service';
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
   private readonly dialog = inject(Dialog);
+  private readonly i18n = inject(I18nService);
   private readonly notifications = inject(NotificationService);
 
   ask(options: ConfirmOptions): Observable<boolean> {
@@ -31,7 +33,7 @@ export class ConfirmService {
       switchMap(() => action()),
       tap(() => this.notifications.success(successMessage)),
       catchError((error) => {
-        this.notifications.error(apiErrorMessage(error, errorFallback));
+        this.notifications.error(apiErrorMessage(error, this.i18n, errorFallback));
         return EMPTY;
       }),
     );

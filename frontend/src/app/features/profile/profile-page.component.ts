@@ -1,14 +1,22 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { filter, finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { Role } from '../../core/models/api.models';
 import { initials } from '../../core/utils/labels.util';
+import { DocumentFormatPipe } from '../../shared/pipes/document-format.pipe';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../shared/ui/alert/alert.component';
 import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
@@ -16,20 +24,23 @@ import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.
 import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
 import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
 import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
-import {
-  currentPasswordWhenChanging,
-  notBlank,
-  phoneValidator,
-} from '../../shared/utils/validation-messages.util';
+import { notBlank, phoneValidator } from '../../shared/utils/validators.util';
 import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
+import { RegionalSettingsCardComponent } from './components/regional-settings-card/regional-settings-card.component';
 import { WhatsappQrComponent } from './components/whatsapp-qr/whatsapp-qr.component';
 import { ProfileService } from './profile.service';
+
+function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
+}
 
 @Component({
   selector: 'app-profile-page',
   imports: [
     AlertComponent,
     DoctorModeCardComponent,
+    DocumentFormatPipe,
+    RegionalSettingsCardComponent,
     SkeletonComponent,
     ReactiveFormsModule,
     FormFieldComponent,
@@ -47,6 +58,7 @@ export class ProfilePageComponent {
   private readonly i18n = inject(I18nService);
   protected readonly profile = inject(ProfileService);
   protected readonly auth = inject(AuthService);
+  protected readonly country = inject(ClinicCountryService).country;
 
   protected readonly me = this.profile.me;
 
@@ -79,7 +91,7 @@ export class ProfilePageComponent {
     return roles.map((role) => this.i18n.translate(`roles.${role}`)).join(' · ');
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
-  protected readonly canLinkWhatsapp = computed(() => this.auth.hasRole(...ROLES.admin));
+  protected readonly isAdmin = computed(() => this.auth.hasRole(...ROLES.admin));
 
   constructor() {
     toObservable(this.me)
@@ -115,7 +127,9 @@ export class ProfilePageComponent {
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         error: (error) =>
-          this.error.set(apiErrorMessage(error, this.i18n.translate('profile.errors.update'))),
+          this.error.set(
+            apiErrorMessage(error, this.i18n, this.i18n.translate('profile.errors.update')),
+          ),
       });
   }
 

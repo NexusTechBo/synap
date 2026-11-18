@@ -35,8 +35,8 @@ export class CalendarPageComponent {
   protected readonly weekdays = computed(() => {
     this.i18n.currentLang();
     return DAYS_OF_WEEK.map((day) => ({
-      value: day.value,
-      short: this.i18n.translate(`days.${day.value}.short`),
+      value: day,
+      short: this.i18n.translate(`days.${day}.short`),
     }));
   });
 

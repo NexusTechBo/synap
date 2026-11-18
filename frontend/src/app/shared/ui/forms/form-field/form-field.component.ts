@@ -12,10 +12,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NgControl } from '@angular/forms';
 import { map, of, startWith, switchMap } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
-import {
-  getValidationErrorMessage,
-  translateValidationKey,
-} from '../../../utils/validation-messages.util';
+import { getValidationErrorMessage, translateValidationKey } from '../../../utils/validators.util';
 
 function toggleAttribute(element: HTMLElement, name: string, value: string | null): void {
   if (value === null) element.removeAttribute(name);

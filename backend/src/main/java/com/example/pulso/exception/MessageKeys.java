@@ -4,6 +4,8 @@ public final class MessageKeys {
     public static final String AUTH_INVALID_CREDENTIALS = "auth.invalidCredentials";
     public static final String AUTH_USER_NOT_ACTIVE = "auth.userNotActive";
     public static final String AUTH_CLINIC_NOT_ACTIVATED = "auth.clinicNotActivated";
+    public static final String AUTH_TOKEN_STALE = "auth.tokenStale";
+    public static final String AUTH_REFRESH_INVALID = "auth.refreshInvalid";
 
     public static final String SECURITY_AUTHENTICATION_REQUIRED = "security.authenticationRequired";
     public static final String SECURITY_ACCESS_DENIED = "security.accessDenied";
@@ -16,6 +18,9 @@ public final class MessageKeys {
     public static final String CLINIC_ALREADY_EXISTS = "clinic.alreadyExists";
     public static final String CLINIC_SLUG_TAKEN = "clinic.slugTaken";
     public static final String CLINIC_ACTIVATION_LINK_INVALID = "clinic.activationLinkInvalid";
+    public static final String REGION_COUNTRY_UNSUPPORTED = "region.countryUnsupported";
+    public static final String REGION_TIMEZONE_INVALID = "region.timezoneInvalid";
+    public static final String REGION_LANGUAGE_UNSUPPORTED = "region.languageUnsupported";
 
     public static final String PERSONAL_NOT_FOUND = "personal.notFound";
     public static final String PERSONAL_DOCTOR_NOT_FOUND = "personal.doctorNotFound";
@@ -76,6 +81,8 @@ public final class MessageKeys {
     public static final String WHATSAPP_NO_ACTIVE_SESSION = "whatsapp.noActiveSession";
 
     public static final String VALIDATION_PHONE_INVALID = "validation.phone.invalid";
+    public static final String VALIDATION_DOCUMENT_CI_INVALID = "validation.document.ciInvalid";
+    public static final String VALIDATION_DOCUMENT_CPF_INVALID = "validation.document.cpfInvalid";
 
     public static final String ERROR_VALIDATION_FAILED = "error.validation.failed";
     public static final String ERROR_HTTP_MALFORMED_BODY = "error.http.malformedBody";

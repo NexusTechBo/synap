@@ -4,16 +4,20 @@ import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/ht
 import localeEs from '@angular/common/locales/es';
 import {
   ApplicationConfig,
-  LOCALE_ID,
   inject,
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
 import { TitleStrategy, provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { apiUrlInterceptor, authInterceptor } from './core/http/api.interceptors';
+import {
+  apiUrlInterceptor,
+  authInterceptor,
+  languageInterceptor,
+} from './core/http/api.interceptors';
 import { I18nTitleStrategy } from './core/i18n/i18n-title.strategy';
 import { I18nService } from './core/i18n/i18n.service';
+import { LOCALE_ID_PROVIDER } from './core/i18n/locale-id.provider';
 
 registerLocaleData(localeEs);
 
@@ -22,9 +26,12 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     { provide: TitleStrategy, useExisting: I18nTitleStrategy },
-    provideHttpClient(withXhr(), withInterceptors([apiUrlInterceptor, authInterceptor])),
+    provideHttpClient(
+      withXhr(),
+      withInterceptors([apiUrlInterceptor, languageInterceptor, authInterceptor]),
+    ),
     provideAppInitializer(() => inject(I18nService).init()),
-    { provide: LOCALE_ID, useValue: 'es' },
+    LOCALE_ID_PROVIDER,
     {
       provide: DEFAULT_DIALOG_CONFIG,
       useValue: { ...new DialogConfig(), backdropClass: 'glass-backdrop', ariaModal: true },

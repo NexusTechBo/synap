@@ -28,7 +28,7 @@ export class AppointmentActionsService {
   private readonly i18n = inject(I18nService);
 
   private dayTime(startTime: string): string {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     return `${formatDayLabel(datePart(startTime), locale).toLowerCase()} ${formatTime(startTime)}`;
   }
 
@@ -88,7 +88,7 @@ export class AppointmentActionsService {
     return request.pipe(
       tap(() => this.notifications.success(successMessage)),
       catchError((error) => {
-        this.notifications.error(apiErrorMessage(error));
+        this.notifications.error(apiErrorMessage(error, this.i18n));
         return EMPTY;
       }),
     );

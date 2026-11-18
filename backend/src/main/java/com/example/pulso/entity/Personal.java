@@ -25,7 +25,7 @@ public class Personal {
     private String username;
 
     @Column(unique = true)
-    private String ci;
+    private String document;
 
     @Column(nullable = false)
     private String name;

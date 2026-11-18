@@ -11,46 +11,21 @@ Los agentes de `.claude/agents/` no tienen detalles del proyecto: leen esta secc
 # Parte 1 — Contexto del proyecto
 
 ## Descripción
-**Synap** (marca visible: *ClinicFlow*) es un SaaS multitenant de agenda para clínicas: gestión de citas, disponibilidad de doctores, excepciones de horario, pacientes, especialidades, personal, tablero en tiempo real y reserva pública para invitados (guest booking). Notificaciones por email (Brevo) y WhatsApp (servicio externo).
+**Synap** (marca visible: *Pulso*): SaaS multitenant de agenda para clínicas (citas, disponibilidad, pacientes, personal, tablero en tiempo real, reserva pública para invitados, configuración regional por clínica; países BO y BR). Notificaciones por email (Brevo) y WhatsApp.
 
-## Stack y versiones
-| Capa | Tecnologías |
-|------|-------------|
-| Backend (`backend/`) | Spring Boot 4.0.x, Java 26 (toolchain Gradle), Spring Data JPA + PostgreSQL, Flyway, Spring Security + JWT (jjwt), WebSocket/STOMP, Spring AI (Google GenAI), MapStruct, Lombok, Bucket4j + Caffeine (rate limiting), springdoc-openapi, Micrometer tracing |
-| Frontend (`frontend/`) | Angular 22 standalone, TypeScript 6, Tailwind CSS 4 (`@tailwindcss/postcss`), Angular CDK (diálogos), Chart.js, RxStomp, jwt-decode, Vitest (jsdom), Prettier + organize-imports |
-| Infra | Docker / `docker-compose.yml`, despliegue en Railway (`railway.json`) |
+## Stack
+- **Backend** (`backend/`): Spring Boot 4, Java 26, JPA + PostgreSQL, Flyway, Spring Security + JWT, WebSocket/STOMP (simple broker), MapStruct, Lombok, Bucket4j + Caffeine.
+- **Frontend** (`frontend/`): Angular 22 standalone, TypeScript 6, Tailwind CSS 4, Angular CDK, RxStomp, Vitest.
+- **Infra**: `docker-compose.yml` (app en :4200, backend en :8080, PostgreSQL del host).
 
-## Backend
-- **Paquete raíz**: `com.example.scheduler`. Capas: `controller/` → `service/` (interfaces) → `service/impl/` → `repository/`. Además: `dto/<dominio>/` (records `*Request`/`*Response`), `entity/`, `enums/`, `mapper/` (MapStruct, `componentModel = "spring"`), `exception/`, `config/`, `security/`, `middleware/` (filtros JWT, rate limit, access log), `notification/` (eventos + listeners email/WhatsApp), `exchange/` (clientes HTTP a Brevo/WhatsApp).
-- **Multitenancy por schema**: schema `public` (datos globales: clínicas, activación) y un schema `clinic_<slug>` por clínica. El tenant actual vive en `config/tenant/TenantContext` (ThreadLocal) y lo resuelve `CustomTenantResolver`. Toda lectura/escritura de datos de clínica debe ocurrir con el tenant correcto; nunca filtrar datos entre clínicas.
-- **Migraciones Flyway**: `src/main/resources/db/migration/public/` y `.../tenant/` (las de tenant se aplican a cada schema de clínica).
-- **Roles** (`enums/ERole`): `ADMINISTRATOR`, `DOCTOR`, `ASSISTANT`, `GUEST`. Autorización con `@PreAuthorize(RoleExpressions.X)` (constantes en `security/RoleExpressions`: `STAFF`, `ADMINISTRATOR`, `ADMINISTRATOR_OR_ASSISTANT`, `DOCTOR`, `GUEST`).
-- **Errores**: lanzar subclases de `ApiException` (`BadRequestException`, `BusinessException`, `ResourceNotFoundException`, `ForbiddenException`, `UnauthorizedException`, `ServiceUnavailableException`) con una clave de `exception/MessageKeys`. `GlobalExceptionHandler` las traduce a `ErrorResponse`. Cada clave nueva debe existir en **`messages.properties` y `messages_es.properties`** (lo verifica `MessageKeysBundleTest`).
-- **Fechas/horas**: inyectar `java.time.Clock` (bean en `ClockConfig`, zona `app.zone`, por defecto `America/La_Paz`); no usar `LocalDateTime.now()` sin clock.
-- **JPA**: `open-in-view: false` → cargar lo necesario dentro de la transacción del servicio.
-- **Controllers**: `@RestController` bajo `/api/...`, `@RequiredArgsConstructor`, `@Tag`/`@Operation` de OpenAPI, `@Valid` en los request bodies.
-
-## Frontend
-- **Estructura** (`src/app/`):
-  - `core/api/` — clientes HTTP por recurso (`*.api.ts`) y socket del tablero.
-  - `core/auth/` — `auth.service`, guards (`authGuard`, `guestGuard`, `roleGuard`), `roles.ts`, sesión de invitado.
-  - `core/http/` — interceptores (`apiUrlInterceptor`, `authInterceptor`) y `api-error` (parseo de `ErrorResponse`).
-  - `core/catalogs/` — stores con signals (doctores, especialidades), `clinic-scoped-resource`.
-  - `core/models/`, `core/navigation/` (títulos de página, paths), `core/utils/`.
-  - `features/<feature>/` — páginas `*-page.component.ts` lazy-loaded, con `components/`, `*.service.ts` y `*.model.ts` propios.
-  - `shared/` — `components/`, `ui/`, `pipes/`, `services/`, `utils/` reutilizables.
-  - `layout/shell/` — layout autenticado.
-- **Rutas**: `app.routes.ts` con `loadComponent` y guards; títulos en `PAGE_TITLES`.
-- **Change detection**: con zone.js (`provideZoneChangeDetection({ eventCoalescing: true })`), componentes `OnPush`.
-- **Idioma**: UI en español, `LOCALE_ID = 'es'`.
-- **Proxy de desarrollo** (`proxy.conf.js`): `/api` y `/ws` → `BACKEND_URL` (por defecto `http://localhost:8080`).
-- **Formato**: Prettier (`printWidth: 100`, comillas simples).
+## Convenciones generales
+- **Sin comentarios en el código** (`//`, `/** */`, `<!-- -->`, `--` en SQL), incluidos los tests.
+- **Sin código muerto**: nada de métodos, constantes, exports ni imports sin uso.
 
 ## Testing
-- **Backend**: JUnit 5 + Mockito.
-  - Services: tests unitarios con `@ExtendWith(MockitoExtension.class)` en `src/test/.../service/impl/`.
-  - Controllers: `@WebMvcTest(controllers = X.class, properties = "rate-limit.enabled=false")` + `@Import(SecurityConfig, JacksonConfig, LocaleConfig, ...)` + `@MockitoBean`. Tokens de prueba en `controller/SliceTokens`. Referencia: `controller/PatientControllerTest.java`.
-- **Frontend**: Vitest con `@angular/build:unit-test`; specs junto al archivo. Referencias: `core/api/appointments.api.spec.ts`, `core/auth/auth.guards.spec.ts`, `features/patients/patients-page.component.spec.ts`. **No** hay `@playwright/test` instalado y no se debe agregar; la verificación en navegador se hace con el Playwright MCP.
+- **Backend** (JUnit 5 + Mockito): los tests replican el paquete de la clase probada. Services con `@ExtendWith(MockitoExtension.class)`. Controllers con `@WebMvcTest(controllers = X.class, properties = "rate-limit.enabled=false")` + `@Import(SecurityConfig, JacksonConfig, LocaleConfig, ...)` + `@MockitoBean`; tokens en `controller/SliceTokens`.
+- **Frontend** (Vitest): los specs viven en `src/test/app/` replicando `src/app/`. No agregar `@playwright/test`; la verificación en navegador se hace con el Playwright MCP.
+- **Verificación local**: `docker compose up -d --build` antes del UI review. El login tiene rate limit; se resetea con `docker compose restart backend`.
 
 ## Comandos
 
@@ -98,7 +73,7 @@ Cuando el usuario pase una instrucción de desarrollo (feature, bug, refactor), 
 Análisis → 
                                     ┌──────────────────────────────────────────────┐
                                     ▼                                              │
-                    backend-developer → backend-code-reviewer → CHANGES_REQUESTED──┘
+                    backend-developer → backend-code-reviewer → ──────────CHANGES_REQUESTED
                                     ▲                │ APPROVED
                                     │                ▼
                                     └────FAIL── backend-tester

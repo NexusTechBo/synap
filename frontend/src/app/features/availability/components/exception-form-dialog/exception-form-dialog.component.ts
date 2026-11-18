@@ -11,11 +11,16 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { finalize, map, merge } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/http/api-error';
 import { I18nService } from '../../../../core/i18n/i18n.service';
-import { toIso } from '../../../../core/utils/calendar.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
@@ -23,7 +28,14 @@ import { DatePickerComponent } from '../../../../shared/ui/forms/date-picker/dat
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { TimePickerComponent } from '../../../../shared/ui/forms/time-picker/time-picker.component';
 import { AvailabilityService } from '../../availability.service';
-import { exceptionEndAfterStart } from '../../availability.util';
+
+export function exceptionEndAfterStart(control: AbstractControl): ValidationErrors | null {
+  const group = control.parent;
+  if (!group || group.get('isFullDayBlock')?.value) return null;
+  const startTime = group.get('startTime')?.value as string;
+  if (!startTime || !control.value) return { rangeRequired: true };
+  return control.value <= startTime ? { endBeforeStart: true } : null;
+}
 
 @Component({
   selector: 'app-exception-form-dialog',
@@ -47,12 +59,12 @@ export class ExceptionFormDialogComponent {
   private readonly injector = inject(Injector);
   protected readonly ref = inject(DialogRef);
 
-  protected readonly today = toIso(new Date());
+  protected readonly minDate = this.availability.today;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    date: [this.today, Validators.required],
+    date: [this.availability.today(), Validators.required],
     isFullDayBlock: [true],
     startTime: ['09:00'],
     endTime: ['10:00', exceptionEndAfterStart],
@@ -125,7 +137,11 @@ export class ExceptionFormDialogComponent {
         },
         error: (error) =>
           this.error.set(
-            apiErrorMessage(error, this.i18n.translate('availability.errors.saveException')),
+            apiErrorMessage(
+              error,
+              this.i18n,
+              this.i18n.translate('availability.errors.saveException'),
+            ),
           ),
       });
   }

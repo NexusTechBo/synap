@@ -1,9 +1,8 @@
 package com.example.pulso.exchange.contract.brevo;
 
 import com.example.pulso.util.LogUtils;
-import org.jspecify.annotations.NonNull;
-
 import java.util.List;
+import org.jspecify.annotations.NonNull;
 
 public record BrevoEmailRequest(
         BrevoContact sender,

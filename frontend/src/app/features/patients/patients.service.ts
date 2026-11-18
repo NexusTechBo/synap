@@ -10,6 +10,7 @@ import { Patient } from '../../core/models/api.models';
 import { PATIENT_ASSIGNMENT_ENABLED } from '../../core/utils/feature-flags.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
+import { stripDocumentSeparators } from '../../shared/utils/document.util';
 import { PatientRow, PatientScope } from './patients.model';
 
 const PATIENTS_PAGE_SIZE = 12;
@@ -66,14 +67,16 @@ export class PatientsService {
   private readonly mineFiltered = computed(() => {
     const showInactive = this.showInactive();
     const term = this.debouncedSearch().toLowerCase();
+    const documentTerm = stripDocumentSeparators(term);
     return (this.mineResource.hasValue() ? this.mineResource.value() : [])
       .filter((patient) => showInactive || patient.active)
       .filter(
         (patient) =>
           !term ||
-          `${patient.name} ${patient.ci ?? ''} ${patient.email} ${patient.phoneNumber ?? ''}`
+          `${patient.name} ${patient.document ?? ''} ${patient.email} ${patient.phoneNumber ?? ''}`
             .toLowerCase()
-            .includes(term),
+            .includes(term) ||
+          (!!documentTerm && (patient.document ?? '').includes(documentTerm)),
       );
   });
   readonly patients = computed(() => {
@@ -115,6 +118,7 @@ export class PatientsService {
   readonly isLoading = computed(() => this.activeResource().isLoading());
   readonly errorMessage = resourceError(
     { error: () => this.activeResource().error() },
+    this.i18n,
     this.i18n.translate('patients.errors.load'),
   );
 
@@ -193,7 +197,7 @@ export class PatientsService {
         this.reload();
       }),
       catchError((error) => {
-        this.notifications.error(apiErrorMessage(error));
+        this.notifications.error(apiErrorMessage(error, this.i18n));
         return EMPTY;
       }),
     );

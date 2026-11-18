@@ -1,3 +1,11 @@
 package com.example.pulso.config.tenant;
 
-public record Tenant(Long clinicId, String clinicSlug) {}
+import com.example.pulso.enums.SupportedCountry;
+import java.time.ZoneId;
+
+public record Tenant(
+        Long clinicId,
+        String clinicSlug,
+        ZoneId zone,
+        SupportedCountry country
+) {}

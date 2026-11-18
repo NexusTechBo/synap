@@ -2,8 +2,8 @@ package com.example.pulso.controller;
 
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionRequest;
 import com.example.pulso.dto.scheduleexception.ScheduleExceptionResponse;
-import com.example.pulso.security.RoleExpressions;
-import com.example.pulso.security.SecurityUtils;
+import com.example.pulso.security.expression.RoleExpressions;
+import com.example.pulso.security.util.SecurityUtils;
 import com.example.pulso.service.ScheduleExceptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -17,6 +17,7 @@ import com.example.pulso.repository.ClinicActivationTokenRepository;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.service.ClinicActivationService;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.util.TokenUtils;
 import java.time.Clock;
 import java.time.Duration;
@@ -44,6 +45,7 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     private final PlatformTransactionManager transactionManager;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -72,7 +74,8 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
                     clinicId, clinic.getName(),
                     admin.getName(),
                     token.getEmail(),
-                    admin.getUsername()
+                    admin.getUsername(),
+                    clinicLocaleResolver.resolve(clinic)
             ));
             log.info("Clinic {} activated", clinicId);
             return new ClinicActivatedResponse(clinic.getName(), admin.getUsername());
@@ -110,7 +113,7 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
                 .build()
         );
         eventPublisher.publishEvent(
-                new ClinicActivationEvent(clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt));
+                new ClinicActivationEvent(clinic.getId(), clinic.getName(), adminName, adminEmail, token, expiresAt, clinicLocaleResolver.resolve(clinic)));
     }
 
     private void reissueActivationToken(Long clinicId) {
@@ -137,10 +140,10 @@ public class ClinicActivationServiceImpl implements ClinicActivationService {
     }
 
     private <T> T inClinicTenant(Long clinicId, TransactionCallback<T> action) {
-        var slug = clinicRepository.findSlugById(clinicId).orElseThrow(ClinicActivationServiceImpl::invalidLink);
+        var clinic = clinicRepository.findById(clinicId).orElseThrow(ClinicActivationServiceImpl::invalidLink);
         var previousTenant = TenantContext.current();
         try {
-            TenantContext.setCurrentTenant(clinicId, slug);
+            TenantContext.setCurrentTenant(clinicId, clinic.getSlug(), clinic.zoneId(), clinic.getCountry());
             return new TransactionTemplate(transactionManager).execute(action);
         } finally {
             TenantContext.restore(previousTenant);

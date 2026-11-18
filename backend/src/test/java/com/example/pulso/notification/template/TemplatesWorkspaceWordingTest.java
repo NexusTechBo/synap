@@ -2,6 +2,7 @@ package com.example.pulso.notification.template;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.notification.event.AppointmentNotificationEvent;
 import com.example.pulso.notification.event.AppointmentNotificationType;
@@ -15,6 +16,9 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Textos de plantillas: espacio de trabajo")
 class TemplatesWorkspaceWordingTest {
     private static final String FRONTEND = "https://app.example.com";
+    private static final NotificationTexts TEXTS = new NotificationTexts(new LocaleConfig().messageSource());
+    private static final EmailTemplates EMAIL = new EmailTemplates(TEXTS);
+    private static final WhatsappTemplates WHATSAPP = new WhatsappTemplates(TEXTS);
 
     private static AppointmentNotificationEvent appointment(String clinicName) {
         return new AppointmentNotificationEvent(
@@ -32,7 +36,8 @@ class TemplatesWorkspaceWordingTest {
                 LocalDateTime.of(2030, 1, 15, 10, 0),
                 LocalDateTime.of(2030, 1, 15, 10, 30),
                 null,
-                AppointmentNotificationEvent.ALL_CHANNELS);
+                AppointmentNotificationEvent.ALL_CHANNELS,
+                LocaleConfig.SPANISH);
     }
 
     @Nested
@@ -40,8 +45,8 @@ class TemplatesWorkspaceWordingTest {
     class Email {
         @Test
         void shouldUseWorkspaceWordingWhenBuildingActivationEmail() {
-            var content = EmailTemplates.clinicActivation(
-                    new ClinicActivationEvent(1L, "Norte", "Ana", "ana@example.com", "tok", LocalDateTime.now()),
+            var content = EMAIL.clinicActivation(
+                    new ClinicActivationEvent(1L, "Norte", "Ana", "ana@example.com", "tok", LocalDateTime.now(), LocaleConfig.SPANISH),
                     FRONTEND);
 
             assertThat(content.subject()).isEqualTo("Activa tu espacio de trabajo Norte");
@@ -53,8 +58,8 @@ class TemplatesWorkspaceWordingTest {
 
         @Test
         void shouldUseWorkspaceWordingWhenBuildingWelcomeEmail() {
-            var content = EmailTemplates.clinicWelcome(
-                    new ClinicActivatedEvent(1L, "Norte", "Ana", "ana@example.com", "ana"), FRONTEND);
+            var content = EMAIL.clinicWelcome(
+                    new ClinicActivatedEvent(1L, "Norte", "Ana", "ana@example.com", "ana", LocaleConfig.SPANISH), FRONTEND);
 
             assertThat(content.subject()).isEqualTo("Tu espacio de trabajo Norte está activo");
             assertThat(content.html()).contains("Tu espacio de trabajo <strong>Norte</strong> ya está activo");
@@ -63,7 +68,7 @@ class TemplatesWorkspaceWordingTest {
 
         @Test
         void shouldUseWorkspaceRowAndRescheduleTextWhenBuildingRescheduledEmail() {
-            var content = EmailTemplates.appointmentRescheduled(appointment("Norte"), "Juan");
+            var content = EMAIL.appointmentRescheduled(appointment("Norte"), "Juan");
 
             assertThat(content.html())
                     .contains("<strong>Espacio de trabajo:</strong>")
@@ -73,8 +78,8 @@ class TemplatesWorkspaceWordingTest {
 
         @Test
         void shouldFallbackToGenericWorkspaceLabelWhenNameIsBlank() {
-            var content = EmailTemplates.clinicActivation(
-                    new ClinicActivationEvent(1L, " ", "Ana", "ana@example.com", "tok", LocalDateTime.now()),
+            var content = EMAIL.clinicActivation(
+                    new ClinicActivationEvent(1L, " ", "Ana", "ana@example.com", "tok", LocalDateTime.now(), LocaleConfig.SPANISH),
                     FRONTEND);
 
             assertThat(content.subject()).isEqualTo("Activa tu espacio de trabajo el espacio de trabajo");
@@ -87,7 +92,7 @@ class TemplatesWorkspaceWordingTest {
     class Whatsapp {
         @Test
         void shouldUseWorkspaceWordingWhenBuildingRescheduledMessage() {
-            var text = WhatsappTemplates.appointmentRescheduled(appointment("Norte"));
+            var text = WHATSAPP.appointmentRescheduled(appointment("Norte"));
 
             assertThat(text).contains("cuando el espacio de trabajo la confirme");
             assertNoLegacyBranding(text);
@@ -95,7 +100,7 @@ class TemplatesWorkspaceWordingTest {
 
         @Test
         void shouldFallbackToWorkspaceLabelWhenClinicNameIsNull() {
-            var text = WhatsappTemplates.appointmentRescheduled(appointment(null));
+            var text = WHATSAPP.appointmentRescheduled(appointment(null));
 
             assertThat(text).contains("tu cita en *el espacio de trabajo*");
             assertNoLegacyBranding(text);

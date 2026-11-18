@@ -11,6 +11,8 @@ import {
   output,
   signal,
 } from '@angular/core';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import {
   addDays,
   buildMonthMatrix,
@@ -21,6 +23,7 @@ import {
   toIso,
 } from '../../../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../../../core/utils/labels.util';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { UiIconComponent } from '../../ui-icon/ui-icon.component';
 
 interface MonthGridDay {
@@ -54,7 +57,7 @@ function keyTarget(event: KeyboardEvent, date: Date): Date | null {
 
 @Component({
   selector: 'app-month-grid',
-  imports: [UiIconComponent],
+  imports: [TranslatePipe, UiIconComponent],
   templateUrl: './month-grid.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -69,38 +72,50 @@ export class MonthGridComponent {
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  private readonly i18n = inject(I18nService);
 
-  protected readonly weekdays = DAYS_OF_WEEK;
-  private readonly today = toIso(new Date());
+  protected readonly weekdays = computed(() => {
+    this.i18n.currentLang();
+    return DAYS_OF_WEEK.map((day) => ({
+      value: day,
+      short: this.i18n.translate(`days.${day}.short`),
+    }));
+  });
+  private readonly clock = inject(ClinicClockService);
+  private readonly today = computed(() => this.clock.today());
   private readonly active = signal<string | null>(null);
 
   protected readonly focusIso = computed(() => {
     const monthKey = toIso(this.month()).slice(0, 7);
-    const candidates = [this.active(), this.start(), this.today];
+    const candidates = [this.active(), this.start(), this.today()];
     return candidates.find((iso) => iso?.startsWith(monthKey)) ?? `${monthKey}-01`;
   });
 
-  protected readonly monthLabel = computed(() => formatMonthLabel(this.month()));
-  private readonly baseWeeks = computed(() =>
-    buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()).map((week) =>
+  protected readonly monthLabel = computed(() =>
+    formatMonthLabel(this.month(), this.i18n.intlLocale()),
+  );
+  private readonly baseWeeks = computed(() => {
+    const locale = this.i18n.intlLocale();
+    return buildMonthMatrix(this.month().getFullYear(), this.month().getMonth()).map((week) =>
       week.map((day) => ({
         iso: day.iso,
         inCurrentMonth: day.inCurrentMonth,
         dayNumber: day.date.getDate(),
-        label: formatLongDate(day.iso),
+        label: formatLongDate(day.iso, locale),
       })),
-    ),
-  );
+    );
+  });
   protected readonly weeks = computed<MonthGridDay[][]>(() => {
     const start = this.start();
     const end = this.end();
+    const today = this.today();
     const [lo, hi] = start && end ? [start, end].sort() : [null, null];
     return this.baseWeeks().map((week) =>
       week.map((day) => ({
         ...day,
         edge: day.iso === start || day.iso === end,
         inRange: !!lo && !!hi && day.iso > lo && day.iso < hi,
-        isToday: day.iso === this.today,
+        isToday: day.iso === today,
         disabled: this.outOfBounds(day.iso),
       })),
     );

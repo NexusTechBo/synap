@@ -1,0 +1,33 @@
+<div [formGroup]="form()" class="grid gap-4">
+  <app-form-field [label]="'regional.countryLabel' | translate" [fieldId]="idPrefix() + '-country'">
+    <app-select
+      [id]="idPrefix() + '-country'"
+      formControlName="country"
+      [options]="countryOptions()"
+      [placeholder]="'regional.placeholder' | translate"
+      (selectionChange)="onCountryChange($event)"
+    />
+  </app-form-field>
+  <app-form-field
+    [label]="'regional.timezoneLabel' | translate"
+    [fieldId]="idPrefix() + '-timezone'"
+  >
+    <app-select
+      [id]="idPrefix() + '-timezone'"
+      formControlName="timezone"
+      [options]="timezoneOptions()"
+      [placeholder]="'regional.placeholder' | translate"
+    />
+  </app-form-field>
+  <app-form-field
+    [label]="'regional.languageLabel' | translate"
+    [fieldId]="idPrefix() + '-language'"
+  >
+    <app-select
+      [id]="idPrefix() + '-language'"
+      formControlName="defaultLanguage"
+      [options]="languageOptions()"
+      [placeholder]="'regional.placeholder' | translate"
+    />
+  </app-form-field>
+</div>

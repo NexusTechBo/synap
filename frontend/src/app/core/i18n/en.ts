@@ -2,6 +2,8 @@ import { ES_TRANSLATIONS } from './es';
 
 export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   common: {
+    select: 'Select',
+    backToHome: 'Back to home',
     save: 'Save',
     cancel: 'Cancel',
     delete: 'Delete',
@@ -10,7 +12,18 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loading: 'Loading...',
     close: 'Close',
     confirm: 'Confirm',
+    back: 'Back',
   },
+  errors: {
+    unexpected: 'An unexpected error occurred',
+    connection: 'Could not connect to the server',
+    rateLimited: 'You have made too many requests. Please try again in a few minutes.',
+    loadAppointments: 'Could not load appointments',
+    loadSpecialties: 'Could not load specialties',
+    loadDoctors: 'Could not load doctors',
+    loadSlots: 'Could not load time slots',
+  },
+
   login: {
     title: 'Sign in',
     subtitle: 'Enter your credentials to access your account',
@@ -75,8 +88,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     sectionClinic: 'Workspace',
     clinicNameLabel: 'Workspace name',
     clinicNamePlaceholder: 'My office',
+    clinicPhoneGenericPlaceholder: 'Include the country code',
     clinicPhoneLabel: 'Phone',
-    clinicPhonePlaceholder: '+591 700 00000',
     clinicSlugLabel: 'Workspace identifier',
     clinicSlugPlaceholder: 'myoffice',
     slugHintPrefix: 'Your workspace users will end in @',
@@ -84,8 +97,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     sectionAdmin: 'Administrator',
     adminNameLabel: 'Full name',
     adminNamePlaceholder: 'Your name',
-    adminCiLabel: 'ID Number (optional)',
-    adminCiPlaceholder: 'Identity document',
     adminUsernameLabel: 'Username',
     adminUsernamePlaceholder: 'admin',
     adminEmailLabel: 'Email',
@@ -100,7 +111,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     loginLink: 'Sign in',
     slugPatternError: '3 to 50 characters: lowercase letters and numbers only (no "@" or ".com")',
     registerError: 'An error occurred during registration, please try again',
-    // --- Llaves de register-success ---
     successTitle: 'Workspace created!',
     successSentTo: 'We sent an email to',
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
@@ -165,6 +175,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     actions: {
       confirm: 'Confirm',
       cancel: 'Cancel appointment',
+      cancelFor: 'Cancel appointment for',
     },
     subtitles: {
       own: 'Your appointments',
@@ -204,7 +215,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       mine: 'My patients',
     },
     newPatient: 'New patient',
-    searchPlaceholder: 'Search by name, ID, email or phone',
+    searchPlaceholder: {
+      BO: 'Search by name, ID (CI), email or phone',
+      BR: 'Search by name, CPF, email or phone',
+    },
     searchAriaLabel: 'Search patients',
     showInactive: 'Show inactive',
     emptySearchTitle: 'No results',
@@ -214,7 +228,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     emptyAllMessage: 'Register the first patient in the workspace.',
     table: {
       patient: 'Patient',
-      ci: 'ID',
       phone: 'Phone',
       status: 'Status',
       actions: 'Actions',
@@ -274,7 +287,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
-      ciLabel: 'ID Number (optional)',
       cancel: 'Cancel',
       saving: 'Saving…',
       saveChanges: 'Save changes',
@@ -296,13 +308,40 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     SUNDAY: { label: 'Sunday', short: 'Sun' },
   },
 
+  regional: {
+    countryLabel: 'Country',
+    timezoneLabel: 'Time zone',
+    languageLabel: 'Default language',
+    placeholder: 'Select',
+    countries: { BO: 'Bolivia', BR: 'Brazil' },
+    languages: { es: 'Español', en: 'English', 'pt-BR': 'Português (Brasil)' },
+    title: 'Regional settings',
+    description: 'Country, time zone and default language of the workspace.',
+    save: 'Save settings',
+    saving: 'Saving…',
+    loadError: 'Could not load the regional catalog',
+    saveError: 'Could not save the regional settings',
+    saved: 'Regional settings updated',
+    confirmTitle: 'Change time zone',
+    confirmMessage:
+      'You are about to change the workspace time zone. Make sure it is correct before continuing.',
+    confirmLabel: 'Change time zone',
+  },
+
+  document: {
+    label: { BO: 'ID Number (CI)', BR: 'CPF' },
+    optionalLabel: { BO: 'ID Number (CI, optional)', BR: 'CPF (optional)' },
+    placeholder: { BO: '12345678', BR: '000.000.000-00' },
+  },
+
   validation: {
     required: 'This field is required',
     email: 'Enter a valid email address',
     minlength: 'Must be at least {min} characters',
     maxlength: 'Must be at most {max} characters',
     pattern: 'Invalid format',
-    ciPattern: 'Numbers only, 5 to 10 digits',
+    documentCi: 'Numbers only, 5 to 10 digits',
+    documentCpf: 'Invalid CPF: 11 digits with a valid check digit',
     phonePattern: '7 to 20 characters: numbers, spaces, +, - or parentheses',
     usernamePattern: '3 to 50 characters: lowercase letters, numbers, dot, hyphen or underscore',
     rangeRequired: 'Enter the time range',
@@ -334,6 +373,21 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       next7Days: 'Next 7 days',
       thisMonth: 'This month',
     },
+  },
+
+  datePicker: {
+    placeholder: 'Select date',
+    dialogAriaLabel: 'Select date',
+    today: 'Today',
+  },
+
+  monthGrid: {
+    previousMonth: 'Previous month',
+    nextMonth: 'Next month',
+  },
+
+  dateStrip: {
+    unavailable: 'no available times',
   },
 
   availability: {
@@ -510,7 +564,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       specialtyLabel: 'Specialty',
       specialtyPlaceholder: 'Select a specialty',
       specialtyRequired: 'Select the doctor’s specialty',
-      ciLabel: 'ID Number (optional)',
       usernameLabel: 'Username',
       usernamePlaceholder: 'john.doe',
       newPasswordLabel: 'New password (optional)',
@@ -528,7 +581,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     subtitle: 'Your contact details at the workspace',
     info: {
       username: 'Username',
-      ci: 'ID Number',
       specialty: 'Specialty',
       clinic: 'Workspace',
       clinicWhatsapp: 'Workspace WhatsApp',
@@ -639,6 +691,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   shared: {
     noSpecialty: 'No specialty',
     defaultClinicName: 'My workspace',
+    specialtyFilter: {
+      all: 'All',
+      ariaLabel: 'Specialty',
+    },
     closeNotificationAria: 'Close notification',
     pagination: {
       page: 'Page',
@@ -761,6 +817,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       dateAria: 'Date',
       chooseDoctorTitle: 'Choose a doctor',
       chooseDoctorMessage: 'We will show their available time slots.',
+      emptySlotsTitle: 'No free times',
       emptySlots:
         'The doctor is unavailable or has no remaining slots on this day. Try another date.',
     },
@@ -821,6 +878,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     retryButton: 'Try again',
     retryIn: 'Retry in',
     cooldownFinished: 'You can try again now',
+    startError: 'Could not start your booking',
     loadingSessionTitle: 'Preparing your booking…',
     headerPrefix: 'Book your appointment at',
     loadingClinicSr: 'Loading workspace…',
@@ -847,7 +905,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       newLabel: 'It is my first time',
       kindRequiredError: 'Choose an option',
       returningHint: 'Enter the phone number you registered with.',
-      ciLabel: 'ID Number (optional)',
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
@@ -857,7 +914,6 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       dateTimeLabel: 'Date and time',
       patientLabel: 'Patient',
       registeredPatientFallback: 'Registered patient',
-      ciPrefix: 'ID',
       confirmButton: 'Confirm booking',
     },
     done: {
@@ -866,6 +922,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     },
     errors: {
       bookingFailed: 'Could not register booking',
+      slotNoLongerValid: 'The date changed. Please choose your time again.',
     },
   },
 

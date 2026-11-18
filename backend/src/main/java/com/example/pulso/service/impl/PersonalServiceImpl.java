@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.personal.DoctorModeRequest;
 import com.example.pulso.dto.personal.PersonalProfileUpdateRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
@@ -22,12 +23,16 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PersonalService;
+import com.example.pulso.service.RefreshTokenService;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
-import java.time.Clock;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -54,7 +59,10 @@ public class PersonalServiceImpl implements PersonalService {
     private final AppointmentRepository appointmentRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final Clock clock;
+    private final ClinicTimeProvider clinicTimeProvider;
+    private final IdentityDocumentResolver identityDocumentResolver;
+    private final ClinicLocaleResolver clinicLocaleResolver;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -78,18 +86,19 @@ public class PersonalServiceImpl implements PersonalService {
         var username = request.username() + Utils.usernameSuffix(clinic.getSlug());
         if (personalRepository.existsByUsername(username))
             throw new BusinessException(MessageKeys.PERSONAL_USERNAME_TAKEN, username);
-        var ci = Utils.normalizeCi(request.ci());
-        if (ci != null && personalRepository.existsByCi(ci))
+        var country = TenantContext.getCurrentCountry();
+        var document = identityDocumentResolver.validateAndNormalize(request.document(), country);
+        if (document != null && personalRepository.existsByDocument(document))
             throw new BusinessException(MessageKeys.PERSONAL_ALREADY_EXISTS);
         var email = Utils.normalizeEmail(request.email());
         if (personalRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber());
+        var phoneNumber = Utils.normalizePhoneNumber(request.phoneNumber(), country);
         if (phoneNumber != null && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         var personal = Personal.builder()
                 .username(username)
-                .ci(ci)
+                .document(document)
                 .name(request.name())
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
@@ -104,7 +113,8 @@ public class PersonalServiceImpl implements PersonalService {
                 saved.getUsername(),
                 request.password(),
                 saved.getRole(),
-                clinic.getName()
+                clinic.getName(),
+                clinicLocaleResolver.resolve(clinic)
         ));
         return personalMapper.toResponse(saved);
     }
@@ -123,22 +133,27 @@ public class PersonalServiceImpl implements PersonalService {
         if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT)
             verifyCanStopBeingDoctor(personalId);
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
-        if (personal.getRole() != ERole.ADMINISTRATOR)
+        var roleChanged = personal.getRole() != ERole.ADMINISTRATOR && personal.getRole() != request.role();
+        if (roleChanged)
             personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrNull(request.specialtyId()));
         if (request.password() != null)
             personal.setPassword(passwordEncoder.encode(request.password()));
-        return personalMapper.toResponse(personalRepository.save(personal));
+        var saved = personalRepository.save(personal);
+        if (roleChanged || request.password() != null)
+            refreshTokenService.revokeAllForUser(TenantContext.getCurrentClinicId(), personalId);
+        return personalMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request) {
+    public PersonalResponse updateOwnProfile(Long userId, UUID currentSessionId, PersonalProfileUpdateRequest request) {
         var personal = getPersonalOrThrowById(userId);
         if (request.newPassword() != null) {
             if (request.currentPassword() == null || !passwordEncoder.matches(request.currentPassword(), personal.getPassword()))
                 throw new BadRequestException(MessageKeys.PERSONAL_CURRENT_PASSWORD_INCORRECT);
             personal.setPassword(passwordEncoder.encode(request.newPassword()));
+            refreshTokenService.revokeAllForUserExcept(TenantContext.getCurrentClinicId(), userId, currentSessionId);
         }
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
         return personalMapper.toResponse(personalRepository.save(personal));
@@ -172,6 +187,7 @@ public class PersonalServiceImpl implements PersonalService {
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(false);
         personalRepository.save(personal);
+        refreshTokenService.revokeAllForUser(TenantContext.getCurrentClinicId(), personalId);
         if (personal.isDoctor())
             appointmentService.cancelUpcomingAppointmentsOfDeactivatedDoctor(personalId);
     }
@@ -188,7 +204,7 @@ public class PersonalServiceImpl implements PersonalService {
         var email = Utils.normalizeEmail(rawEmail);
         if (!Objects.equals(personal.getEmail(), email) && personalRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber);
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, TenantContext.getCurrentCountry());
         if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
         personal.setName(name);
@@ -217,7 +233,7 @@ public class PersonalServiceImpl implements PersonalService {
 
     private void cancelOrRejectActiveAppointments(Long doctorId, DoctorModeRequest request) {
         var active = appointmentRepository.countByDoctorIdAndStatusInAndStartTimeAfter(
-                doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock)
+                doctorId, ACTIVE_STATUSES, clinicTimeProvider.now()
         );
         if (active == 0) return;
         if (!Boolean.TRUE.equals(request.cancelAppointments())) {
@@ -231,7 +247,7 @@ public class PersonalServiceImpl implements PersonalService {
     }
 
     private void verifyCanStopBeingDoctor(Long doctorId) {
-        if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(doctorId, AppointmentStatus.CANCELLED, LocalDateTime.now(clock)))
+        if (appointmentRepository.existsByDoctorIdAndStatusNotAndStartTimeAfter(doctorId, AppointmentStatus.CANCELLED, clinicTimeProvider.now()))
             throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS);
         if (doctorAvailabilityRepository.existsByDoctorIdAndActiveTrue(doctorId))
             throw new BusinessException(MessageKeys.PERSONAL_DOCTOR_HAS_ACTIVE_AVAILABILITIES);

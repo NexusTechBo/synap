@@ -5,7 +5,8 @@ import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.middleware.JwtAuthFilter;
 import com.example.pulso.middleware.RateLimitFilter;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
+import com.example.pulso.security.util.SecurityUtils;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,9 +49,20 @@ public class SecurityConfig {
                     a.anyRequest().hasAnyRole(RoleExpressions.STAFF_ROLES.toArray(String[]::new));
                 })
                 .exceptionHandling(e -> e.authenticationEntryPoint((req, res, _) -> errorResponseWriter.write(
-                                req, res, HttpStatus.UNAUTHORIZED, MessageKeys.SECURITY_AUTHENTICATION_REQUIRED))
+                                req,
+                                res,
+                                HttpStatus.UNAUTHORIZED,
+                                Boolean.TRUE.equals(req.getAttribute(SecurityUtils.TOKEN_STALE_ATTRIBUTE))
+                                        ? MessageKeys.AUTH_TOKEN_STALE
+                                        : MessageKeys.SECURITY_AUTHENTICATION_REQUIRED
+                        ))
                         .accessDeniedHandler((req, res, _) -> errorResponseWriter.write(
-                                req, res, HttpStatus.FORBIDDEN, MessageKeys.SECURITY_ACCESS_DENIED)))
+                                req,
+                                res,
+                                HttpStatus.FORBIDDEN,
+                                MessageKeys.SECURITY_ACCESS_DENIED
+                        ))
+                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, JwtAuthFilter.class)
                 .httpBasic(AbstractHttpConfigurer::disable)

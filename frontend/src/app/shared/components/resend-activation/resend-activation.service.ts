@@ -5,7 +5,7 @@ import { ClinicsApi } from '../../../core/api/clinics.api';
 import { apiErrorMessage, retryAfterSeconds } from '../../../core/http/api-error';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { createCooldown } from '../../../core/utils/cooldown.util';
-import { INVALID_EMAIL_KEY } from '../../utils/validation-messages.util';
+import { INVALID_EMAIL_KEY } from '../../utils/validators.util';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -42,7 +42,7 @@ export class ResendActivationService {
           if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.BadRequest) {
             this._error.set(emailEditable ? this.i18n.translate(INVALID_EMAIL_KEY) : fallback);
           } else {
-            this._error.set(apiErrorMessage(error, fallback));
+            this._error.set(apiErrorMessage(error, this.i18n, fallback));
           }
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter, () => this._error.set(null));

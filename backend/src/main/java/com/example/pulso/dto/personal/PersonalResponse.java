@@ -3,7 +3,7 @@ package com.example.pulso.dto.personal;
 public record PersonalResponse(
         Long id,
         String username,
-        String ci,
+        String document,
         String name,
         String email,
         String phoneNumber,

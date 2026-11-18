@@ -5,6 +5,7 @@ import com.example.pulso.dto.clinic.ClinicCreatedResponse;
 import com.example.pulso.dto.clinic.ClinicRequest;
 import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.Personal;
+import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.ClinicStatus;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.exception.BusinessException;
@@ -12,15 +13,21 @@ import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.repository.ClinicActivationTokenRepository;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
+import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
 import com.example.pulso.service.SchemaProvisioningService;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
+import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
+import com.example.pulso.service.component.resolver.RegionalSettingsResolver.RegionalSettings;
 import com.example.pulso.util.Utils;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -32,6 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class ClinicServiceImpl implements ClinicService {
     private static final String SLUG_CONSTRAINT = "uq_clinics_slug";
+    private static final String DEFAULT_SPECIALTY_NAME = "specialty.defaultGeneralMedicine";
 
     private final ClinicRepository clinicRepository;
     private final PersonalRepository personalRepository;
@@ -41,9 +49,20 @@ public class ClinicServiceImpl implements ClinicService {
     private final ClinicActivationService clinicActivationService;
     private final ClinicActivationTokenRepository tokenRepository;
     private final Clock clock;
+    private final RegionalSettingsResolver regionalSettingsResolver;
+    private final SpecialtyRepository specialtyRepository;
+    private final MessageSource messageSource;
+    private final IdentityDocumentResolver identityDocumentResolver;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     public ClinicCreatedResponse createClinic(ClinicRequest request) {
+        var regional = regionalSettingsResolver.resolveWithDefaults(
+                request.country(),
+                request.timezone(),
+                request.defaultLanguage()
+        );
+        var adminDocument = identityDocumentResolver.validateAndNormalize(request.adminDocument(), regional.country());
         var slug = request.slug();
         var tx = new TransactionTemplate(transactionManager);
         removeAbandonedClinics(request.name(), slug, tx);
@@ -53,10 +72,10 @@ public class ClinicServiceImpl implements ClinicService {
             throw new BusinessException(MessageKeys.CLINIC_SLUG_TAKEN, slug);
         var encodedPassword = passwordEncoder.encode(request.adminPassword());
         var adminEmail = Utils.normalizeEmail(request.adminEmail());
-        var clinic = saveNewClinic(request, slug, tx);
+        var clinic = saveNewClinic(request, slug, regional, tx);
         try {
             schemaProvisioningService.createTenantSchema(TenantContext.schemaName(clinic.getSlug()));
-            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug());
+            TenantContext.setCurrentTenant(clinic.getId(), clinic.getSlug(), clinic.zoneId(), clinic.getCountry());
             return tx.execute(_ -> {
                 var admin = personalRepository.save(Personal.builder()
                         .username(request.adminUsername() + Utils.usernameSuffix(clinic.getSlug()))
@@ -64,8 +83,12 @@ public class ClinicServiceImpl implements ClinicService {
                         .password(encodedPassword)
                         .email(adminEmail)
                         .phoneNumber(clinic.getPhoneNumber())
-                        .ci(Utils.normalizeCi(request.adminCi()))
+                        .document(adminDocument)
                         .role(ERole.ADMINISTRATOR)
+                        .build()
+                );
+                specialtyRepository.save(Specialty.builder()
+                        .name(resolveDefaultSpecialtyName(clinic))
                         .build()
                 );
                 clinicActivationService.issueActivationToken(clinic, admin.getName(), admin.getEmail());
@@ -87,13 +110,24 @@ public class ClinicServiceImpl implements ClinicService {
         }
     }
 
-    private Clinic saveNewClinic(ClinicRequest request, String slug, TransactionTemplate tx) {
+    private String resolveDefaultSpecialtyName(Clinic clinic) {
+        return messageSource.getMessage(
+                DEFAULT_SPECIALTY_NAME,
+                null,
+                clinicLocaleResolver.resolve(clinic)
+        );
+    }
+
+    private Clinic saveNewClinic(ClinicRequest request, String slug, RegionalSettings regional, TransactionTemplate tx) {
         try {
             return tx.execute(_ -> clinicRepository.saveAndFlush(Clinic.builder()
                     .name(request.name())
-                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber()))
+                    .phoneNumber(Utils.normalizePhoneNumber(request.phoneNumber(), regional.country()))
                     .slug(slug)
                     .status(ClinicStatus.PENDING_ACTIVATION)
+                    .country(regional.country())
+                    .timezone(regional.timezone())
+                    .defaultLanguage(regional.language())
                     .build()
             ));
         } catch (DataIntegrityViolationException e) {

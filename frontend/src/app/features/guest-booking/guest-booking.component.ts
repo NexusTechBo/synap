@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnInit,
   afterRenderEffect,
@@ -11,11 +12,14 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { GuestSessionService } from '../../core/auth/guest-session.service';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { CountryCode } from '../../core/models/api.models';
 import { datePart, formatLongDate } from '../../core/utils/calendar.util';
 import { DoctorPickerComponent } from '../../shared/components/doctor-picker/doctor-picker.component';
 import { SlotGridComponent } from '../../shared/components/slot-grid/slot-grid.component';
 import { SpecialtyFilterComponent } from '../../shared/components/specialty-filter/specialty-filter.component';
+import { DocumentFormatPipe } from '../../shared/pipes/document-format.pipe';
 import { SpecialtyLabelPipe } from '../../shared/pipes/specialty-label.pipe';
 import { TimeRangePipe } from '../../shared/pipes/time-range.pipe';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
@@ -30,6 +34,37 @@ import { GuestPatientFormComponent } from './components/guest-patient-form/guest
 import { STEP_TITLE_KEYS } from './guest-booking.model';
 import { GuestBookingService } from './guest-booking.service';
 
+const PHONE_FORMATS: Record<
+  CountryCode,
+  { code: string; format: (national: string) => string | null }
+> = {
+  BO: { code: '591', format: (n) => (n.length === 8 ? n : null) },
+  BR: {
+    code: '55',
+    format: (n) => {
+      if (n.length === 11) return `${n.slice(0, 2)} ${n.slice(2, 7)}-${n.slice(7)}`;
+      if (n.length === 10) return `${n.slice(0, 2)} ${n.slice(2, 6)}-${n.slice(6)}`;
+      return null;
+    },
+  },
+};
+
+export function formatPhone(raw: string, country: CountryCode): string {
+  const typed = raw.trim();
+  const digits = typed.replace(/\D/g, '');
+  const { code, format } = PHONE_FORMATS[country];
+  const hasCode = digits.startsWith(code);
+  let national = digits;
+  if (typed.startsWith('+')) {
+    if (!hasCode) return typed;
+    national = digits.slice(code.length);
+  } else if (hasCode && format(digits.slice(code.length)) !== null) {
+    national = digits.slice(code.length);
+  }
+  const formatted = format(national);
+  return formatted === null ? typed : `+${code} ${formatted}`;
+}
+
 @Component({
   selector: 'app-guest-booking',
   imports: [
@@ -43,6 +78,7 @@ import { GuestBookingService } from './guest-booking.service';
     SlotGridComponent,
     SpecialtyFilterComponent,
     DoctorPickerComponent,
+    DocumentFormatPipe,
     SkeletonComponent,
     SpecialtyLabelPipe,
     TimeRangePipe,
@@ -60,6 +96,7 @@ export class GuestBookingComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   protected readonly session = inject(GuestSessionService);
   protected readonly booking = inject(GuestBookingService);
+  protected readonly country = inject(ClinicCountryService).country;
 
   private lastView: string | null = null;
 
@@ -74,16 +111,19 @@ export class GuestBookingComponent implements OnInit {
     return this.i18n.translate(STEP_TITLE_KEYS[this.booking.step()]);
   });
   protected readonly dateLabel = computed(() => {
-    this.i18n.currentLang();
-    return formatLongDate(this.booking.selectedDate());
+    return formatLongDate(this.booking.selectedDate(), this.i18n.intlLocale());
+  });
+  protected readonly patientPhone = computed(() => {
+    const patient = this.booking.patient();
+    return patient ? formatPhone(patient.phoneNumber, this.country()) : '';
   });
   protected readonly resultDateLabel = computed(() => {
-    this.i18n.currentLang();
     const result = this.booking.result();
-    return result ? formatLongDate(datePart(result.startTime)) : '';
+    return result ? formatLongDate(datePart(result.startTime), this.i18n.intlLocale()) : '';
   });
 
   constructor() {
+    inject(DestroyRef).onDestroy(() => this.session.releaseClinicContext());
     afterRenderEffect(() => {
       const view = this.session.ready() ? this.booking.step() : this.session.status();
       const heading = this.heading()?.nativeElement;

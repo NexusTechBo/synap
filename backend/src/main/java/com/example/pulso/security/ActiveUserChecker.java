@@ -1,10 +1,11 @@
 package com.example.pulso.security;
 
-import com.example.pulso.enums.ERole;
+import com.example.pulso.enums.TokenStatus;
 import com.example.pulso.repository.PersonalRepository;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Set;
+import com.example.pulso.security.cache.ClinicSettingsVersionCache;
+import com.example.pulso.security.jwt.JwtUtils;
+import com.example.pulso.security.profile.RoleProfile;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,17 +13,27 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ActiveUserChecker {
     private final PersonalRepository personalRepository;
+    private final ClinicSettingsVersionCache settingsVersionCache;
 
-    public boolean isActive(Long userId, String role, Collection<String> roles) {
-        if (ERole.GUEST.name().equals(role)) return true;
-        var primary = Arrays.stream(ERole.values())
-                .filter(r -> r.name().equals(role))
-                .findFirst()
-                .orElse(null);
-        if (primary == null) return false;
-        var alsoDoctor = primary == ERole.ADMINISTRATOR && roles.contains(ERole.DOCTOR.name());
-        var expected = alsoDoctor ? Set.of(primary.name(), ERole.DOCTOR.name()) : Set.of(primary.name());
-        if (!expected.equals(Set.copyOf(roles))) return false;
-        return personalRepository.existsByIdAndActiveTrueAndRoleAndAlsoDoctor(userId, primary, alsoDoctor);
+    public TokenStatus check(Claims claims, RoleProfile profile) {
+        if (profile.isGuest())
+            return TokenStatus.VALID;
+        var userVersion = JwtUtils.extractUserVersion(claims);
+        var settingsVersion = JwtUtils.extractSettingsVersion(claims);
+        var sessionId = JwtUtils.extractSessionId(claims);
+        var clinicId = JwtUtils.extractClinicId(claims);
+        if (userVersion.isEmpty() || settingsVersion.isEmpty() || clinicId == null || sessionId.isEmpty())
+            return TokenStatus.INVALID;
+
+        var currentUserVersion = personalRepository.findVersionOfActiveById(Long.valueOf(claims.getSubject()));
+        if (currentUserVersion.isEmpty())
+            return TokenStatus.INVALID;
+
+        var currentSettingsVersion = settingsVersionCache.get(clinicId);
+        if (currentSettingsVersion.isEmpty())
+            return TokenStatus.INVALID;
+
+        var upToDate = currentUserVersion.get().equals(userVersion.get()) && currentSettingsVersion.get().equals(settingsVersion.get());
+        return upToDate ? TokenStatus.VALID : TokenStatus.STALE;
     }
 }

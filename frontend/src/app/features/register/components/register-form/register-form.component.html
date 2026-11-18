@@ -1,3 +1,4 @@
+<app-back-to-home-link class="w-full max-w-md" />
 <div class="glass-panel w-full max-w-md rounded-3xl p-6 sm:p-8">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="mb-6">
@@ -44,6 +45,10 @@
       </app-form-field>
     </div>
 
+    @if (regionalAvailable()) {
+      <app-regional-fields class="mt-4" idPrefix="register" [form]="form.controls.regional" />
+    }
+
     <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">
       {{ 'register.sectionAdmin' | translate }}
     </p>
@@ -63,19 +68,18 @@
           />
         </app-form-field>
         <app-form-field
-          [label]="'register.adminCiLabel' | translate"
-          fieldId="register-admin-ci"
-          [errorMessages]="ciErrors"
+          [label]="'document.optionalLabel.' + documentCountry() | translate"
+          fieldId="register-admin-document"
         >
           <input
-            id="register-admin-ci"
+            id="register-admin-document"
             type="text"
             class="field-input"
-            formControlName="adminCi"
+            formControlName="adminDocument"
             inputmode="numeric"
-            maxlength="10"
+            [attr.maxlength]="documentMaxLength()"
             autocomplete="off"
-            [placeholder]="'register.adminCiPlaceholder' | translate"
+            [placeholder]="'document.placeholder.' + documentCountry() | translate"
           />
         </app-form-field>
       </div>
@@ -126,7 +130,7 @@
             class="field-input"
             formControlName="phoneNumber"
             autocomplete="tel"
-            [placeholder]="'register.clinicPhonePlaceholder' | translate"
+            [placeholder]="phonePlaceholder()"
           />
         </app-form-field>
       </div>

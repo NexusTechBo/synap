@@ -6,3 +6,7 @@ export const ROLES = {
   admin: ['ADMINISTRATOR'],
   guestLink: ['ADMINISTRATOR'],
 } as const satisfies Record<string, readonly Role[]>;
+
+export function isRole(value: string): value is Role {
+  return (ROLES.staff as readonly string[]).includes(value);
+}

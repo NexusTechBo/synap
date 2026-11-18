@@ -150,7 +150,7 @@
         </div>
         <app-date-picker
           [ariaLabel]="'availability.previewDateAria' | translate"
-          [min]="availability.today"
+          [min]="availability.today()"
           [ngModel]="availability.previewDate()"
           (ngModelChange)="availability.setPreviewDate($event)"
         />

@@ -31,8 +31,12 @@
               <dd class="min-w-0 break-all text-right font-bold text-gray-800">{{ p.username }}</dd>
             </div>
             <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
-              <dt class="font-semibold text-gray-500">{{ 'profile.info.ci' | translate }}</dt>
-              <dd class="font-bold text-gray-800">{{ p.ci || '—' }}</dd>
+              <dt class="font-semibold text-gray-500">
+                {{ 'document.label.' + country() | translate }}
+              </dt>
+              <dd class="font-bold text-gray-800">
+                {{ (p.document | documentFormat: country()) || '—' }}
+              </dd>
             </div>
             @if (p.specialtyName) {
               <div class="flex justify-between gap-3 rounded-2xl bg-white/50 px-4 py-2.5">
@@ -49,7 +53,7 @@
               </div>
             }
           </dl>
-          @if (canLinkWhatsapp()) {
+          @if (isAdmin()) {
             <button type="button" class="btn btn-primary mt-4" (click)="openWhatsapp()">
               {{ 'profile.info.clinicWhatsapp' | translate }}
             </button>
@@ -144,6 +148,10 @@
 
       @if (profile.canToggleDoctorMode() && me()) {
         <app-doctor-mode-card class="lg:col-start-2" />
+      }
+
+      @if (isAdmin()) {
+        <app-regional-settings-card class="lg:col-start-2" />
       }
     </div>
   }

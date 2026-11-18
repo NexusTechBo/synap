@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DialogFrameComponent } from '../dialog-frame/dialog-frame.component';
 
 export interface ConfirmOptions {
@@ -12,7 +13,7 @@ export interface ConfirmOptions {
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [DialogFrameComponent],
+  imports: [DialogFrameComponent, TranslatePipe],
   templateUrl: './confirm-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -23,7 +23,7 @@ export class BoardCardComponent {
   past = input(false);
 
   protected readonly dayLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     return formatDayLabel(this.appointment().appointmentDate, locale);
   });
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class WhatsappNotificationListener {
     private final WhatsappExchangeService whatsappExchangeService;
+    private final WhatsappTemplates whatsappTemplates;
 
     @Async(AsyncConfig.WHATSAPP_TASK_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -22,9 +23,9 @@ public class WhatsappNotificationListener {
         if (!event.channels().contains(NotificationChannel.WHATSAPP)) return;
 
         var message = switch (event.type()) {
-            case CONFIRMED -> WhatsappTemplates.appointmentConfirmed(event);
-            case CANCELLED -> WhatsappTemplates.appointmentCancelled(event);
-            case RESCHEDULED -> WhatsappTemplates.appointmentRescheduled(event);
+            case CONFIRMED -> whatsappTemplates.appointmentConfirmed(event);
+            case CANCELLED -> whatsappTemplates.appointmentCancelled(event);
+            case RESCHEDULED -> whatsappTemplates.appointmentRescheduled(event);
             case DOCTOR_GUEST_BOOKED -> null;
         };
 

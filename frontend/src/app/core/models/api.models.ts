@@ -1,5 +1,9 @@
 export type Role = 'ADMINISTRATOR' | 'DOCTOR' | 'ASSISTANT';
 
+export type CountryCode = 'BO' | 'BR';
+
+export type ClinicLanguage = 'es' | 'en' | 'pt-BR';
+
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 
 export type DayOfWeek =
@@ -55,12 +59,14 @@ export interface LoginResponse {
 
 export interface TokenPayload {
   sub: string;
-  role: Role;
-  roles?: Role[];
+  roles?: string[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
   username: string;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
   exp: number;
 }
 
@@ -80,7 +86,29 @@ export interface ClinicRequest {
   adminUsername: string;
   adminEmail: string;
   adminPassword: string;
-  adminCi?: string | null;
+  adminDocument?: string | null;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
+}
+
+export interface RegionCountry {
+  code: CountryCode;
+  defaultTimezone: string;
+  timezones: string[];
+  defaultLanguage: ClinicLanguage;
+  phonePlaceholder: string;
+}
+
+export interface RegionCatalog {
+  countries: RegionCountry[];
+  languages: ClinicLanguage[];
+}
+
+export interface ClinicRegionalSettings {
+  country: CountryCode;
+  timezone: string;
+  defaultLanguage: ClinicLanguage;
 }
 
 export interface ClinicCreatedResponse {
@@ -172,7 +200,7 @@ export interface AppointmentCalendarQuery {
 
 export interface Patient {
   id: number;
-  ci: string | null;
+  document: string | null;
   name: string;
   email: string | null;
   phoneNumber: string;
@@ -180,7 +208,7 @@ export interface Patient {
 }
 
 export interface PatientRequest {
-  ci?: string | null;
+  document?: string | null;
   name: string;
   phoneNumber: string;
   email?: string | null;
@@ -189,7 +217,7 @@ export interface PatientRequest {
 export interface Staff {
   id: number;
   username: string;
-  ci: string | null;
+  document: string | null;
   name: string;
   email: string;
   phoneNumber: string | null;
@@ -204,7 +232,7 @@ export interface StaffRegisterRequest {
   name: string;
   email: string;
   phoneNumber?: string | null;
-  ci?: string | null;
+  document?: string | null;
   username: string;
   password: string;
   role: Role;
@@ -302,10 +330,12 @@ export interface ScheduleException extends Omit<ScheduleExceptionRequest, 'cance
 
 export interface GuestTokenPayload {
   sub: string;
-  role: string;
+  roles?: string[];
   clinicId: number;
   clinicName: string;
   clinicSlug: string;
+  country?: CountryCode;
+  timezone?: string;
   exp: number;
 }
 
@@ -313,14 +343,12 @@ export interface GuestSessionRequest {
   slug: string;
 }
 
-export interface GuestSessionResponse {
-  token: string;
-  expiresAt: string;
-}
-
 export interface GuestClinic {
   name: string;
   slug: string;
+  country?: CountryCode;
+  timezone?: string;
+  defaultLanguage?: ClinicLanguage;
 }
 
 export interface GuestDoctor {
@@ -335,13 +363,13 @@ export interface GuestPatientRequest {
 }
 
 export interface GuestNewPatientRequest extends GuestPatientRequest {
-  ci?: string | null;
+  document?: string | null;
   name: string;
   email?: string | null;
 }
 
 export type GuestBookingPatient = GuestPatientRequest &
-  Partial<Pick<GuestNewPatientRequest, 'ci' | 'name' | 'email'>>;
+  Partial<Pick<GuestNewPatientRequest, 'document' | 'name' | 'email'>>;
 
 export interface GuestAppointmentRequest<P extends GuestBookingPatient = GuestBookingPatient> {
   doctorId: number;

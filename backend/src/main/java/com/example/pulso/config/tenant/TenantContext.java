@@ -1,6 +1,8 @@
 package com.example.pulso.config.tenant;
 
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.util.LogKeys;
+import java.time.ZoneId;
 import org.slf4j.MDC;
 
 public class TenantContext {
@@ -12,8 +14,8 @@ public class TenantContext {
         return CLINIC_SCHEMA_PREFIX + clinicSlug;
     }
 
-    public static void setCurrentTenant(Long clinicId, String clinicSlug) {
-        CURRENT_TENANT.set(new Tenant(clinicId, clinicSlug));
+    public static void setCurrentTenant(Long clinicId, String clinicSlug, ZoneId zone, SupportedCountry country) {
+        CURRENT_TENANT.set(new Tenant(clinicId, clinicSlug, zone, country));
         putOrRemove(LogKeys.CLINIC_ID, clinicId.toString());
         putOrRemove(LogKeys.CLINIC_SLUG, clinicSlug);
     }
@@ -24,7 +26,7 @@ public class TenantContext {
 
     public static void restore(Tenant previousTenant) {
         if (previousTenant == null) clear();
-        else setCurrentTenant(previousTenant.clinicId(), previousTenant.clinicSlug());
+        else setCurrentTenant(previousTenant.clinicId(), previousTenant.clinicSlug(), previousTenant.zone(), previousTenant.country());
     }
 
     public static String getCurrentTenant() {
@@ -36,6 +38,18 @@ public class TenantContext {
         var tenant = current();
         if (tenant == null) throw new IllegalStateException("No clinic tenant bound");
         return tenant.clinicId();
+    }
+
+    public static ZoneId getCurrentZone() {
+        var tenant = current();
+        if (tenant == null) throw new IllegalStateException("No clinic tenant bound");
+        return tenant.zone();
+    }
+
+    public static SupportedCountry getCurrentCountry() {
+        var tenant = current();
+        if (tenant == null) throw new IllegalStateException("No clinic tenant bound");
+        return tenant.country();
     }
 
     public static void clear() {

@@ -28,7 +28,9 @@ import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.ScheduleException;
 import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.AppointmentStatus;
+import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
@@ -43,13 +45,18 @@ import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PatientRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
 import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Locale;
@@ -66,6 +73,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -117,7 +125,7 @@ class AppointmentServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        TenantContext.setCurrentTenant(CLINIC_ID, "demo");
+        TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         service = new AppointmentServiceImpl(
                 appointmentRepository,
                 patientRepository,
@@ -128,13 +136,16 @@ class AppointmentServiceImplTest {
                 currentClinicProvider,
                 eventPublisher,
                 messageSource,
-                CLOCK
+                CLOCK,
+                new ClinicTimeProvider(CLOCK),
+                new ClinicLocaleResolver(currentClinicProvider)
         );
     }
 
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        LocaleContextHolder.resetLocaleContext();
     }
 
     private Appointment givenExisting(AppointmentStatus status, LocalDateTime start) {
@@ -195,11 +206,16 @@ class AppointmentServiceImplTest {
     }
 
     private void givenClinic() {
+        givenClinic(ClinicLanguage.ES);
+    }
+
+    private void givenClinic(ClinicLanguage language) {
         when(currentClinicProvider.getCurrentClinic())
                 .thenReturn(Clinic.builder()
                         .id(CLINIC_ID)
                         .name("Clinica Demo")
                         .slug("demo")
+                        .defaultLanguage(language)
                         .build());
     }
 
@@ -303,6 +319,74 @@ class AppointmentServiceImplTest {
                 .startTime(start)
                 .endTime(end)
                 .build();
+    }
+
+    @Nested
+    @DisplayName("clinic time zone")
+    class ClinicTimeZone {
+        private static final Instant INSTANT = Instant.parse("2026-11-04T14:00:00Z");
+        private static final LocalDateTime LOCAL_10_30 = LocalDateTime.of(2026, 11, 4, 10, 30);
+
+        private AppointmentServiceImpl serviceInZone(String zone) {
+            TenantContext.setCurrentTenant(CLINIC_ID, "demo", ZoneId.of(zone), SupportedCountry.BO);
+            var clock = Clock.fixed(INSTANT, ZoneOffset.UTC);
+            return new AppointmentServiceImpl(
+                    appointmentRepository,
+                    patientRepository,
+                    personalRepository,
+                    appointmentMapper,
+                    scheduleExceptionRepository,
+                    doctorAvailabilityRepository,
+                    currentClinicProvider,
+                    eventPublisher,
+                    messageSource,
+                    clock,
+                    new ClinicTimeProvider(clock),
+                    new ClinicLocaleResolver(currentClinicProvider)
+            );
+        }
+
+        @Test
+        @DisplayName("rejects 10:30 as past in a clinic where it is already 11:00")
+        void shouldRejectStartInThePastForSaoPauloClinic() {
+            var saoPauloService = serviceInZone("America/Sao_Paulo");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+
+            var thrown = catchThrowable(
+                    () -> saoPauloService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            assertThat(((BadRequestException) thrown).getMessageKey()).isEqualTo(MessageKeys.APPOINTMENT_PAST_DATE);
+            verify(appointmentRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("accepts 10:30 as future in a clinic where it is 10:00")
+        void shouldAcceptSameStartForLaPazClinic() {
+            var laPazService = serviceInZone("America/La_Paz");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            givenWorkingDay(DOCTOR_ID, LOCAL_10_30.getDayOfWeek());
+            givenPatient(patient(PATIENT_ID, true));
+            givenSaveAssignsId();
+
+            laPazService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false);
+
+            assertThat(captureSaved().getStartTime()).isEqualTo(LOCAL_10_30);
+        }
+
+        @Test
+        @DisplayName("createdAt keeps using the global clock")
+        void shouldStampCreatedAtWithGlobalClock() {
+            var laPazService = serviceInZone("America/La_Paz");
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            givenWorkingDay(DOCTOR_ID, LOCAL_10_30.getDayOfWeek());
+            givenPatient(patient(PATIENT_ID, true));
+            givenSaveAssignsId();
+
+            laPazService.bookAppointment(request(DOCTOR_ID, LOCAL_10_30), 1L, false);
+
+            assertThat(captureSaved().getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 11, 4, 14, 0));
+        }
     }
 
     @Nested
@@ -798,6 +882,18 @@ class AppointmentServiceImplTest {
                     MessageKeys.PERSONAL_DOCTOR_NOT_FOUND,
                     DOCTOR_ID
             );
+        }
+
+        @Test
+        void shouldPublishClinicLocaleOnReschedule() {
+            givenExistingForReschedule(doctor(DOCTOR_ID, ERole.DOCTOR), AppointmentStatus.CONFIRMED);
+            givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
+            givenSaveAssignsId();
+            givenClinic(ClinicLanguage.EN);
+
+            service.rescheduleAppointmentById(APPOINTMENT_ID, reschedule(FUTURE_START), 1L, false);
+
+            assertThat(singleNotification().locale()).isEqualTo(Locale.ENGLISH);
         }
 
         @Test
@@ -1453,6 +1549,106 @@ class AppointmentServiceImplTest {
                     LocalDateTime.of(2026, 12, 1, 0, 0),
                     LocalDateTime.of(2027, 1, 1, 0, 0)
             );
+        }
+    }
+
+    @Nested
+    class NotificationLocale {
+        private AppointmentNotificationEvent bookGuestAppointment(ClinicLanguage language) {
+            givenDoctorLocked(doctor(DOCTOR_ID, ERole.DOCTOR));
+            givenWorkingDay(DOCTOR_ID, FUTURE_DAY);
+            givenPatient(patient(PATIENT_ID, true));
+            givenSaveAssignsId();
+            givenClinic(language);
+            givenMapperResponse();
+
+            service.bookGuestAppointment(request(DOCTOR_ID, FUTURE_START));
+
+            return singleNotification();
+        }
+
+        private static final Locale SPANISH = Locale.forLanguageTag("es");
+
+        @Test
+        void shouldPublishClinicLocaleOnConfirm() {
+            givenExisting(AppointmentStatus.PENDING, FUTURE_START);
+            givenSaveAssignsId();
+            givenClinic(ClinicLanguage.EN);
+            givenMapperResponse();
+
+            service.confirmAppointmentById(APPOINTMENT_ID, 1L, false);
+
+            assertThat(singleNotification().locale()).isEqualTo(Locale.ENGLISH);
+        }
+
+        @Test
+        void shouldPublishClinicLocaleOnCancel() {
+            givenExisting(AppointmentStatus.CONFIRMED, FUTURE_START);
+            givenSaveAssignsId();
+            givenClinic(ClinicLanguage.PT_BR);
+
+            service.cancelAppointmentById(APPOINTMENT_ID, new CancelAppointmentRequest("Viaje"), 1L, false);
+
+            assertThat(singleNotification().locale()).isEqualTo(SPANISH);
+        }
+
+        @Test
+        void shouldIgnoreRequestLocaleOnConfirm() {
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+            givenExisting(AppointmentStatus.PENDING, FUTURE_START);
+            givenSaveAssignsId();
+            givenClinic(ClinicLanguage.ES);
+            givenMapperResponse();
+
+            service.confirmAppointmentById(APPOINTMENT_ID, 1L, false);
+
+            assertThat(singleNotification().locale()).isEqualTo(SPANISH);
+        }
+
+        @Test
+        void shouldResolveDefaultBulkCancellationReasonInClinicLanguage() {
+            var doctor = doctor(DOCTOR_ID, ERole.DOCTOR);
+            var appointment = appointment(1L, doctor, patient(PATIENT_ID, true), FUTURE_START, AppointmentStatus.PENDING);
+            when(appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
+                    DOCTOR_ID,
+                    List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED),
+                    NOW
+            )).thenReturn(List.of(appointment));
+            when(messageSource.getMessage(
+                    eq(MessageKeys.APPOINTMENT_DOCTOR_MODE_DISABLED_CANCELLATION_REASON),
+                    isNull(),
+                    eq(Locale.ENGLISH)
+            )).thenReturn("Default");
+            givenSaveAssignsId();
+            givenClinic(ClinicLanguage.EN);
+            LocaleContextHolder.setLocale(SPANISH);
+
+            service.cancelUpcomingAppointmentsOfDoctor(DOCTOR_ID, null);
+
+            assertThat(appointment.getCancellationReason()).isEqualTo("Default");
+            assertThat(singleNotification().locale()).isEqualTo(Locale.ENGLISH);
+        }
+
+        @Test
+        void shouldPublishEnglishLocaleWhenClinicLanguageIsEnglish() {
+            assertThat(bookGuestAppointment(ClinicLanguage.EN).locale()).isEqualTo(Locale.ENGLISH);
+        }
+
+        @Test
+        void shouldPublishSpanishLocaleWhenClinicLanguageIsSpanish() {
+            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(Locale.forLanguageTag("es"));
+        }
+
+        @Test
+        void shouldPublishSpanishLocaleWhenClinicLanguageIsPortuguese() {
+            assertThat(bookGuestAppointment(ClinicLanguage.PT_BR).locale()).isEqualTo(Locale.forLanguageTag("es"));
+        }
+
+        @Test
+        void shouldIgnoreRequestLocale() {
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+
+            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(Locale.forLanguageTag("es"));
         }
     }
 }

@@ -55,6 +55,7 @@ export class StaffService {
   readonly onlyActive = computed(() => this.filters().isActive === true);
   readonly errorMessage = resourceError(
     this.staffResource,
+    this.i18n,
     this.i18n.translate('staff.errors.load'),
   );
 

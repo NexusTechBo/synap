@@ -12,7 +12,7 @@
       <span class="text-lg font-extrabold leading-tight">{{ day.day }}</span>
       <span class="text-[11px] font-semibold opacity-80">{{ day.month }}</span>
       @if (day.isUnavailable) {
-        <span class="sr-only">, sin horarios disponibles</span>
+        <span class="sr-only">, {{ 'dateStrip.unavailable' | translate }}</span>
       }
     </button>
   }

@@ -21,6 +21,9 @@ import com.example.pulso.notification.event.AppointmentNotificationEvent;
 import com.example.pulso.notification.event.AppointmentNotificationType;
 import com.example.pulso.repository.*;
 import com.example.pulso.service.AppointmentService;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.util.DateTimeUtils;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
@@ -40,7 +43,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -65,6 +67,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final ApplicationEventPublisher eventPublisher;
     private final MessageSource messageSource;
     private final Clock clock;
+    private final ClinicTimeProvider clinicTimeProvider;
+    private final ClinicLocaleResolver clinicLocaleResolver;
 
     @Override
     @Transactional
@@ -201,7 +205,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public int cancelUpcomingAppointmentsOfDeactivatedDoctor(Long doctorId) {
         var appointments = appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                doctorId, ACTIVE_STATUSES, LocalDateTime.now(clock)
+                doctorId, ACTIVE_STATUSES, clinicTimeProvider.now()
         );
         var cancelled = cancelAll(
                 appointments,
@@ -218,7 +222,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         var appointments = appointmentRepository.findByDoctorIdAndStatusInAndStartTimeAfterOrderByIdAsc(
                 doctorId,
                 ACTIVE_STATUSES,
-                LocalDateTime.now(clock)
+                clinicTimeProvider.now()
         );
         var finalReason = reason == null || reason.isBlank()
                 ? resolveMessage(MessageKeys.APPOINTMENT_DOCTOR_MODE_DISABLED_CANCELLATION_REASON)
@@ -232,7 +236,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public int cancelUpcomingAppointmentsOfDeactivatedPatient(Long patientId) {
         var appointments = appointmentRepository.findByPatientIdAndStatusInAndStartTimeAfterOrderByIdAsc(
-                patientId, ACTIVE_STATUSES, LocalDateTime.now(clock)
+                patientId, ACTIVE_STATUSES, clinicTimeProvider.now()
         );
         var cancelled = cancelAll(
                 appointments,
@@ -307,7 +311,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         patientId,
                         doctorId,
                         ACTIVE_STATUSES,
-                        LocalDateTime.now(clock)
+                        clinicTimeProvider.now()
                 )
                 .ifPresent(existing -> {
                     throw patientHasActiveConflict(existing, channel);
@@ -317,7 +321,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private LocalDateTime verifySlotBookable(Personal doctor, LocalDateTime startTime, Long excludeAppointmentId) {
         if (!doctor.isDoctor()) throw new BadRequestException(MessageKeys.PERSONAL_DOCTOR_NOT_FOUND, doctor.getId());
         if (!doctor.isActive()) throw new BusinessException(MessageKeys.APPOINTMENT_DOCTOR_INACTIVE);
-        if (startTime.isBefore(LocalDateTime.now(clock)))
+        if (startTime.isBefore(clinicTimeProvider.now()))
             throw new BadRequestException(MessageKeys.APPOINTMENT_PAST_DATE);
         var endTime = findSlotEnd(doctor.getId(), startTime)
                 .orElseThrow(() -> new BusinessException(MessageKeys.APPOINTMENT_OUT_OF_JOURNEY));
@@ -415,12 +419,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getStartTime(),
                 appointment.getEndTime(),
                 appointment.getCancellationReason(),
-                channels
+                channels,
+                clinicLocaleResolver.resolve(clinic)
         ));
     }
 
     private String resolveMessage(String key) {
-        return messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
+        return messageSource.getMessage(key, null, clinicLocaleResolver.resolveCurrent());
     }
 
     private Appointment getAppointmentOrThrowById(Long appointmentId) {
@@ -435,7 +440,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private void verifyNotStarted(Appointment appointment) {
-        if (appointment.getStartTime().isBefore(LocalDateTime.now(clock)))
+        if (appointment.getStartTime().isBefore(clinicTimeProvider.now()))
             throw new BusinessException(MessageKeys.APPOINTMENT_PAST_NOT_MODIFIABLE);
     }
 

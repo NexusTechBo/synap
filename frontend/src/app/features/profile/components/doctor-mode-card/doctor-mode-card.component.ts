@@ -79,7 +79,11 @@ export class DoctorModeCardComponent {
         },
         error: (error) =>
           this.error.set(
-            apiErrorMessage(error, this.i18n.translate('profile.errors.enableDoctorMode')),
+            apiErrorMessage(
+              error,
+              this.i18n,
+              this.i18n.translate('profile.errors.enableDoctorMode'),
+            ),
           ),
       });
   }

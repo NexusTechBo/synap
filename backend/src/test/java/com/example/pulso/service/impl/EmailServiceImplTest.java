@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.exception.MailDeliveryException;
@@ -16,6 +17,8 @@ import com.example.pulso.notification.event.AppointmentNotificationType;
 import com.example.pulso.notification.event.ClinicActivatedEvent;
 import com.example.pulso.notification.event.ClinicActivationEvent;
 import com.example.pulso.notification.event.StaffCreatedEvent;
+import com.example.pulso.notification.template.EmailTemplates;
+import com.example.pulso.notification.template.NotificationTexts;
 import com.example.pulso.notification.transport.MailTransport;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,10 +46,12 @@ class EmailServiceImplTest {
     private MailTransport mailTransport;
 
     private EmailServiceImpl emailService;
+    private final EmailTemplates emailTemplates =
+            new EmailTemplates(new NotificationTexts(new LocaleConfig().messageSource()));
 
     @BeforeEach
     void setUp() {
-        emailService = new EmailServiceImpl(mailTransport, "  " + FRONTEND_URL + "//  ");
+        emailService = new EmailServiceImpl(mailTransport, emailTemplates, "  " + FRONTEND_URL + "//  ");
     }
 
     private OutgoingEmail captureSent() {
@@ -220,7 +225,6 @@ class EmailServiceImplTest {
 
         @Test
         void shouldNotCallTransportNorPropagateWhenTemplateRenderingFails() {
-            // A null start time makes the appointment template fail while rendering.
             var event = new AppointmentNotificationEvent(
                     AppointmentNotificationType.CONFIRMED,
                     AppointmentStatus.CONFIRMED,
@@ -236,7 +240,8 @@ class EmailServiceImplTest {
                     null,
                     null,
                     null,
-                    AppointmentNotificationEvent.ALL_CHANNELS
+                    AppointmentNotificationEvent.ALL_CHANNELS,
+                    LocaleConfig.SPANISH
             );
 
             assertThatCode(() -> emailService.sendAppointmentConfirmed(event)).doesNotThrowAnyException();
@@ -245,7 +250,7 @@ class EmailServiceImplTest {
     }
 
     private static StaffCreatedEvent staffEvent(String email) {
-        return new StaffCreatedEvent(email, "Ana Perez", "ana.perez", "S3cret!pw", ERole.DOCTOR, CLINIC);
+        return new StaffCreatedEvent(email, "Ana Perez", "ana.perez", "S3cret!pw", ERole.DOCTOR, CLINIC, LocaleConfig.SPANISH);
     }
 
     private static AppointmentNotificationEvent appointmentEvent(AppointmentNotificationType type, String email) {
@@ -272,15 +277,16 @@ class EmailServiceImplTest {
                 START,
                 START.plusMinutes(30),
                 cancellationReason,
-                AppointmentNotificationEvent.ALL_CHANNELS
+                AppointmentNotificationEvent.ALL_CHANNELS,
+                LocaleConfig.SPANISH
         );
     }
 
     private static ClinicActivationEvent activationEvent(String email) {
-        return new ClinicActivationEvent(7L, CLINIC, "Admin Norte", email, "tok+abc", START.plusDays(2));
+        return new ClinicActivationEvent(7L, CLINIC, "Admin Norte", email, "tok+abc", START.plusDays(2), LocaleConfig.SPANISH);
     }
 
     private static ClinicActivatedEvent welcomeEvent(String email) {
-        return new ClinicActivatedEvent(7L, CLINIC, "Admin Norte", email, "norte.admin");
+        return new ClinicActivatedEvent(7L, CLINIC, "Admin Norte", email, "norte.admin", LocaleConfig.SPANISH);
     }
 }

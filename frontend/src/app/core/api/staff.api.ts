@@ -6,7 +6,6 @@ import {
   AssignPatientRequest,
   DoctorFilters,
   DoctorModeRequest,
-  LoginResponse,
   Page,
   Patient,
   ProfileUpdateRequest,
@@ -40,8 +39,8 @@ export class StaffApi {
     return this.http.put<Staff>('personal/update', request);
   }
 
-  updateDoctorMode(request: DoctorModeRequest): Observable<LoginResponse> {
-    return this.http.put<LoginResponse>('personal/me/doctor-mode', request);
+  updateDoctorMode(request: DoctorModeRequest): Observable<void> {
+    return this.http.put<void>('personal/me/doctor-mode', request);
   }
 
   deactivate(id: number): Observable<void> {

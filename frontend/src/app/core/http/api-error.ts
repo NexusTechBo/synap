@@ -1,13 +1,11 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { computed, Signal } from '@angular/core';
+import { I18nService } from '../i18n/i18n.service';
 import {
   ActiveAppointmentStatus,
   ApiError,
   StaffActiveAppointmentConflict,
 } from '../models/api.models';
-
-const RATE_LIMIT_MESSAGE =
-  'Has realizado demasiadas solicitudes. Intenta de nuevo en unos minutos.';
 
 export const API_ERROR_CODES = {
   slotTaken: 'appointment.slotTaken',
@@ -37,16 +35,20 @@ export function retryAfterSeconds(error: unknown): number {
   return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 0;
 }
 
-export function apiErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado'): string {
+export function apiErrorMessage(
+  error: unknown,
+  i18n: I18nService,
+  fallback = i18n.translate('errors.unexpected'),
+): string {
   if (!(error instanceof HttpErrorResponse)) return fallback;
-  if (error.status === 0) return 'No se pudo conectar con el servidor';
+  if (error.status === 0) return i18n.translate('errors.connection');
   const body = error.error as Partial<ApiError> | string | null;
   if (body && typeof body === 'object') {
     const details = [...new Set((body.errors ?? []).map((e) => e.message).filter(Boolean))];
     if (details.length) return details.join('. ');
     if (body.message) return body.message;
   }
-  return isRateLimited(error) ? RATE_LIMIT_MESSAGE : fallback;
+  return isRateLimited(error) ? i18n.translate('errors.rateLimited') : fallback;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -102,10 +104,11 @@ export function staffActiveAppointmentConflict(
 
 export function resourceError(
   resource: { error(): unknown },
+  i18n: I18nService,
   fallback: string,
 ): Signal<string | null> {
   return computed(() => {
     const error = resource.error();
-    return error ? apiErrorMessage(error, fallback) : null;
+    return error ? apiErrorMessage(error, i18n, fallback) : null;
   });
 }

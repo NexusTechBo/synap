@@ -1,16 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ClinicCountryService } from '../../../../core/clinic/clinic-country.service';
 import { GuestBookingPatient } from '../../../../core/models/api.models';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
-  CI_ERRORS,
   PHONE_ERRORS,
-  ciValidator,
+  documentValidator,
   notBlank,
   phoneValidator,
-} from '../../../../shared/utils/validation-messages.util';
+} from '../../../../shared/utils/validators.util';
 
 type PatientKind = 'returning' | 'new';
 
@@ -26,7 +27,10 @@ export class GuestPatientFormComponent implements OnInit {
   readonly submitted = output<GuestBookingPatient>();
   readonly back = output<void>();
 
-  protected readonly ciErrors = CI_ERRORS;
+  private readonly clinicCountry = inject(ClinicCountryService);
+  protected readonly country = this.clinicCountry.country;
+  protected readonly phonePlaceholder = this.clinicCountry.phonePlaceholder;
+  protected readonly documentMaxLength = DOCUMENT_MAX_LENGTH[this.country()];
   protected readonly phoneErrors = PHONE_ERRORS;
   protected readonly kinds: { id: PatientKind; labelKey: string }[] = [
     { id: 'returning', labelKey: 'guestBooking.patientForm.returningLabel' },
@@ -35,7 +39,7 @@ export class GuestPatientFormComponent implements OnInit {
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
     kind: [null as PatientKind | null, Validators.required],
-    ci: [{ value: '', disabled: true }, ciValidator],
+    document: [{ value: '', disabled: true }, documentValidator(this.country())],
     phoneNumber: ['', [notBlank, phoneValidator]],
     name: [{ value: '', disabled: true }, notBlank],
     email: [{ value: '', disabled: true }, Validators.email],
@@ -44,8 +48,8 @@ export class GuestPatientFormComponent implements OnInit {
 
   constructor() {
     this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed()).subscribe((kind) => {
-      const { ci, name, email } = this.form.controls;
-      for (const control of [ci, name, email]) {
+      const { document, name, email } = this.form.controls;
+      for (const control of [document, name, email]) {
         if (kind === 'new') control.enable();
         else control.disable();
       }
@@ -57,7 +61,7 @@ export class GuestPatientFormComponent implements OnInit {
     if (!initial) return;
     this.form.patchValue({
       kind: initial.name ? 'new' : 'returning',
-      ci: initial.ci ?? '',
+      document: initial.document ?? '',
       phoneNumber: initial.phoneNumber,
       name: initial.name ?? '',
       email: initial.email ?? '',
@@ -75,7 +79,7 @@ export class GuestPatientFormComponent implements OnInit {
       return;
     }
     this.submitted.emit({
-      ci: this.form.controls.ci.value.trim() || null,
+      document: this.form.controls.document.value.trim() || null,
       phoneNumber,
       name: this.form.controls.name.value.trim(),
       email: this.form.controls.email.value.trim() || null,

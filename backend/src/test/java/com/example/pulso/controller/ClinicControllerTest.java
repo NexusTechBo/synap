@@ -2,6 +2,7 @@ package com.example.pulso.controller;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -15,9 +16,11 @@ import com.example.pulso.config.SecurityConfig;
 import com.example.pulso.config.ratelimiting.RateLimitProperties;
 import com.example.pulso.dto.clinic.ClinicCreatedResponse;
 import com.example.pulso.dto.clinic.ClinicRequest;
+import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.ErrorResponseWriter;
+import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.ClinicActivationService;
 import com.example.pulso.service.ClinicService;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +43,6 @@ import org.springframework.test.web.servlet.MockMvc;
     ClinicControllerTest.SliceSecurityConfig.class
 })
 class ClinicControllerTest {
-    private static final String CI_PATTERN_MESSAGE = "debe contener solo números, entre 5 y 10 dígitos";
 
     @Autowired
     private MockMvc mvc;
@@ -52,16 +54,16 @@ class ClinicControllerTest {
     private ClinicActivationService clinicActivationService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;
 
-    private static String body(String adminCi) {
+    private static String body(String adminDocument) {
         return """
                 {"name":"Clinica Demo","slug":"demo","phoneNumber":"70000000","adminName":"Admin Demo",
-                 "adminUsername":"admin","adminEmail":"admin@mail.test","adminPassword":"secret123","adminCi":"%s"}
-                """.formatted(adminCi);
+                 "adminUsername":"admin","adminEmail":"admin@mail.test","adminPassword":"secret123","adminDocument":"%s"}
+                """.formatted(adminDocument);
     }
 
     @TestConfiguration
@@ -71,17 +73,24 @@ class ClinicControllerTest {
     @Nested
     class CreateClinic {
         @Test
-        void shouldReturnBadRequestWithAdminCiFieldErrorWhenAdminCiIsMalformed() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(clinicService.createClinic(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID));
+
+            mvc.perform(post("/api/clinics").contentType(MediaType.APPLICATION_JSON).content(body("1234")))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID))
+                    .andExpect(jsonPath("$.message").value("El CPF debe tener 11 dígitos y un dígito verificador válido"));
+        }
+
+        @Test
+        void shouldReturnBadRequestWithDocumentFieldErrorWhenDocumentExceedsTwentyCharacters() throws Exception {
             mvc.perform(post("/api/clinics")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(body("1234")))
+                            .content(body("1".repeat(21))))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.status").value(400))
-                    .andExpect(jsonPath("$.message").value("Error de validación en los datos enviados."))
                     .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("adminCi"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
-                    .andExpect(jsonPath("$.path").value("/api/clinics"));
+                    .andExpect(jsonPath("$.errors[0].field").value("adminDocument"));
 
             verifyNoInteractions(clinicService);
         }
@@ -114,8 +123,57 @@ class ClinicControllerTest {
                     "admin",
                     "admin@mail.test",
                     "secret123",
-                    "12345"
+                    "12345",
+                    null,
+                    null,
+                    null
             ));
+        }
+
+        private static final String REGIONAL_BODY = """
+                {"name":"Clinica Demo","slug":"demo","phoneNumber":"70000000","adminName":"Admin Demo",
+                 "adminUsername":"admin","adminEmail":"admin@mail.test","adminPassword":"secret123",
+                 "country":"BR","timezone":"America/Manaus","defaultLanguage":"pt-BR"}
+                """;
+
+        @Test
+        void shouldPassRegionalSettingsToService() throws Exception {
+            when(clinicService.createClinic(any()))
+                    .thenReturn(new ClinicCreatedResponse(7L, "Clinica Demo", "70000000", "demo", 1L, "admin", "a@b.c"));
+
+            mvc.perform(post("/api/clinics").contentType(MediaType.APPLICATION_JSON).content(REGIONAL_BODY))
+                    .andExpect(status().isCreated());
+
+            verify(clinicService).createClinic(argThat(r ->
+                    "BR".equals(r.country())
+                            && "America/Manaus".equals(r.timezone())
+                            && "pt-BR".equals(r.defaultLanguage())));
+        }
+
+        @Test
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsRegionalSettings() throws Exception {
+            when(clinicService.createClinic(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.REGION_TIMEZONE_INVALID, "America/La_Paz", "BR"));
+
+            mvc.perform(post("/api/clinics").contentType(MediaType.APPLICATION_JSON).content(REGIONAL_BODY))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("La zona horaria America/La_Paz no es válida para el país BR"));
+
+            mvc.perform(post("/api/clinics")
+                            .header("Accept-Language", "en")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(REGIONAL_BODY))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("The time zone America/La_Paz is not valid for country BR"));
+        }
+
+        @Test
+        void shouldReturnBadRequestWhenCountryExceedsTwoCharacters() throws Exception {
+            mvc.perform(post("/api/clinics")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(REGIONAL_BODY.replace("\"BR\"", "\"BRA\"")))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value("country"));
         }
     }
 }

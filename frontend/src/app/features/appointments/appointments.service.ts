@@ -2,7 +2,9 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable, tap } from 'rxjs';
 import { AppointmentsApi } from '../../core/api/appointments.api';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
 import { AppointmentFilters } from '../../core/models/api.models';
 import { canCancelAppointment, canConfirmAppointment } from '../../core/utils/appointment.util';
 import { datePart, formatDayLabel, formatTimeRange } from '../../core/utils/calendar.util';
@@ -13,7 +15,9 @@ const PAGE_SIZE = 12;
 
 @Injectable()
 export class AppointmentsService {
+  private readonly clock = inject(ClinicClockService);
   private readonly api = inject(AppointmentsApi);
+  private readonly i18n = inject(I18nService);
   private readonly actions = inject(AppointmentActionsService);
 
   private readonly filters = signal<AppointmentFilters>({
@@ -28,20 +32,26 @@ export class AppointmentsService {
   });
   readonly isLoading = this.resource.isLoading;
 
-  readonly appointments = computed<AppointmentRow[]>(() =>
-    (this.resource.hasValue() ? this.resource.value().content : []).map((appointment) => ({
+  readonly appointments = computed<AppointmentRow[]>(() => {
+    const now = this.clock.now();
+    const locale = this.i18n.intlLocale();
+    return (this.resource.hasValue() ? this.resource.value().content : []).map((appointment) => ({
       ...appointment,
-      dayLabel: formatDayLabel(datePart(appointment.startTime)),
+      dayLabel: formatDayLabel(datePart(appointment.startTime), locale),
       timeLabel: formatTimeRange(appointment.startTime, appointment.endTime),
-      canConfirm: canConfirmAppointment(appointment.status, appointment.startTime),
-      canCancel: canCancelAppointment(appointment.status, appointment.startTime),
-    })),
-  );
+      canConfirm: canConfirmAppointment(appointment.status, appointment.startTime, now),
+      canCancel: canCancelAppointment(appointment.status, appointment.startTime, now),
+    }));
+  });
   readonly pagination = computed(() =>
     this.resource.hasValue() ? this.resource.value().page : null,
   );
   readonly status = computed<AppointmentStatusFilter>(() => this.filters().status ?? 'ALL');
-  readonly errorMessage = resourceError(this.resource, 'No se pudieron cargar las citas');
+  readonly errorMessage = resourceError(
+    this.resource,
+    this.i18n,
+    this.i18n.translate('errors.loadAppointments'),
+  );
 
   reload(): void {
     this.resource.reload();

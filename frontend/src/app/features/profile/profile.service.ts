@@ -1,6 +1,6 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, computed, inject } from '@angular/core';
-import { EMPTY, Observable, catchError, filter, map, switchMap, tap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, filter, map, of, switchMap, tap, throwError } from 'rxjs';
 import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
@@ -41,6 +41,7 @@ export class ProfileService {
 
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
+    this.i18n,
     this.i18n.translate('profile.errors.load'),
   );
   readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
@@ -65,6 +66,12 @@ export class ProfileService {
         this.auth.setProfile(profile);
         if (this.doctorMode()) this.doctorsStore.invalidate();
       }),
+      switchMap((profile) =>
+        this.auth.refresh().pipe(
+          map(() => profile),
+          catchError(() => of(profile)),
+        ),
+      ),
     );
   }
 
@@ -90,7 +97,11 @@ export class ProfileService {
         tap((cancelled) => this.notifications.success(this.disabledMessage(cancelled))),
         catchError((error) => {
           this.notifications.error(
-            apiErrorMessage(error, this.i18n.translate('profile.errors.disableDoctorMode')),
+            apiErrorMessage(
+              error,
+              this.i18n,
+              this.i18n.translate('profile.errors.disableDoctorMode'),
+            ),
           );
           return EMPTY;
         }),
@@ -104,7 +115,6 @@ export class ProfileService {
       : this.i18n.translate('profile.notifications.doctorModeDisabledMany');
   }
 
-  /** Emits how many appointments were cancelled (0 when none). */
   private disableCountingCancelled(): Observable<number> {
     return this.changeDoctorMode({ enabled: false, specialtyId: null }).pipe(
       map(() => 0),
@@ -137,8 +147,8 @@ export class ProfileService {
 
   private changeDoctorMode(request: DoctorModeRequest): Observable<unknown> {
     return this.staffApi.updateDoctorMode(request).pipe(
-      tap(({ token }) => {
-        this.auth.replaceToken(token);
+      switchMap(() => this.auth.refresh().pipe(catchError(() => of(null)))),
+      tap(() => {
         this.auth.reloadProfile();
         this.doctorsStore.invalidate();
       }),

@@ -171,7 +171,7 @@ export class WhatsappQrService {
   }
 
   private fail(error: unknown, fallback: string): Observable<never> {
-    this._error.set(apiErrorMessage(error, fallback));
+    this._error.set(apiErrorMessage(error, this.i18n, fallback));
     return EMPTY;
   }
 

@@ -147,7 +147,7 @@
               </p>
               <app-date-picker
                 [ariaLabel]="'guestBooking.dateAriaLabel' | translate"
-                [min]="booking.today"
+                [min]="booking.today()"
                 [ngModel]="booking.selectedDate()"
                 (ngModelChange)="booking.selectDate($event)"
               />
@@ -215,10 +215,13 @@
                   </dd>
                   <dd class="text-gray-500">
                     {{
-                      patient.ci
-                        ? ('guestBooking.summary.ciPrefix' | translate) + ' ' + patient.ci + ' · '
+                      patient.document
+                        ? ('document.label.' + country() | translate) +
+                          ' ' +
+                          (patient.document | documentFormat: country()) +
+                          ' · '
                         : ''
-                    }}{{ patient.phoneNumber }}
+                    }}{{ patientPhone() }}
                   </dd>
                   @if (patient.email) {
                     <dd class="text-gray-500">{{ patient.email }}</dd>

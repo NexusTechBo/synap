@@ -5,11 +5,14 @@ import {
   ElementRef,
   computed,
   forwardRef,
+  inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { I18nService } from '../../../../core/i18n/i18n.service';
 import { POPOVER_POSITIONS } from '../../../utils/overlay-positions.util';
 import { UiIconComponent, UiIconName } from '../../ui-icon/ui-icon.component';
 
@@ -33,10 +36,13 @@ let nextId = 0;
 })
 export class SelectComponent<T> implements ControlValueAccessor {
   readonly options = input<SelectOption<T>[]>([]);
-  readonly placeholder = input('Seleccionar');
+  readonly placeholder = input<string | null>(null);
   readonly icon = input<UiIconName | null>(null);
   readonly id = input<string | null>(null);
+  readonly selectionChange = output<T>();
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('triggerEl');
+
+  private readonly i18n = inject(I18nService);
 
   protected readonly listboxId = `app-select-${nextId++}`;
   protected readonly positions = POPOVER_POSITIONS;
@@ -50,6 +56,10 @@ export class SelectComponent<T> implements ControlValueAccessor {
   private onChange: (value: T) => void = () => {};
   private onTouched: () => void = () => {};
 
+  protected readonly placeholderText = computed(() => {
+    this.i18n.currentLang();
+    return this.placeholder() ?? this.i18n.translate('common.select');
+  });
   protected readonly selectedIndex = computed(() =>
     this.options().findIndex((option) => option.value === this.value()),
   );
@@ -112,6 +122,7 @@ export class SelectComponent<T> implements ControlValueAccessor {
     if (option.value !== this.value()) {
       this.value.set(option.value);
       this.onChange(option.value);
+      this.selectionChange.emit(option.value);
     }
     this.close();
     this.trigger().nativeElement.focus();

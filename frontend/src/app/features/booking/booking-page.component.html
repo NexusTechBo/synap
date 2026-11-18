@@ -148,7 +148,7 @@
         </h2>
         <app-date-picker
           [ariaLabel]="'booking.schedule.dateAria' | translate"
-          [min]="booking.today"
+          [min]="booking.today()"
           [ngModel]="booking.selectedDate()"
           (ngModelChange)="booking.selectDate($event)"
         />
@@ -172,6 +172,7 @@
           [selected]="booking.selectedSlot()"
           [loading]="booking.slotsLoading()"
           [errorMessage]="booking.slotsErrorMessage()"
+          [emptyTitle]="'booking.schedule.emptySlotsTitle' | translate"
           [emptyMessage]="'booking.schedule.emptySlots' | translate"
           (select)="booking.selectSlot($event)"
           (retry)="booking.reloadSlots()"

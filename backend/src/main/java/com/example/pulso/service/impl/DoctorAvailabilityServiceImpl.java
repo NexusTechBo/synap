@@ -20,7 +20,7 @@ import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.DoctorAvailabilityService;
-import java.time.Clock;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -45,7 +45,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
     private final AppointmentRepository appointmentRepository;
     private final PersonalRepository personalRepository;
     private final DoctorAvailabilityMapper mapper;
-    private final Clock clock;
+    private final ClinicTimeProvider clinicTimeProvider;
 
     @Override
     @Transactional
@@ -78,7 +78,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
 
     @Override
     public DoctorAvailabilitySlotsResponse getDoctorAvailableSlots(Long doctorId, LocalDate date) {
-        var now = LocalDateTime.now(clock);
+        var now = clinicTimeProvider.now();
         var dayOfWeek = date.getDayOfWeek();
         var isActiveDoctor = personalRepository.findActiveDoctorById(doctorId).isPresent();
         if (!isActiveDoctor || isPast(date, now))
@@ -104,7 +104,7 @@ public class DoctorAvailabilityServiceImpl implements DoctorAvailabilityService 
         var rangeDays = ChronoUnit.DAYS.between(from, to) + 1;
         if (rangeDays < 1 || rangeDays > MAX_RANGE_DAYS)
             throw new BadRequestException(MessageKeys.AVAILABILITY_INVALID_DATE_RANGE, MAX_RANGE_DAYS);
-        var now = LocalDateTime.now(clock);
+        var now = clinicTimeProvider.now();
         var dates = LongStream.range(0, rangeDays).mapToObj(from::plusDays).toList();
         var isActiveDoctor = personalRepository.findActiveDoctorById(doctorId).isPresent();
         if (!isActiveDoctor || isPast(to, now))

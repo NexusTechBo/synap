@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
@@ -16,6 +16,7 @@ import {
 } from 'rxjs';
 import { AgendaApi } from '../../core/api/agenda.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { ClinicClockService } from '../../core/clinic/clinic-clock.service';
 import {
   activeAppointmentsConflict,
   apiErrorMessage,
@@ -24,15 +25,22 @@ import {
 import { I18nService } from '../../core/i18n/i18n.service';
 import {
   Availability,
+  AvailabilityRequest,
   DayOfWeek,
   ScheduleException,
   ScheduleExceptionRequest,
 } from '../../core/models/api.models';
-import { formatLongDate, formatTime, toIso } from '../../core/utils/calendar.util';
+import { formatLongDate, formatTime, notBefore } from '../../core/utils/calendar.util';
 import { DAYS_OF_WEEK } from '../../core/utils/labels.util';
 import { ConfirmService } from '../../shared/services/confirm.service';
 import { NotificationService } from '../../shared/services/notification.service';
-import { AddAvailabilityResult, AvailabilityBlock } from './availability.model';
+
+type AvailabilityBlock = Omit<AvailabilityRequest, 'dayOfWeek'>;
+
+export interface AddAvailabilityResult {
+  saved: DayOfWeek[];
+  failed: { day: DayOfWeek; message: string }[];
+}
 
 @Injectable()
 export class AvailabilityService {
@@ -41,14 +49,19 @@ export class AvailabilityService {
   private readonly notifications = inject(NotificationService);
   private readonly i18n = inject(I18nService);
   private readonly doctorId = inject(AuthService).userId()!;
+  private readonly clock = inject(ClinicClockService);
 
-  readonly today = toIso(new Date());
-  private readonly _previewDate = signal(this.today);
+  readonly today = computed(() => this.clock.today());
+  private readonly _previewDate = linkedSignal<string, string>({
+    source: this.today,
+    computation: (today, previous) => (previous ? notBefore(previous.value, today) : today),
+  });
   readonly previewDate = this._previewDate.asReadonly();
 
   private readonly availabilityResource = rxResource({ stream: () => this.api.availabilities() });
   private readonly exceptionsResource = rxResource({
-    stream: () => this.api.exceptions(this.today),
+    params: () => this.today(),
+    stream: ({ params }) => this.api.exceptions(params),
   });
   private readonly previewResource = rxResource({
     params: () => this.previewDate(),
@@ -65,11 +78,11 @@ export class AvailabilityService {
     this.i18n.currentLang();
     const blocks = this.availabilityResource.hasValue() ? this.availabilityResource.value() : [];
     return DAYS_OF_WEEK.map((day) => ({
-      value: day.value,
-      label: this.i18n.translate(`days.${day.value}.label`),
-      short: this.i18n.translate(`days.${day.value}.short`),
+      value: day,
+      label: this.i18n.translate(`days.${day}.label`),
+      short: this.i18n.translate(`days.${day}.short`),
       blocks: blocks
-        .filter((block) => block.dayOfWeek === day.value)
+        .filter((block) => block.dayOfWeek === day)
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
   });
@@ -81,14 +94,17 @@ export class AvailabilityService {
   );
   readonly weekError = resourceError(
     this.availabilityResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadWeek'),
   );
   readonly exceptionsError = resourceError(
     this.exceptionsResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadExceptions'),
   );
   readonly previewError = resourceError(
     this.previewResource,
+    this.i18n,
     this.i18n.translate('availability.errors.loadPreview'),
   );
 
@@ -116,6 +132,7 @@ export class AvailabilityService {
               day,
               message: apiErrorMessage(
                 error,
+                this.i18n,
                 this.i18n.translate('availability.errors.saveSchedule'),
               ),
             }),
@@ -188,7 +205,7 @@ export class AvailabilityService {
       .confirmThen(
         {
           title: this.i18n.translate('availability.confirm.removeBlockTitle'),
-          message: `${prefix} ${formatLongDate(exception.date).toLowerCase()}?`,
+          message: `${prefix} ${formatLongDate(exception.date, this.i18n.intlLocale()).toLowerCase()}?`,
           confirmLabel: this.i18n.translate('availability.confirm.removeLabel'),
         },
         () => this.api.removeException(exception.id),

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { ClinicClockService } from '../../../../core/clinic/clinic-clock.service';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { AppointmentSummaryItem } from '../../../../core/models/api.models';
-import { CalendarDay, formatLongDate, toIso } from '../../../../core/utils/calendar.util';
+import { CalendarDay, formatLongDate } from '../../../../core/utils/calendar.util';
 import { APPOINTMENT_STATUSES, STATUS_STYLE } from '../../../../core/utils/labels.util';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
@@ -21,7 +22,8 @@ export class CalendarDayCellComponent {
 
   select = output<string>();
 
-  protected readonly today = toIso(new Date());
+  private readonly clock = inject(ClinicClockService);
+  protected readonly today = computed(() => this.clock.today());
 
   protected readonly dotTones = computed(() => {
     const present = new Set((this.appointments() ?? []).map((appointment) => appointment.status));
@@ -31,7 +33,7 @@ export class CalendarDayCellComponent {
   });
   protected readonly count = computed(() => this.appointments()?.length ?? null);
   protected readonly ariaLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     const date = formatLongDate(this.day().iso, locale);
     const count = this.count();
     if (count === null) return date;

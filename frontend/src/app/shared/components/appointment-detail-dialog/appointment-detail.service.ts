@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable, finalize, tap } from 'rxjs';
 import { AppointmentsApi } from '../../../core/api/appointments.api';
+import { ClinicClockService } from '../../../core/clinic/clinic-clock.service';
 import { resourceError } from '../../../core/http/api-error';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { AppointmentResponse } from '../../../core/models/api.models';
@@ -16,6 +17,7 @@ export class AppointmentDetailService {
   private readonly api = inject(AppointmentsApi);
   private readonly actions = inject(AppointmentActionsService);
   private readonly i18n = inject(I18nService);
+  private readonly clock = inject(ClinicClockService);
   private readonly id = inject<AppointmentDetailData>(DIALOG_DATA).id;
 
   private readonly resource = rxResource({ stream: () => this.api.get(this.id) });
@@ -26,23 +28,30 @@ export class AppointmentDetailService {
   readonly isLoading = this.resource.isLoading;
   readonly errorMessage = resourceError(
     this.resource,
+    this.i18n,
     this.i18n.translate('shared.detailDialog.loadError'),
   );
   readonly appointment = computed(() =>
     this.resource.hasValue() ? this.resource.value() : undefined,
   );
   readonly dateLabel = computed(() => {
-    const locale = this.i18n.currentLang() === 'en' ? 'en-US' : 'es-ES';
+    const locale = this.i18n.intlLocale();
     const appointment = this.appointment();
     return appointment ? formatLongDate(datePart(appointment.startTime), locale) : '';
   });
   readonly canConfirm = computed(() => {
     const appointment = this.appointment();
-    return !!appointment && canConfirmAppointment(appointment.status, appointment.startTime);
+    return (
+      !!appointment &&
+      canConfirmAppointment(appointment.status, appointment.startTime, this.clock.now())
+    );
   });
   readonly canCancel = computed(() => {
     const appointment = this.appointment();
-    return !!appointment && canCancelAppointment(appointment.status, appointment.startTime);
+    return (
+      !!appointment &&
+      canCancelAppointment(appointment.status, appointment.startTime, this.clock.now())
+    );
   });
 
   get changed(): boolean {

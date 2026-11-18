@@ -1,5 +1,6 @@
 package com.example.pulso.service.impl;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.appointment.AppointmentRequest;
 import com.example.pulso.dto.doctoravailability.DoctorAvailabilitySlotsResponse;
 import com.example.pulso.dto.doctoravailability.DoctorUnavailableDatesResponse;
@@ -21,6 +22,8 @@ import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.DoctorAvailabilityService;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.PatientService;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
 import java.time.LocalDate;
 import java.util.List;
@@ -43,11 +46,11 @@ public class GuestServiceImpl implements GuestService {
     private final AppointmentService appointmentService;
     private final DoctorAvailabilityService doctorAvailabilityService;
     private final GuestMapper guestMapper;
+    private final IdentityDocumentResolver identityDocumentResolver;
 
     @Override
     public GuestClinicResponse findCurrentClinic() {
-        var clinic = currentClinicProvider.getCurrentClinic();
-        return new GuestClinicResponse(clinic.getName(), clinic.getSlug());
+        return guestMapper.toClinicResponse(currentClinicProvider.getCurrentClinic());
     }
 
     @Override
@@ -87,20 +90,21 @@ public class GuestServiceImpl implements GuestService {
     }
 
     private Long resolvePatientId(GuestPatientRequest patient) {
-        return patientRepository.findActiveIdByPhoneNumber(Utils.normalizePhoneNumber(patient.phoneNumber()))
+        return patientRepository.findActiveIdByPhoneNumber(Utils.normalizePhoneNumber(patient.phoneNumber(), TenantContext.getCurrentCountry()))
                 .orElseThrow(() -> new BusinessException(MessageKeys.GUEST_CANNOT_BOOK));
     }
 
     private Long resolveNewPatientId(GuestNewPatientRequest patient) {
-        var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber());
+        var country = TenantContext.getCurrentCountry();
+        var phoneNumber = Utils.normalizePhoneNumber(patient.phoneNumber(), country);
         var email = Utils.normalizeEmail(patient.email());
-        var ci = Utils.normalizeCi(patient.ci());
-        if ((ci != null && patientRepository.existsByCi(ci))
+        var document = identityDocumentResolver.validateAndNormalize(patient.document(), country);
+        if ((document != null && patientRepository.existsByDocument(document))
                 || (phoneNumber != null && patientRepository.existsByPhoneNumber(phoneNumber))
                 || (email != null && patientRepository.existsByEmailIgnoreCase(email)))
             throw new BusinessException(MessageKeys.GUEST_CANNOT_BOOK);
         try {
-            return patientService.createPatient(new PatientRequest(ci, patient.name(), email, phoneNumber)).id();
+            return patientService.createPatient(new PatientRequest(document, patient.name(), email, phoneNumber)).id();
         } catch (ApiException | DataIntegrityViolationException e) {
             log.info(
                     "Guest patient creation rejected: {}",

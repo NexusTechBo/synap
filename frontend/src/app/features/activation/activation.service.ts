@@ -4,8 +4,14 @@ import { ClinicsApi } from '../../core/api/clinics.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { apiErrorMessage, retryAfterSeconds } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { ClinicActivatedResponse } from '../../core/models/api.models';
 import { createCooldown } from '../../core/utils/cooldown.util';
-import { ActivationState } from './activation.model';
+
+type ActivationState =
+  | { status: 'loading' }
+  | { status: 'success'; result: ClinicActivatedResponse }
+  | { status: 'invalid' }
+  | { status: 'error'; message: string };
 
 @Injectable()
 export class ActivationService {
@@ -82,7 +88,11 @@ export class ActivationService {
         if (retryAfter) this.cooldown.start(retryAfter);
         this._state.set({
           status: 'error',
-          message: apiErrorMessage(error, this.i18n.translate('activation.defaultError')),
+          message: apiErrorMessage(
+            error,
+            this.i18n,
+            this.i18n.translate('activation.defaultError'),
+          ),
         });
       },
     });

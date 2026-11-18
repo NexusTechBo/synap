@@ -39,7 +39,7 @@
   <div
     class="glass-modal w-[min(19rem,calc(100vw-2rem))] rounded-3xl p-4"
     role="dialog"
-    aria-label="Seleccionar fecha"
+    [attr.aria-label]="'datePicker.dialogAriaLabel' | translate"
     cdkTrapFocus
     [cdkTrapFocusAutoCapture]="true"
   >
@@ -53,11 +53,11 @@
     <div class="mt-3.5 border-t border-white/60 pt-3.5">
       <button
         type="button"
-        (click)="pick(today)"
-        [disabled]="outOfBounds(today)"
+        (click)="pick(today())"
+        [disabled]="outOfBounds(today())"
         class="glass-panel rounded-xl px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-white/70 disabled:opacity-50"
       >
-        Hoy
+        {{ 'datePicker.today' | translate }}
       </button>
     </div>
   </div>

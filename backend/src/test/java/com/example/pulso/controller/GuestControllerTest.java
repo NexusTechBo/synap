@@ -29,7 +29,7 @@ import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.SpecialtyService;
 import java.time.LocalDate;
@@ -57,7 +57,6 @@ import org.springframework.test.web.servlet.MockMvc;
     GuestControllerTest.SliceSecurityConfig.class
 })
 class GuestControllerTest {
-    private static final String CI_PATTERN_MESSAGE = "debe contener solo números, entre 5 y 10 dígitos";
     private static final LocalDateTime START = LocalDateTime.of(2026, 11, 10, 9, 0);
     private static final LocalDate RANGE_FROM = LocalDate.of(2026, 11, 6);
     private static final LocalDate RANGE_TO = LocalDate.of(2026, 11, 19);
@@ -73,7 +72,7 @@ class GuestControllerTest {
     private SpecialtyService specialtyService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;
@@ -106,7 +105,7 @@ class GuestControllerTest {
     private static String newPatientBody(String ci) {
         return """
                 {"doctorId":10,"startTime":"2026-11-10T09:00:00",
-                 "patient":{"ci":"%s","name":"Ana Perez","phoneNumber":"70000000","email":"ana@mail.test"}}
+                 "patient":{"document":"%s","name":"Ana Perez","phoneNumber":"70000000","email":"ana@mail.test"}}
                 """.formatted(ci);
     }
 
@@ -155,6 +154,18 @@ class GuestControllerTest {
                             .param("from", "2026-11-06")
                             .param("to", "2026-11-19"))
                     .andExpect(status().isForbidden());
+
+            verifyNoInteractions(guestService);
+        }
+
+        @Test
+        void shouldReturnUnauthorizedWhenGuestTokenOnlyHasLegacyRoleClaim() throws Exception {
+            SliceTokens.givenLegacyRoleOnlyGuestToken(jwtUtil);
+
+            mvc.perform(as(SliceTokens.LEGACY_ROLE_GUEST_TOKEN, get(UNAVAILABLE_DATES_PATH))
+                            .param("from", "2026-11-06")
+                            .param("to", "2026-11-19"))
+                    .andExpect(status().isUnauthorized());
 
             verifyNoInteractions(guestService);
         }
@@ -284,16 +295,26 @@ class GuestControllerTest {
         }
 
         @Test
-        @DisplayName("should return 400 with patient.ci field error in Spanish when the CI has eleven digits")
-        void shouldReturnBadRequestWithCiFieldErrorWhenCiHasElevenDigits() throws Exception {
+        void shouldReturnLocalizedBadRequestWhenServiceRejectsDocument() throws Exception {
+            when(guestService.bookAppointmentForNewPatient(any()))
+                    .thenThrow(new BadRequestException(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID));
+
             mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments/new-patient"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(newPatientBody("12345678901")))
                     .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID))
+                    .andExpect(jsonPath("$.message").value("El CPF debe tener 11 dígitos y un dígito verificador válido"));
+        }
+
+        @Test
+        void shouldReturnBadRequestWithDocumentFieldErrorWhenDocumentExceedsTwentyCharacters() throws Exception {
+            mvc.perform(as(GUEST_TOKEN, post("/api/guest/appointments/new-patient"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(newPatientBody("1".repeat(21))))
+                    .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.errors", hasSize(1)))
-                    .andExpect(jsonPath("$.errors[0].field").value("patient.ci"))
-                    .andExpect(jsonPath("$.errors[0].message").value(CI_PATTERN_MESSAGE))
-                    .andExpect(jsonPath("$.path").value("/api/guest/appointments/new-patient"));
+                    .andExpect(jsonPath("$.errors[0].field").value("patient.document"));
 
             verifyNoInteractions(guestService);
         }

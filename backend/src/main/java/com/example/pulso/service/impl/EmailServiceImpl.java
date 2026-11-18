@@ -31,31 +31,36 @@ public class EmailServiceImpl implements EmailService {
     private static final Pattern TRAILING_SLASHES = Pattern.compile("/+$");
 
     private final MailTransport mailTransport;
+    private final EmailTemplates emailTemplates;
     private final String frontendUrl;
 
-    public EmailServiceImpl(MailTransport mailTransport, @Value("${app.frontend-url}") String frontendUrl) {
+    public EmailServiceImpl(
+            MailTransport mailTransport,
+            EmailTemplates emailTemplates,
+            @Value("${app.frontend-url}") String frontendUrl) {
         this.mailTransport = mailTransport;
+        this.emailTemplates = emailTemplates;
         this.frontendUrl = TRAILING_SLASHES.matcher(frontendUrl.strip()).replaceAll("");
     }
 
     @Override
     public void sendStaffCredentials(StaffCreatedEvent event) {
-        send(STAFF_CREDENTIALS, "staff", event.email(), () -> EmailTemplates.staffCredentials(event));
+        send(STAFF_CREDENTIALS, "staff", event.email(), () -> emailTemplates.staffCredentials(event));
     }
 
     @Override
     public void sendAppointmentConfirmed(AppointmentNotificationEvent event) {
-        sendToPatient(APPOINTMENT_CONFIRMED, event, EmailTemplates::appointmentConfirmed);
+        sendToPatient(APPOINTMENT_CONFIRMED, event, emailTemplates::appointmentConfirmed);
     }
 
     @Override
     public void sendAppointmentCancelled(AppointmentNotificationEvent event) {
-        sendToPatient(APPOINTMENT_CANCELLED, event, EmailTemplates::appointmentCancelled);
+        sendToPatient(APPOINTMENT_CANCELLED, event, emailTemplates::appointmentCancelled);
     }
 
     @Override
     public void sendAppointmentRescheduled(AppointmentNotificationEvent event) {
-        sendToPatient(APPOINTMENT_RESCHEDULED, event, EmailTemplates::appointmentRescheduled);
+        sendToPatient(APPOINTMENT_RESCHEDULED, event, emailTemplates::appointmentRescheduled);
     }
 
     @Override
@@ -65,7 +70,7 @@ public class EmailServiceImpl implements EmailService {
                 DOCTOR_GUEST_APPOINTMENT,
                 ref,
                 event.doctorEmail(),
-                () -> EmailTemplates.doctorGuestAppointment(event)
+                () -> emailTemplates.doctorGuestAppointment(event)
         );
     }
 
@@ -75,7 +80,7 @@ public class EmailServiceImpl implements EmailService {
                 CLINIC_ACTIVATION,
                 clinicAdminRef(event.clinicId()),
                 event.adminEmail(),
-                () -> EmailTemplates.clinicActivation(event, frontendUrl)
+                () -> emailTemplates.clinicActivation(event, frontendUrl)
         );
     }
 
@@ -85,7 +90,7 @@ public class EmailServiceImpl implements EmailService {
                 CLINIC_WELCOME,
                 clinicAdminRef(event.clinicId()),
                 event.adminEmail(),
-                () -> EmailTemplates.clinicWelcome(event, frontendUrl)
+                () -> emailTemplates.clinicWelcome(event, frontendUrl)
         );
     }
 

@@ -35,7 +35,7 @@ export class RegisterService {
           const retryAfter = retryAfterSeconds(error);
           if (retryAfter) this.cooldown.start(retryAfter);
           this.notifications.error(
-            apiErrorMessage(error, this.i18n.translate('register.registerError')),
+            apiErrorMessage(error, this.i18n, this.i18n.translate('register.registerError')),
           );
         },
       });

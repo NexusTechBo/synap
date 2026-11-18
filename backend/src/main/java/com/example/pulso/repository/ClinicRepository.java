@@ -17,9 +17,6 @@ public interface ClinicRepository extends JpaRepository<Clinic, Long> {
 
     Optional<Clinic> findBySlug(String slug);
 
-    @Query("SELECT c.slug FROM Clinic c WHERE c.id = :id")
-    Optional<String> findSlugById(@Param("id") Long id);
-
     @Query("SELECT c.id FROM Clinic c "
             + "WHERE c.status = ClinicStatus.PENDING_ACTIVATION "
             + "AND (LOWER(c.name) = LOWER(:name) OR c.slug = :slug)")
@@ -28,4 +25,7 @@ public interface ClinicRepository extends JpaRepository<Clinic, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Clinic c WHERE c.id = :id")
     Optional<Clinic> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("SELECT c.settingsVersion FROM Clinic c WHERE c.id = :id")
+    Optional<Integer> findSettingsVersionById(@Param("id") Long id);
 }

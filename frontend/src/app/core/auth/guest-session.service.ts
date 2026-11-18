@@ -5,7 +5,7 @@ import { Observable, catchError, finalize, map, of, shareReplay, throwError } fr
 import { GuestApi } from '../api/guest.api';
 import { apiErrorMessage, isRateLimited, retryAfterSeconds } from '../http/api-error';
 import { I18nService } from '../i18n/i18n.service';
-import { GuestTokenPayload } from '../models/api.models';
+import { CountryCode, GuestTokenPayload } from '../models/api.models';
 import { createCooldown } from '../utils/cooldown.util';
 
 export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
@@ -13,6 +13,8 @@ export type GuestSessionStatus = 'loading' | 'ready' | 'unavailable' | 'error';
 interface GuestSession {
   token: string;
   clinicSlug: string;
+  country: CountryCode | null;
+  timezone: string | null;
   expiresAt: number;
 }
 
@@ -38,8 +40,14 @@ function decodeGuestSession(token: string | null, slug: string): GuestSession | 
   if (!token) return null;
   try {
     const payload = jwtDecode<GuestTokenPayload>(token);
-    if (payload.role !== 'GUEST' || payload.clinicSlug !== slug) return null;
-    return { token, clinicSlug: payload.clinicSlug, expiresAt: payload.exp * 1000 };
+    if (!payload.roles?.includes('GUEST') || payload.clinicSlug !== slug) return null;
+    return {
+      token,
+      clinicSlug: payload.clinicSlug,
+      country: payload.country ?? null,
+      timezone: payload.timezone ?? null,
+      expiresAt: payload.exp * 1000,
+    };
   } catch {
     return null;
   }
@@ -57,11 +65,16 @@ export class GuestSessionService {
   private slug: string | null = null;
   private session: GuestSession | null = null;
   private pending: Observable<string> | null = null;
+  private contextActive = false;
 
   private readonly _status = signal<GuestSessionStatus>('loading');
   private readonly _message = signal<string | null>(null);
+  private readonly _timezone = signal<string | null>(null);
+  private readonly _country = signal<CountryCode | null>(null);
   private readonly cooldown = createCooldown();
 
+  readonly timezone = this._timezone.asReadonly();
+  readonly country = this._country.asReadonly();
   readonly status = this._status.asReadonly();
   readonly message = this._message.asReadonly();
   readonly ready = computed(() => this._status() === 'ready');
@@ -71,6 +84,7 @@ export class GuestSessionService {
 
   start(slug: string | null): void {
     this.cooldown.reset();
+    this.contextActive = true;
     this.slug = slug?.trim() || null;
     this.pending = null;
     if (!this.slug) {
@@ -79,7 +93,7 @@ export class GuestSessionService {
     }
     const stored = decodeGuestSession(readStorage(), this.slug);
     if (isFresh(stored)) {
-      this.session = stored;
+      this.setSession(stored);
       this.setStatus('ready');
       return;
     }
@@ -97,11 +111,12 @@ export class GuestSessionService {
     const slug = this.slug;
     if (!slug) return throwError(() => new Error('No guest session'));
     if (this._status() !== 'ready') this.setStatus('loading');
-    this.pending ??= this.guestApi.createSession({ slug: slug }).pipe(
+    if (this.pending) return this.pending;
+    const request: Observable<string> = this.guestApi.createSession({ slug: slug }).pipe(
       map(({ token }) => {
         const session = decodeGuestSession(token, slug);
         if (!session) throw new Error('Invalid guest token');
-        this.session = session;
+        this.setSession(session);
         writeStorage(token);
         this.setStatus('ready');
         return token;
@@ -110,14 +125,23 @@ export class GuestSessionService {
         this.fail(error);
         return throwError(() => error);
       }),
-      finalize(() => (this.pending = null)),
+      finalize(() => {
+        if (this.pending === request) this.pending = null;
+      }),
       shareReplay(1),
     );
-    return this.pending;
+    this.pending = request;
+    return request;
+  }
+
+  releaseClinicContext(): void {
+    this.contextActive = false;
+    this._timezone.set(null);
+    this._country.set(null);
   }
 
   clear(): void {
-    this.session = null;
+    this.setSession(null);
     writeStorage(null);
   }
 
@@ -132,7 +156,17 @@ export class GuestSessionService {
       (error.status === HttpStatusCode.NotFound || error.status === HttpStatusCode.BadRequest);
     if (unavailable)
       this.setStatus('unavailable', this.i18n.translate('guestBooking.unavailableMessage'));
-    else this.setStatus('error', apiErrorMessage(error, 'No se pudo iniciar la reserva'));
+    else
+      this.setStatus(
+        'error',
+        apiErrorMessage(error, this.i18n, this.i18n.translate('guestBooking.startError')),
+      );
+  }
+
+  private setSession(session: GuestSession | null): void {
+    this.session = session;
+    this._timezone.set(this.contextActive ? (session?.timezone ?? null) : null);
+    this._country.set(this.contextActive ? (session?.country ?? null) : null);
   }
 
   private setStatus(status: GuestSessionStatus, message: string | null = null): void {

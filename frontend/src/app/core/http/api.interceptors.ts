@@ -1,23 +1,38 @@
 import {
   HttpErrorResponse,
+  HttpEvent,
   HttpHandlerFn,
   HttpInterceptorFn,
   HttpRequest,
   HttpStatusCode,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../auth/auth.service';
 import { GuestSessionService } from '../auth/guest-session.service';
+import { I18nService } from '../i18n/i18n.service';
 
 const GUEST_PATH = 'guest/';
-const PUBLIC_PATHS = ['public/', 'auth/login', 'clinics/activate', 'clinics/activation/resend'];
+const PUBLIC_PATHS = [
+  'public/',
+  'auth/login',
+  'auth/refresh',
+  'auth/logout',
+  'clinics/activate',
+  'clinics/activation/resend',
+];
 const REGISTER_PATH = 'clinics';
 
 export const apiUrlInterceptor: HttpInterceptorFn = (req, next) => {
   if (/^(https?:)?\/\//.test(req.url) || req.url.startsWith('/')) return next(req);
   return next(req.clone({ url: environment.apiUrl + req.url }));
+};
+
+export const languageInterceptor: HttpInterceptorFn = (req, next) => {
+  if (!req.url.startsWith(environment.apiUrl)) return next(req);
+  const lang = inject(I18nService).currentLang();
+  return next(req.clone({ setHeaders: { 'Accept-Language': lang } }));
 };
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -27,18 +42,38 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const token = auth.token();
   if (token && !auth.isAuthenticated()) {
-    auth.expireSession(token);
-    return throwError(() => unauthorized(req));
+    return auth
+      .refresh(token)
+      .pipe(switchMap((session) => sendRetried(req, next, auth, session.token)));
   }
   return next(withToken(req, token)).pipe(
     catchError((error: unknown) => {
-      if (token && error instanceof HttpErrorResponse && error.status === 401) {
-        auth.expireSession(token);
-      }
-      return throwError(() => error);
+      if (!token || !isUnauthorized(error)) return throwError(() => error);
+      return auth.refresh(token).pipe(
+        catchError(() => throwError(() => error)),
+        switchMap((session) => sendRetried(req, next, auth, session.token)),
+      );
     }),
   );
 };
+
+function isUnauthorized(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === HttpStatusCode.Unauthorized;
+}
+
+function sendRetried(
+  req: HttpRequest<unknown>,
+  next: HttpHandlerFn,
+  auth: AuthService,
+  token: string,
+): Observable<HttpEvent<unknown>> {
+  return next(withToken(req, token)).pipe(
+    catchError((error: unknown) => {
+      if (isUnauthorized(error)) auth.expireSession(token);
+      return throwError(() => error);
+    }),
+  );
+}
 
 function hasPath(url: string, path: string): boolean {
   return url.startsWith(path) || url.startsWith(environment.apiUrl + path);
@@ -58,14 +93,6 @@ function isGuestRequest(url: string): boolean {
 
 function withToken(req: HttpRequest<unknown>, token: string | null): HttpRequest<unknown> {
   return token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
-}
-
-function unauthorized(req: HttpRequest<unknown>): HttpErrorResponse {
-  return new HttpErrorResponse({
-    status: HttpStatusCode.Unauthorized,
-    statusText: 'Unauthorized',
-    url: req.url,
-  });
 }
 
 function guestRequest(req: HttpRequest<unknown>, next: HttpHandlerFn) {

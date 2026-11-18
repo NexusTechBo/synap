@@ -9,7 +9,7 @@ import com.example.pulso.dto.guest.GuestDoctorResponse;
 import com.example.pulso.dto.guest.GuestNewPatientRequest;
 import com.example.pulso.dto.guest.GuestPatientRequest;
 import com.example.pulso.dto.specialty.SpecialtyResponse;
-import com.example.pulso.security.RoleExpressions;
+import com.example.pulso.security.expression.RoleExpressions;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.SpecialtyService;
 import io.swagger.v3.oas.annotations.Operation;

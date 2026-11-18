@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.appointment.AppointmentRequest;
 import com.example.pulso.dto.appointment.AppointmentResponse;
 import com.example.pulso.dto.doctoravailability.DoctorUnavailableDatesResponse;
@@ -18,7 +19,9 @@ import com.example.pulso.dto.guest.GuestPatientRequest;
 import com.example.pulso.dto.patient.PatientRequest;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.entity.Personal;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
+import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
@@ -28,16 +31,23 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.DoctorAvailabilityService;
 import com.example.pulso.service.PatientService;
+import com.example.pulso.service.component.document.BolivianCiValidator;
+import com.example.pulso.service.component.document.BrazilianCpfValidator;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,8 +76,22 @@ class GuestServiceImplTest {
     @Mock
     private GuestMapper guestMapper;
 
+    @Spy
+    private IdentityDocumentResolver identityDocumentResolver =
+            new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator()));
+
     @InjectMocks
     private GuestServiceImpl service;
+
+    @BeforeEach
+    void bindTenant() {
+        TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
+    }
+
+    @AfterEach
+    void clearTenant() {
+        TenantContext.clear();
+    }
 
     private void givenBookingSucceedsForPatient(Long patientId) {
         var appointment = Mockito.mock(AppointmentResponse.class);
@@ -120,6 +144,18 @@ class GuestServiceImplTest {
         }
 
         @Test
+        void shouldFindExistingPatientByE164PhoneInBrazilianTenant() {
+            TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BR);
+            when(patientRepository.findActiveIdByPhoneNumber("+5511912345678")).thenReturn(Optional.of(5L));
+            givenBookingSucceedsForPatient(5L);
+
+            var result = service.bookAppointment(
+                    new GuestAppointmentRequest<>(DOCTOR_ID, START, new GuestPatientRequest("11 91234-5678")));
+
+            assertThat(result).isNotNull();
+        }
+
+        @Test
         void shouldThrowCannotBookWhenNoActivePatientHasThatPhone() {
             when(patientRepository.findActiveIdByPhoneNumber(PHONE_E164)).thenReturn(Optional.empty());
 
@@ -148,17 +184,54 @@ class GuestServiceImplTest {
             var result = service.bookAppointmentForNewPatient(request(null));
 
             assertThat(result).isNotNull();
-            verify(patientRepository, never()).existsByCi(any());
+            verify(patientRepository, never()).existsByDocument(any());
         }
 
         @Test
         void shouldCreatePatientWithStrippedCiWhenCiIsProvided() {
-            when(patientRepository.existsByCi("123456")).thenReturn(false);
+            when(patientRepository.existsByDocument("123456")).thenReturn(false);
             when(patientService.createPatient(new PatientRequest("123456", "Ana Perez", "ana@mail.test", PHONE_E164)))
                     .thenReturn(createdPatient(9L));
             givenBookingSucceedsForPatient(9L);
 
             assertThat(service.bookAppointmentForNewPatient(request(" 123456 "))).isNotNull();
+        }
+
+        @Test
+        void shouldPropagateBadRequestWithoutQueryingWhenCiIsInvalidForBolivia() {
+            var thrown = catchThrowable(() -> service.bookAppointmentForNewPatient(request("1234")));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CI_INVALID);
+            verifyNoInteractions(patientService, appointmentService);
+            verify(patientRepository, never()).existsByDocument(any());
+        }
+
+        @Test
+        void shouldCreatePatientWithDigitsOnlyCpfAndE164PhoneInBrazilianTenant() {
+            TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BR);
+            var brazilianRequest = new GuestAppointmentRequest<>(
+                    DOCTOR_ID, START, new GuestNewPatientRequest("529.982.247-25", "Ana Perez", "11 91234-5678", "Ana@Mail.test"));
+            when(patientRepository.existsByDocument("52998224725")).thenReturn(false);
+            when(patientService.createPatient(
+                    new PatientRequest("52998224725", "Ana Perez", "ana@mail.test", "+5511912345678")))
+                    .thenReturn(createdPatient(9L));
+            givenBookingSucceedsForPatient(9L);
+
+            assertThat(service.bookAppointmentForNewPatient(brazilianRequest)).isNotNull();
+        }
+
+        @Test
+        void shouldPropagateCpfInvalidWithoutBookingInBrazilianTenant() {
+            TenantContext.setCurrentTenant(1L, "demo", ZoneOffset.UTC, SupportedCountry.BR);
+            var brazilianRequest = new GuestAppointmentRequest<>(
+                    DOCTOR_ID, START, new GuestNewPatientRequest("52998224724", "Ana Perez", "11 91234-5678", "Ana@Mail.test"));
+
+            var thrown = catchThrowable(() -> service.bookAppointmentForNewPatient(brazilianRequest));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
+            verifyNoInteractions(patientService, appointmentService);
         }
 
         @Test
@@ -174,7 +247,7 @@ class GuestServiceImplTest {
 
         @Test
         void shouldThrowCannotBookWhenCiAlreadyExists() {
-            when(patientRepository.existsByCi("123456")).thenReturn(true);
+            when(patientRepository.existsByDocument("123456")).thenReturn(true);
 
             var thrown = catchThrowable(() -> service.bookAppointmentForNewPatient(request("123456")));
 
