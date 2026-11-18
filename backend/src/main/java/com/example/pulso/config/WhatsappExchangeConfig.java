@@ -19,7 +19,8 @@ public class WhatsappExchangeConfig {
     @Bean
     public WhatsappExchange whatsappExchange(
             @Value("${whatsapp.service.base-url}") String baseUrl,
-            @Value("${whatsapp.service.api-key:}") String apiKey) {
+            @Value("${whatsapp.service.api-key:}") String apiKey
+    ) {
         var httpClient = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build();
         var requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(READ_TIMEOUT);

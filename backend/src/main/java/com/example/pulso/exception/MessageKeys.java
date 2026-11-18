@@ -4,6 +4,8 @@ public final class MessageKeys {
     public static final String AUTH_INVALID_CREDENTIALS = "auth.invalidCredentials";
     public static final String AUTH_USER_NOT_ACTIVE = "auth.userNotActive";
     public static final String AUTH_CLINIC_NOT_ACTIVATED = "auth.clinicNotActivated";
+    public static final String AUTH_TOKEN_STALE = "auth.tokenStale";
+    public static final String AUTH_REFRESH_INVALID = "auth.refreshInvalid";
 
     public static final String SECURITY_AUTHENTICATION_REQUIRED = "security.authenticationRequired";
     public static final String SECURITY_ACCESS_DENIED = "security.accessDenied";
@@ -41,7 +43,6 @@ public final class MessageKeys {
 
     public static final String SPECIALTY_NOT_FOUND = "specialty.notFound";
     public static final String SPECIALTY_ALREADY_EXISTS = "specialty.alreadyExists";
-    public static final String SPECIALTY_DEFAULT_GENERAL_MEDICINE = "specialty.defaultGeneralMedicine";
 
     public static final String AVAILABILITY_NOT_FOUND = "availability.notFound";
     public static final String AVAILABILITY_OVERLAPS = "availability.overlaps";

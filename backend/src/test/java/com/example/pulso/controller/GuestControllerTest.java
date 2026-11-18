@@ -29,7 +29,7 @@ import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.GuestService;
 import com.example.pulso.service.SpecialtyService;
 import java.time.LocalDate;
@@ -72,7 +72,7 @@ class GuestControllerTest {
     private SpecialtyService specialtyService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;
@@ -154,6 +154,18 @@ class GuestControllerTest {
                             .param("from", "2026-11-06")
                             .param("to", "2026-11-19"))
                     .andExpect(status().isForbidden());
+
+            verifyNoInteractions(guestService);
+        }
+
+        @Test
+        void shouldReturnUnauthorizedWhenGuestTokenOnlyHasLegacyRoleClaim() throws Exception {
+            SliceTokens.givenLegacyRoleOnlyGuestToken(jwtUtil);
+
+            mvc.perform(as(SliceTokens.LEGACY_ROLE_GUEST_TOKEN, get(UNAVAILABLE_DATES_PATH))
+                            .param("from", "2026-11-06")
+                            .param("to", "2026-11-19"))
+                    .andExpect(status().isUnauthorized());
 
             verifyNoInteractions(guestService);
         }

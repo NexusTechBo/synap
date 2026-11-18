@@ -4,7 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public enum SupportedCountry {
     BO("America/La_Paz",
             List.of("America/La_Paz"),
@@ -34,16 +36,6 @@ public enum SupportedCountry {
     private final List<String> timezones;
     private final ClinicLanguage defaultLanguage;
     private final String phonePlaceholder;
-
-    SupportedCountry(String defaultTimezone,
-                     List<String> timezones,
-                     ClinicLanguage defaultLanguage,
-                     String phonePlaceholder) {
-        this.defaultTimezone = defaultTimezone;
-        this.timezones = List.copyOf(timezones);
-        this.defaultLanguage = defaultLanguage;
-        this.phonePlaceholder = phonePlaceholder;
-    }
 
     public String defaultTimezone() {
         return defaultTimezone;

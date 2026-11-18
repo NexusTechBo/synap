@@ -2,7 +2,6 @@ package com.example.pulso.notification.event;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
-import org.jspecify.annotations.NonNull;
 
 public record ClinicActivationEvent(
         Long clinicId,

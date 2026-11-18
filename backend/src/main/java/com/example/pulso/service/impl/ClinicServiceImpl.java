@@ -39,6 +39,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class ClinicServiceImpl implements ClinicService {
     private static final String SLUG_CONSTRAINT = "uq_clinics_slug";
+    private static final String DEFAULT_SPECIALTY_NAME = "specialty.defaultGeneralMedicine";
 
     private final ClinicRepository clinicRepository;
     private final PersonalRepository personalRepository;
@@ -111,7 +112,7 @@ public class ClinicServiceImpl implements ClinicService {
 
     private String resolveDefaultSpecialtyName(Clinic clinic) {
         return messageSource.getMessage(
-                MessageKeys.SPECIALTY_DEFAULT_GENERAL_MEDICINE,
+                DEFAULT_SPECIALTY_NAME,
                 null,
                 clinicLocaleResolver.resolve(clinic)
         );

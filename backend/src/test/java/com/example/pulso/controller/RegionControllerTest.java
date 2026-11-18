@@ -9,11 +9,11 @@ import com.example.pulso.config.JacksonConfig;
 import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.config.SecurityConfig;
 import com.example.pulso.config.ratelimiting.RateLimitProperties;
-import com.example.pulso.dto.region.RegionCatalogResponse;
 import com.example.pulso.dto.region.CountryResponse;
+import com.example.pulso.dto.region.RegionCatalogResponse;
 import com.example.pulso.exception.ErrorResponseWriter;
 import com.example.pulso.security.ActiveUserChecker;
-import com.example.pulso.security.jwt.JwtUtil;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.RegionService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ class RegionControllerTest {
     private RegionService regionService;
 
     @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;

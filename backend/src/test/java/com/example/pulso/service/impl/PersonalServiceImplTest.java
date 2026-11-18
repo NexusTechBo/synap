@@ -1,6 +1,5 @@
 package com.example.pulso.service.impl;
 
-import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,49 +11,53 @@ import static org.mockito.Mockito.when;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.personal.DoctorModeRequest;
+import com.example.pulso.dto.personal.PersonalProfileUpdateRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.entity.Clinic;
-import com.example.pulso.exception.ApiException;
-import com.example.pulso.service.component.document.BolivianCiValidator;
-import com.example.pulso.service.component.document.BrazilianCpfValidator;
-import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
-import com.example.pulso.service.component.provider.ClinicTimeProvider;
-import com.example.pulso.service.component.provider.CurrentClinicProvider;
-import com.example.pulso.notification.event.StaffCreatedEvent;
-import java.util.Locale;
-import org.mockito.ArgumentCaptor;
-import org.springframework.context.i18n.LocaleContextHolder;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
-import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.enums.SupportedCountry;
+import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.mapper.PersonalMapper;
+import com.example.pulso.notification.event.StaffCreatedEvent;
 import com.example.pulso.repository.AppointmentRepository;
 import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.AppointmentService;
+import com.example.pulso.service.RefreshTokenService;
+import com.example.pulso.service.component.document.BolivianCiValidator;
+import com.example.pulso.service.component.document.BrazilianCpfValidator;
+import com.example.pulso.service.component.provider.ClinicTimeProvider;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,6 +96,9 @@ class PersonalServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     private PersonalServiceImpl service;
 
     @BeforeEach
@@ -110,7 +116,8 @@ class PersonalServiceImplTest {
                 eventPublisher,
                 new ClinicTimeProvider(CLOCK),
                 new IdentityDocumentResolver(List.of(new BolivianCiValidator(), new BrazilianCpfValidator())),
-                new ClinicLocaleResolver(currentClinicProvider)
+                new ClinicLocaleResolver(currentClinicProvider),
+                refreshTokenService
         );
     }
 
@@ -440,6 +447,139 @@ class PersonalServiceImplTest {
             var thrown = catchThrowable(() -> service.createPersonal(request("1234567", null)));
 
             assertThat(((ApiException) thrown).getMessageKey()).isEqualTo(MessageKeys.VALIDATION_DOCUMENT_CPF_INVALID);
+        }
+    }
+
+    @Nested
+    class SessionRevocation {
+        private static final Long CLINIC_ID = 1L;
+        private static final Long TARGET_ID = 9L;
+
+        private Personal target(ERole role) {
+            var personal = Personal.builder()
+                    .id(TARGET_ID)
+                    .name("Target")
+                    .email("target@mail.test")
+                    .password("old-hash")
+                    .role(role)
+                    .active(true)
+                    .build();
+            givenPersonal(personal);
+            return personal;
+        }
+
+        @Test
+        void shouldRevokeAllFamiliesWhenDeactivatingUser() {
+            target(ERole.ASSISTANT);
+
+            service.deactivatePersonalById(TARGET_ID, ADMIN_ID);
+
+            verify(refreshTokenService).revokeAllForUser(CLINIC_ID, TARGET_ID);
+        }
+
+        @Test
+        void shouldNotRevokeWhenDeactivatingSelfIsRejected() {
+            var thrown = catchThrowable(() -> service.deactivatePersonalById(ADMIN_ID, ADMIN_ID));
+
+            assertThat(thrown).isInstanceOf(BusinessException.class);
+            verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldRevokeAllFamiliesWhenAdminResetsPassword() {
+            target(ERole.ASSISTANT);
+            when(passwordEncoder.encode("new-password")).thenReturn("new-hash");
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID, new PersonalUpdateRequest("Target", "target@mail.test", null, "new-password", ERole.ASSISTANT, null));
+
+            verify(refreshTokenService).revokeAllForUser(CLINIC_ID, TARGET_ID);
+        }
+
+        @Test
+        void shouldRevokeAllFamiliesWhenAdminChangesRole() {
+            var personal = target(ERole.ASSISTANT);
+            when(specialtyRepository.findById(SPECIALTY_ID))
+                    .thenReturn(Optional.of(Specialty.builder().id(SPECIALTY_ID).name("Cardio").build()));
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID, new PersonalUpdateRequest("Target", "target@mail.test", null, null, ERole.DOCTOR, SPECIALTY_ID));
+
+            assertThat(personal.getRole()).isEqualTo(ERole.DOCTOR);
+            verify(refreshTokenService).revokeAllForUser(CLINIC_ID, TARGET_ID);
+        }
+
+        @Test
+        void shouldNotRevokeWhenAdminUpdatesOnlyContactDataWithoutPasswordNorRoleChange() {
+            target(ERole.ASSISTANT);
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID, new PersonalUpdateRequest("Renamed", "target@mail.test", null, null, ERole.ASSISTANT, null));
+
+            verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldNotRevokeWhenTargetIsAdministratorAndOnlyRequestedRoleDiffers() {
+            target(ERole.ADMINISTRATOR);
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID, new PersonalUpdateRequest("Target", "target@mail.test", null, null, ERole.ASSISTANT, null));
+
+            verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldRevokeAllExceptCurrentSessionWhenOwnPasswordChanges() {
+            var sessionId = UUID.randomUUID();
+            target(ERole.ASSISTANT);
+            when(passwordEncoder.matches("old-password", "old-hash")).thenReturn(true);
+            when(passwordEncoder.encode("new-password")).thenReturn("new-hash");
+
+            service.updateOwnProfile(
+                    TARGET_ID,
+                    sessionId,
+                    new PersonalProfileUpdateRequest("Target", "target@mail.test", null, "old-password", "new-password"));
+
+            verify(refreshTokenService).revokeAllForUserExcept(CLINIC_ID, TARGET_ID, sessionId);
+        }
+
+        @Test
+        void shouldNotRevokeWhenCurrentPasswordIsIncorrect() {
+            var sessionId = UUID.randomUUID();
+            target(ERole.ASSISTANT);
+            when(passwordEncoder.matches("wrong", "old-hash")).thenReturn(false);
+            var request = new PersonalProfileUpdateRequest("Target", "target@mail.test", null, "wrong", "new-password");
+
+            var thrown = catchThrowable(() -> service.updateOwnProfile(TARGET_ID, sessionId, request));
+
+            assertThat(thrown).isInstanceOf(BadRequestException.class);
+            verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldNotRevokeWhenOwnProfileChangesWithoutNewPassword() {
+            target(ERole.ASSISTANT);
+
+            service.updateOwnProfile(
+                    TARGET_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Renamed", "target@mail.test", null, null, null));
+
+            verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldNotRevokeWhenDoctorModeChanges() {
+            var personal = admin(false);
+            givenPersonal(personal);
+            when(specialtyRepository.findById(SPECIALTY_ID))
+                    .thenReturn(Optional.of(Specialty.builder().id(SPECIALTY_ID).name("Cardio").build()));
+            when(personalRepository.saveAndFlush(personal)).thenReturn(personal);
+
+            service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(true, SPECIALTY_ID, null, null));
+
+            verifyNoInteractions(refreshTokenService);
         }
     }
 }

@@ -1,8 +1,9 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { DestroyRef, Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { Observable, map } from 'rxjs';
+import { EMPTY, Observable, catchError, firstValueFrom, from, map, of, throwError } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
 import {
   ClinicLanguage,
@@ -13,11 +14,11 @@ import {
   TokenPayload,
 } from '../models/api.models';
 import { HOME_URL, SESSION_ACCESS, SessionAccess } from '../navigation/navigation';
+import { isRole } from './roles';
 
 interface Session {
   token: string;
   userId: number;
-  role: Role;
   roles: Role[];
   clinicId: number;
   clinicName: string;
@@ -30,6 +31,10 @@ interface Session {
 }
 
 const TOKEN_KEY = 'scheduler.token';
+const REFRESH_LOCK = 'scheduler.auth-refresh';
+const RENEW_LEEWAY_MS = 60_000;
+const MIN_RENEW_DELAY_MS = 5_000;
+const RENEW_RETRY_DELAYS_MS = [5_000, 15_000, 30_000];
 const MAX_TIMER_MS = 2_147_483_647;
 
 function readStorage(key: string): string | null {
@@ -55,11 +60,12 @@ function decodeSession(token: string | null): Session | null {
   if (!token) return null;
   try {
     const payload = jwtDecode<TokenPayload>(token);
+    const roles = (payload.roles ?? []).filter(isRole);
+    if (!roles.length || !payload.username) return null;
     const session: Session = {
       token,
       userId: Number(payload.sub),
-      role: payload.role,
-      roles: payload.roles?.length ? payload.roles : [payload.role],
+      roles,
       clinicId: Number(payload.clinicId),
       clinicName: payload.clinicName,
       clinicSlug: payload.clinicSlug,
@@ -75,6 +81,16 @@ function decodeSession(token: string | null): Session | null {
   }
 }
 
+class SessionClosedError extends Error {
+  constructor() {
+    super('Session closed during refresh');
+  }
+}
+
+function isRefreshRejected(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === HttpStatusCode.Unauthorized;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly authApi = inject(AuthApi);
@@ -82,10 +98,13 @@ export class AuthService {
   private readonly zone = inject(NgZone);
 
   private readonly _session = signal<Session | null>(decodeSession(readStorage(TOKEN_KEY)));
-  private expiryTimer: ReturnType<typeof setTimeout> | undefined;
+  private renewTimer: ReturnType<typeof setTimeout> | undefined;
+  private refreshInFlight: Promise<Session> | undefined;
+  private renewFailures = 0;
+  private sessionEpoch = 0;
+  private startupRestorePending = true;
 
   readonly session = this._session.asReadonly();
-  readonly role = computed(() => this._session()?.role ?? null);
   readonly roles = computed<readonly Role[]>(() => this._session()?.roles ?? []);
   readonly restrictedToOwnData = computed(
     () => this.hasRole('DOCTOR') && !this.hasRole('ADMINISTRATOR'),
@@ -119,13 +138,13 @@ export class AuthService {
   });
 
   constructor() {
-    this.scheduleExpiry(this._session());
+    this.scheduleRenewal(this._session());
 
     const onStorage = (event: StorageEvent) => this.onStorage(event);
     window.addEventListener('storage', onStorage);
     inject(DestroyRef).onDestroy(() => {
       window.removeEventListener('storage', onStorage);
-      clearTimeout(this.expiryTimer);
+      clearTimeout(this.renewTimer);
     });
   }
 
@@ -165,9 +184,35 @@ export class AuthService {
     return session;
   }
 
+  refresh(staleToken: string | null = this.token()): Observable<Session> {
+    return this.requestRefresh(staleToken).pipe(
+      catchError((error: unknown) => {
+        if (isRefreshRejected(error) && this._session()) this.closeSession();
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  ensureSession(): Observable<boolean> {
+    if (this.isAuthenticated()) return of(true);
+    const hadStoredToken = readStorage(TOKEN_KEY) !== null;
+    if (!this.startupRestorePending && !hadStoredToken) return of(false);
+    this.startupRestorePending = false;
+    return this.requestRefresh(this.token()).pipe(
+      map(() => true),
+      catchError((error: unknown) => {
+        if (isRefreshRejected(error)) this.clearSession();
+        return of(false);
+      }),
+    );
+  }
+
   logout(extras: NavigationExtras = {}): void {
-    this.clearSession();
-    this.router.navigate(['/login'], extras).finally();
+    this.authApi
+      .logout()
+      .pipe(catchError(() => EMPTY))
+      .subscribe();
+    this.closeSession(extras);
   }
 
   expireSession(token: string): void {
@@ -175,31 +220,94 @@ export class AuthService {
     this.clearSession();
   }
 
+  private closeSession(extras: NavigationExtras = {}): void {
+    this.clearSession();
+    this.router.navigate(['/login'], extras).finally();
+  }
+
+  private requestRefresh(staleToken: string | null): Observable<Session> {
+    if (!this.refreshInFlight) {
+      const epoch = this.sessionEpoch;
+      const attempt: Promise<Session> = this.runExclusively(() =>
+        this.renewSession(staleToken, epoch),
+      ).finally(() => {
+        if (this.refreshInFlight === attempt) this.refreshInFlight = undefined;
+      });
+      this.refreshInFlight = attempt;
+    }
+    return from(this.refreshInFlight);
+  }
+
+  private runExclusively<T>(task: () => Promise<T>): Promise<T> {
+    const locks: LockManager | undefined = navigator.locks;
+    return locks ? locks.request(REFRESH_LOCK, task) : task();
+  }
+
+  private async renewSession(staleToken: string | null, epoch: number): Promise<Session> {
+    this.assertSessionEpoch(epoch);
+    const stored = decodeSession(readStorage(TOKEN_KEY));
+    if (stored && stored.token !== staleToken && stored.expiresAt - Date.now() > RENEW_LEEWAY_MS) {
+      this.setSession(stored);
+      return stored;
+    }
+    const { token } = await firstValueFrom(this.authApi.refresh());
+    this.assertSessionEpoch(epoch);
+    return this.replaceToken(token);
+  }
+
+  private assertSessionEpoch(epoch: number): void {
+    if (epoch !== this.sessionEpoch) throw new SessionClosedError();
+  }
+
   private setSession(session: Session | null): void {
     this._session.set(session);
-    this.scheduleExpiry(session);
+    this.scheduleRenewal(session);
   }
 
   private clearSession(): void {
+    this.sessionEpoch++;
+    this.refreshInFlight = undefined;
     writeStorage(TOKEN_KEY, null);
     this.setSession(null);
   }
 
-  private scheduleExpiry(session: Session | null): void {
-    clearTimeout(this.expiryTimer);
-    this.expiryTimer = undefined;
+  private scheduleRenewal(session: Session | null): void {
+    this.renewFailures = 0;
+    clearTimeout(this.renewTimer);
+    this.renewTimer = undefined;
     if (!session) return;
-    const delay = Math.min(Math.max(session.expiresAt - Date.now(), 0), MAX_TIMER_MS);
-    this.expiryTimer = this.zone.runOutsideAngular(() =>
-      setTimeout(
-        () =>
-          this.zone.run(() => {
-            if (isExpired(session)) this.expireSession(session.token);
-            else this.scheduleExpiry(session);
-          }),
-        delay,
-      ),
+    this.armRenewal(
+      session,
+      Math.max(session.expiresAt - RENEW_LEEWAY_MS - Date.now(), MIN_RENEW_DELAY_MS),
     );
+  }
+
+  private armRenewal(session: Session, delay: number): void {
+    clearTimeout(this.renewTimer);
+    this.renewTimer = this.zone.runOutsideAngular(() =>
+      setTimeout(() => this.zone.run(() => this.renewDue(session)), Math.min(delay, MAX_TIMER_MS)),
+    );
+  }
+
+  private renewDue(session: Session): void {
+    if (this._session()?.token !== session.token) return;
+    const remaining = session.expiresAt - RENEW_LEEWAY_MS - Date.now();
+    if (remaining > MIN_RENEW_DELAY_MS) {
+      this.armRenewal(session, remaining);
+      return;
+    }
+    this.refresh(session.token).subscribe({
+      error: (error: unknown) => this.retryRenewal(session, error),
+    });
+  }
+
+  private retryRenewal(session: Session, error: unknown): void {
+    const untilExpiry = session.expiresAt - Date.now();
+    if (isRefreshRejected(error) || untilExpiry <= 0) return;
+    const delays = RENEW_RETRY_DELAYS_MS;
+    const delay = delays[Math.min(this.renewFailures, delays.length - 1)];
+    this.renewFailures++;
+    this.armRenewal(session, Math.min(delay, untilExpiry));
   }
 
   private onStorage(event: StorageEvent): void {

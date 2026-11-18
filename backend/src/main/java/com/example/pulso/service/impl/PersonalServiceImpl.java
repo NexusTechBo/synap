@@ -23,14 +23,16 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
 import com.example.pulso.service.AppointmentService;
 import com.example.pulso.service.PersonalService;
+import com.example.pulso.service.RefreshTokenService;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
-import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -60,6 +62,7 @@ public class PersonalServiceImpl implements PersonalService {
     private final ClinicTimeProvider clinicTimeProvider;
     private final IdentityDocumentResolver identityDocumentResolver;
     private final ClinicLocaleResolver clinicLocaleResolver;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public Page<PersonalResponse> findAllDoctors(Long specialtyId, Boolean isActive, Pageable pageable) {
@@ -130,22 +133,27 @@ public class PersonalServiceImpl implements PersonalService {
         if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT)
             verifyCanStopBeingDoctor(personalId);
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
-        if (personal.getRole() != ERole.ADMINISTRATOR)
+        var roleChanged = personal.getRole() != ERole.ADMINISTRATOR && personal.getRole() != request.role();
+        if (roleChanged)
             personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrNull(request.specialtyId()));
         if (request.password() != null)
             personal.setPassword(passwordEncoder.encode(request.password()));
-        return personalMapper.toResponse(personalRepository.save(personal));
+        var saved = personalRepository.save(personal);
+        if (roleChanged || request.password() != null)
+            refreshTokenService.revokeAllForUser(TenantContext.getCurrentClinicId(), personalId);
+        return personalMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request) {
+    public PersonalResponse updateOwnProfile(Long userId, UUID currentSessionId, PersonalProfileUpdateRequest request) {
         var personal = getPersonalOrThrowById(userId);
         if (request.newPassword() != null) {
             if (request.currentPassword() == null || !passwordEncoder.matches(request.currentPassword(), personal.getPassword()))
                 throw new BadRequestException(MessageKeys.PERSONAL_CURRENT_PASSWORD_INCORRECT);
             personal.setPassword(passwordEncoder.encode(request.newPassword()));
+            refreshTokenService.revokeAllForUserExcept(TenantContext.getCurrentClinicId(), userId, currentSessionId);
         }
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
         return personalMapper.toResponse(personalRepository.save(personal));
@@ -179,6 +187,7 @@ public class PersonalServiceImpl implements PersonalService {
         var personal = getPersonalOrThrowById(personalId);
         personal.setActive(false);
         personalRepository.save(personal);
+        refreshTokenService.revokeAllForUser(TenantContext.getCurrentClinicId(), personalId);
         if (personal.isDoctor())
             appointmentService.cancelUpcomingAppointmentsOfDeactivatedDoctor(personalId);
     }

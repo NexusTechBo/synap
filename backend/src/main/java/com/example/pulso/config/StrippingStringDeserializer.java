@@ -25,8 +25,7 @@ final class StrippingStringDeserializer extends ValueDeserializer<String> {
 
     @Override
     public ValueDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) {
-        var isPassword =
-                property != null && property.getName().toLowerCase(Locale.ROOT).contains("password");
+        var isPassword = property != null && property.getName().toLowerCase(Locale.ROOT).contains("password");
         return isPassword ? KEEP : STRIP;
     }
 }

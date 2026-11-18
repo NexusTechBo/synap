@@ -1,9 +1,8 @@
 package com.example.pulso.config;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Locale;
-
-import jakarta.annotation.PostConstruct;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +29,7 @@ public class LocaleConfig {
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource source = bundleMessageSource("messages", "notifications", HIBERNATE_VALIDATION_BUNDLE);
+        ResourceBundleMessageSource source = bundleMessageSource("messages", "notifications", "defaults", HIBERNATE_VALIDATION_BUNDLE);
         source.setUseCodeAsDefaultMessage(true);
         return source;
     }

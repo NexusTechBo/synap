@@ -1,6 +1,5 @@
 package com.example.pulso.service.impl;
 
-import com.example.pulso.enums.SupportedCountry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.entry;
@@ -31,7 +30,7 @@ import com.example.pulso.entity.Specialty;
 import com.example.pulso.enums.AppointmentStatus;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ERole;
-import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
+import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.ApiException;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
@@ -48,6 +47,7 @@ import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.ScheduleExceptionRepository;
 import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.websocket.event.AppointmentChangedEvent;
 import com.example.pulso.websocket.event.BoardEvent;
 import java.time.Clock;

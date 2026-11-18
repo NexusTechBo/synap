@@ -1,6 +1,6 @@
 package com.example.pulso.entity;
 
-import com.example.pulso.converter.ClinicLanguageConverter;
+import com.example.pulso.entity.converter.ClinicLanguageConverter;
 import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.ClinicStatus;
 import com.example.pulso.enums.SupportedCountry;
@@ -48,6 +48,10 @@ public class Clinic {
     @Convert(converter = ClinicLanguageConverter.class)
     @Column(name = "default_language", nullable = false, length = 10)
     private ClinicLanguage defaultLanguage;
+
+    @Column(name = "settings_version", nullable = false)
+    @Builder.Default
+    private int settingsVersion = 0;
 
     public ZoneId zoneId() {
         return ZoneId.of(timezone);

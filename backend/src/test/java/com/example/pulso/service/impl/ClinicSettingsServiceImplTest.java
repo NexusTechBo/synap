@@ -3,6 +3,7 @@ package com.example.pulso.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 import com.example.pulso.config.tenant.TenantContext;
 import com.example.pulso.dto.clinic.ClinicRegionalSettingsRequest;
@@ -16,19 +17,24 @@ import com.example.pulso.mapper.ClinicSettingsMapperImpl;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
-import java.util.Optional;
+import com.example.pulso.websocket.event.SessionRefreshEvent;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class ClinicSettingsServiceImplTest {
     @Mock
     private ClinicRepository clinicRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private ClinicSettingsServiceImpl service;
     private Clinic clinic;
@@ -38,7 +44,9 @@ class ClinicSettingsServiceImplTest {
         service = new ClinicSettingsServiceImpl(
                 new CurrentClinicProvider(clinicRepository),
                 new RegionalSettingsResolver(),
-                new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl()));
+                new ClinicSettingsMapperImpl(new ClinicLanguageMapperImpl()),
+                clinicRepository,
+                eventPublisher);
         TenantContext.setCurrentTenant(7L, "demo", ZoneOffset.UTC, SupportedCountry.BO);
         clinic = Clinic.builder()
                 .id(7L)
@@ -50,6 +58,7 @@ class ClinicSettingsServiceImplTest {
                 .defaultLanguage(ClinicLanguage.ES)
                 .build();
         lenient().when(clinicRepository.findById(7L)).thenReturn(Optional.of(clinic));
+        lenient().when(clinicRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(clinic));
     }
 
     @AfterEach
@@ -68,15 +77,13 @@ class ClinicSettingsServiceImplTest {
 
     @Test
     void shouldUpdateCurrentClinicSettings() {
-        var response = service.updateRegionalSettings(
-                new ClinicRegionalSettingsRequest("BR", "America/Manaus", "pt-BR"));
+        service.updateRegionalSettings(new ClinicRegionalSettingsRequest("BR", "America/Manaus", "pt-BR"));
 
-        assertThat(response.country()).isEqualTo("BR");
-        assertThat(response.timezone()).isEqualTo("America/Manaus");
-        assertThat(response.defaultLanguage()).isEqualTo("pt-BR");
         assertThat(clinic.getCountry()).isEqualTo(SupportedCountry.BR);
         assertThat(clinic.getTimezone()).isEqualTo("America/Manaus");
         assertThat(clinic.getDefaultLanguage()).isEqualTo(ClinicLanguage.PT_BR);
+        assertThat(clinic.getSettingsVersion()).isEqualTo(1);
+        verify(eventPublisher).publishEvent(new SessionRefreshEvent(7L));
     }
 
     @Test

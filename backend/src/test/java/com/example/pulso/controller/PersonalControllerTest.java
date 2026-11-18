@@ -19,7 +19,6 @@ import com.example.pulso.config.JacksonConfig;
 import com.example.pulso.config.LocaleConfig;
 import com.example.pulso.config.SecurityConfig;
 import com.example.pulso.config.ratelimiting.RateLimitProperties;
-import com.example.pulso.dto.login.LoginResponse;
 import com.example.pulso.dto.personal.DoctorModeRequest;
 import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalResponse;
@@ -27,10 +26,9 @@ import com.example.pulso.enums.ERole;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ErrorResponseWriter;
-import com.example.pulso.security.ActiveUserChecker;
 import com.example.pulso.exception.MessageKeys;
-import com.example.pulso.security.jwt.JwtUtil;
-import com.example.pulso.service.AuthService;
+import com.example.pulso.security.ActiveUserChecker;
+import com.example.pulso.security.jwt.JwtUtils;
 import com.example.pulso.service.DoctorPatientService;
 import com.example.pulso.service.PersonalService;
 import java.util.Map;
@@ -66,10 +64,7 @@ class PersonalControllerTest {
     private DoctorPatientService doctorPatientService;
 
     @MockitoBean
-    private AuthService authService;
-
-    @MockitoBean
-    private JwtUtil jwtUtil;
+    private JwtUtils jwtUtil;
 
     @MockitoBean
     private ActiveUserChecker activeUserChecker;
@@ -186,16 +181,13 @@ class PersonalControllerTest {
     @Nested
     class UpdateDoctorMode {
         @Test
-        void shouldReturnOkAndPassNewFieldsToService() throws Exception {
-            when(authService.issueToken(anyLong())).thenReturn(new LoginResponse("new-token"));
-
+        void shouldReturnNoContentAndPassNewFieldsToService() throws Exception {
             mvc.perform(as(ADMIN_TOKEN, put("/api/personal/me/doctor-mode"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("""
                                     {"enabled":false,"cancelAppointments":true,"cancellationReason":"Vacaciones"}
                                     """))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.token").value("new-token"));
+                    .andExpect(status().isNoContent());
 
             verify(personalService).updateDoctorMode(1L, new DoctorModeRequest(false, null, true, "Vacaciones"));
         }
@@ -228,8 +220,6 @@ class PersonalControllerTest {
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.code").value("personal.doctorModeActiveAppointmentsConflict"))
                     .andExpect(jsonPath("$.details.count").value(2));
-
-            verifyNoInteractions(authService);
         }
 
         @Test

@@ -11,8 +11,6 @@ import com.example.pulso.entity.Clinic;
 import com.example.pulso.entity.ClinicActivationToken;
 import com.example.pulso.entity.Personal;
 import com.example.pulso.enums.ClinicLanguage;
-import com.example.pulso.service.component.provider.CurrentClinicProvider;
-import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.enums.ClinicStatus;
 import com.example.pulso.enums.ERole;
 import com.example.pulso.enums.SupportedCountry;
@@ -21,6 +19,8 @@ import com.example.pulso.notification.event.ClinicActivationEvent;
 import com.example.pulso.repository.ClinicActivationTokenRepository;
 import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.PersonalRepository;
+import com.example.pulso.service.component.provider.CurrentClinicProvider;
+import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -67,10 +67,6 @@ class ClinicActivationServiceImplTest {
         service = new ClinicActivationServiceImpl(
                 clinicRepository, tokenRepository, personalRepository, transactionManager, eventPublisher, CLOCK,
                 new ClinicLocaleResolver(currentClinicProvider));
-    }
-
-    private Clinic clinic(ClinicStatus status) {
-        return clinic(status, ClinicLanguage.ES);
     }
 
     private Clinic clinic(ClinicStatus status, ClinicLanguage language) {

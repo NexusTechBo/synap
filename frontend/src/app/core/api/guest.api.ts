@@ -9,7 +9,7 @@ import {
   GuestClinic,
   GuestDoctor,
   GuestSessionRequest,
-  GuestSessionResponse,
+  LoginResponse,
   Specialty,
   UnavailableDates,
 } from '../models/api.models';
@@ -18,8 +18,8 @@ import {
 export class GuestApi {
   private readonly http = inject(HttpClient);
 
-  createSession(request: GuestSessionRequest): Observable<GuestSessionResponse> {
-    return this.http.post<GuestSessionResponse>('public/guest/session', request);
+  createSession(request: GuestSessionRequest): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>('public/guest/session', request);
   }
 
   clinic(): Observable<GuestClinic> {

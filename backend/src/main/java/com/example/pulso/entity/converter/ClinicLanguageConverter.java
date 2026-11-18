@@ -1,4 +1,4 @@
-package com.example.pulso.converter;
+package com.example.pulso.entity.converter;
 
 import com.example.pulso.enums.ClinicLanguage;
 import jakarta.persistence.AttributeConverter;

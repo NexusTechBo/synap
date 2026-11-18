@@ -6,6 +6,7 @@ import com.example.pulso.dto.personal.PersonalRequest;
 import com.example.pulso.dto.personal.PersonalResponse;
 import com.example.pulso.dto.personal.PersonalUpdateRequest;
 import com.example.pulso.enums.ERole;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -20,7 +21,7 @@ public interface PersonalService {
 
     PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request);
 
-    PersonalResponse updateOwnProfile(Long userId, PersonalProfileUpdateRequest request);
+    PersonalResponse updateOwnProfile(Long userId, UUID currentSessionId, PersonalProfileUpdateRequest request);
 
     void updateDoctorMode(Long userId, DoctorModeRequest request);
 

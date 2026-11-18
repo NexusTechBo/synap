@@ -25,4 +25,7 @@ public interface ClinicRepository extends JpaRepository<Clinic, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Clinic c WHERE c.id = :id")
     Optional<Clinic> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("SELECT c.settingsVersion FROM Clinic c WHERE c.id = :id")
+    Optional<Integer> findSettingsVersionById(@Param("id") Long id);
 }

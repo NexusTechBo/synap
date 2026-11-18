@@ -35,8 +35,9 @@ describe('ProfileService', () => {
     profileLoading: ReturnType<typeof signal>;
     profileError: ReturnType<typeof signal>;
     hasRole: ReturnType<typeof vi.fn>;
-    replaceToken: ReturnType<typeof vi.fn>;
+    refresh: ReturnType<typeof vi.fn>;
     reloadProfile: ReturnType<typeof vi.fn>;
+    setProfile: ReturnType<typeof vi.fn>;
   };
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let dialog: { open: ReturnType<typeof vi.fn> };
@@ -46,15 +47,16 @@ describe('ProfileService', () => {
 
   beforeEach(() => {
     staffApi = {
-      updateDoctorMode: vi.fn(() => of({ token: 'new-token' })),
+      updateDoctorMode: vi.fn(() => of(undefined)),
     };
     auth = {
       profile: signal(null),
       profileLoading: signal(false),
       profileError: signal(null),
       hasRole: vi.fn(() => false),
-      replaceToken: vi.fn(),
+      refresh: vi.fn(() => of(null)),
       reloadProfile: vi.fn(),
+      setProfile: vi.fn(),
     };
     confirm = { ask: vi.fn(() => of(true)) };
     dialogClosed = new Subject();
@@ -114,7 +116,7 @@ describe('ProfileService', () => {
         specialtyId: null,
       });
       expect(dialog.open).not.toHaveBeenCalled();
-      expect(auth.replaceToken).toHaveBeenCalledWith('new-token');
+      expect(auth.refresh).toHaveBeenCalled();
       expect(auth.reloadProfile).toHaveBeenCalledOnce();
       expect(doctorsStore.invalidate).toHaveBeenCalledOnce();
       expect(notifications.success).toHaveBeenCalledWith('Ya no atiendes como doctor');
@@ -123,7 +125,7 @@ describe('ProfileService', () => {
     it('opens the dialog on conflict and resends cancelling the appointments with the reason', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(3)))
-        .mockReturnValueOnce(of({ token: 'new-token' }));
+        .mockReturnValueOnce(of(undefined));
       const state = run();
 
       expect(dialog.open).toHaveBeenCalledWith(
@@ -145,7 +147,7 @@ describe('ProfileService', () => {
         cancelAppointments: true,
         cancellationReason: 'Vacaciones',
       });
-      expect(auth.replaceToken).toHaveBeenCalledWith('new-token');
+      expect(auth.refresh).toHaveBeenCalled();
       expect(notifications.success).toHaveBeenCalledWith(
         'Ya no atiendes como doctor. Se cancelaron las citas y se notificó a los pacientes',
       );
@@ -155,7 +157,7 @@ describe('ProfileService', () => {
     it('omits the reason when blank and uses the singular message for one appointment', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(1)))
-        .mockReturnValueOnce(of({ token: 'new-token' }));
+        .mockReturnValueOnce(of(undefined));
       run();
       dialogClosed.next({ reason: '' });
       dialogClosed.complete();
@@ -177,7 +179,7 @@ describe('ProfileService', () => {
       dialogClosed.complete();
 
       expect(staffApi.updateDoctorMode).toHaveBeenCalledOnce();
-      expect(auth.replaceToken).not.toHaveBeenCalled();
+      expect(auth.refresh).not.toHaveBeenCalled();
       expect(auth.reloadProfile).not.toHaveBeenCalled();
       expect(notifications.success).not.toHaveBeenCalled();
       expect(notifications.error).not.toHaveBeenCalled();
@@ -202,7 +204,48 @@ describe('ProfileService', () => {
       dialogClosed.next({ reason: '' });
       dialogClosed.complete();
       expect(notifications.error).toHaveBeenCalledWith('Falló');
-      expect(auth.replaceToken).not.toHaveBeenCalled();
+      expect(auth.refresh).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('session refresh after profile changes', () => {
+    it('keeps the doctor mode change successful when the refresh fails', () => {
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+      let completed = false;
+      let failed = false;
+
+      service.enableDoctorMode(3).subscribe({
+        complete: () => (completed = true),
+        error: () => (failed = true),
+      });
+
+      expect(staffApi.updateDoctorMode).toHaveBeenCalledWith({ enabled: true, specialtyId: 3 });
+      expect(failed).toBe(false);
+      expect(completed).toBe(true);
+      expect(auth.reloadProfile).toHaveBeenCalledOnce();
+      expect(doctorsStore.invalidate).toHaveBeenCalledOnce();
+    });
+
+    it('refreshes the session after updating the own profile', () => {
+      const profile = { id: 1, name: 'Ana' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(profile));
+      let result: unknown;
+
+      service.update({} as never).subscribe((value) => (result = value));
+
+      expect(result).toBe(profile);
+      expect(auth.refresh).toHaveBeenCalledOnce();
+    });
+
+    it('returns the updated profile when the refresh fails after updating', () => {
+      const profile = { id: 1, name: 'Ana' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(profile));
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      let result: unknown;
+
+      service.update({} as never).subscribe((value) => (result = value));
+
+      expect(result).toBe(profile);
     });
   });
 });

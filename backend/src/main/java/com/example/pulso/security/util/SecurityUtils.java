@@ -1,7 +1,8 @@
-package com.example.pulso.security;
+package com.example.pulso.security.util;
 
 import com.example.pulso.enums.ERole;
 import java.util.Collection;
+import java.util.UUID;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -9,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 public final class SecurityUtils {
     public static final String ROLE_PREFIX = "ROLE_";
     public static final String BEARER_PREFIX = "Bearer ";
+    public static final String TOKEN_STALE_ATTRIBUTE = SecurityUtils.class.getName() + ".tokenStale";
 
     private SecurityUtils() {}
 
@@ -25,6 +27,10 @@ public final class SecurityUtils {
         return Long.valueOf(auth.getName());
     }
 
+    public static UUID extractSessionId(Authentication auth) {
+        return auth.getDetails() instanceof UUID sessionId ? sessionId : null;
+    }
+
     public static String extractBearerToken(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith(BEARER_PREFIX)) return null;
         return authorizationHeader.substring(BEARER_PREFIX.length());
@@ -32,8 +38,17 @@ public final class SecurityUtils {
 
     public static UsernamePasswordAuthenticationToken authenticated(String subject, Collection<String> roles) {
         var authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority(ROLE_PREFIX + role))
-                .toList();
+                .map(role -> new SimpleGrantedAuthority(ROLE_PREFIX + role)).toList();
         return new UsernamePasswordAuthenticationToken(subject, null, authorities);
+    }
+
+    public static UsernamePasswordAuthenticationToken authenticated(
+            String subject,
+            Collection<String> roles,
+            UUID sessionId
+    ) {
+        var authentication = authenticated(subject, roles);
+        authentication.setDetails(sessionId);
+        return authentication;
     }
 }

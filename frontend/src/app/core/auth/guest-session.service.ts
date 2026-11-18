@@ -40,7 +40,7 @@ function decodeGuestSession(token: string | null, slug: string): GuestSession | 
   if (!token) return null;
   try {
     const payload = jwtDecode<GuestTokenPayload>(token);
-    if (payload.role !== 'GUEST' || payload.clinicSlug !== slug) return null;
+    if (!payload.roles?.includes('GUEST') || payload.clinicSlug !== slug) return null;
     return {
       token,
       clinicSlug: payload.clinicSlug,
