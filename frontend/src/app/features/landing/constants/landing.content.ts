@@ -24,6 +24,16 @@ export const LANDING_NAV = [
 
 export const HERO_SHOT: LandingShot = {
   src: SHOTS + '11-assistant-board.webp',
+  srcset: [
+    SHOTS + '11-assistant-board-480.webp 480w',
+    SHOTS + '11-assistant-board-960.webp 960w',
+    SHOTS + '11-assistant-board-1100.webp 1100w',
+    SHOTS + '11-assistant-board.webp 1440w',
+  ].join(', '),
+  sizes:
+    '(min-width: 1152px) 532px, (min-width: 1024px) calc((100vw - 88px) / 2), (min-width: 640px) calc(100vw - 48px), calc(100vw - 32px)',
+  width: 1440,
+  height: 900,
   altKey: 'landing.hero.shotAlt',
 };
 

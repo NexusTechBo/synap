@@ -350,8 +350,34 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
   },
 
   banner: {
-    welcome: 'Welcome',
-    tagline: 'Manage your appointments and schedules simply, quickly, and securely.',
+    login: {
+      headline: 'Your schedule,\nin order.',
+      stats: {
+        roles: 'roles with their own permissions',
+        installations: 'installations needed',
+        cloud: 'in the cloud',
+      },
+    },
+    register: {
+      headline: 'Create your space.',
+      intro:
+        'Your space brings together your schedule, your patients and, if you have one, your team. Start on your own and grow whenever you want.',
+    },
+    activation: {
+      headline: 'Activate your space.',
+      intro: 'One last step and your schedule will be ready to use.',
+    },
+    steps: {
+      create: 'Create your space',
+      activate: 'Activate it from your email',
+      configure: 'Set up your schedule',
+    },
+    status: {
+      here: 'You are here',
+      done: 'Done',
+      linkSent: 'We sent you a link',
+      configure: 'Hours and, if applicable, your team',
+    },
   },
 
   resendActivation: {

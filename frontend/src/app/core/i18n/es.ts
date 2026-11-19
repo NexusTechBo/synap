@@ -349,8 +349,34 @@ export const ES_TRANSLATIONS = {
   },
 
   banner: {
-    welcome: 'Bienvenido',
-    tagline: 'Gestiona tus citas y horarios de forma simple, rápida y segura.',
+    login: {
+      headline: 'Tu agenda,\nen orden.',
+      stats: {
+        roles: 'roles con permisos propios',
+        installations: 'instalaciones necesarias',
+        cloud: 'en la nube',
+      },
+    },
+    register: {
+      headline: 'Crea tu espacio.',
+      intro:
+        'Tu espacio reúne tu agenda, tus pacientes y, si lo tienes, tu equipo. Empieza solo y crece cuando quieras.',
+    },
+    activation: {
+      headline: 'Activa tu espacio.',
+      intro: 'Un último paso y tu agenda estará lista para usar.',
+    },
+    steps: {
+      create: 'Crea tu espacio',
+      activate: 'Actívalo desde tu correo',
+      configure: 'Configura tu agenda',
+    },
+    status: {
+      here: 'Estás aquí',
+      done: 'Listo',
+      linkSent: 'Te enviamos un enlace',
+      configure: 'Horarios y, si aplica, tu equipo',
+    },
   },
 
   resendActivation: {
