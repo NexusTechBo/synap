@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { HOME_URL } from '../../../../core/navigation/navigation';
@@ -16,5 +17,9 @@ export class HeaderLandingPageComponent {
   private readonly auth = inject(AuthService);
   protected readonly nav = LANDING_NAV;
   protected readonly homeUrl = HOME_URL;
-  protected readonly isLoggedIn = computed(() => !!this.auth.session());
+  private readonly restored = toSignal(this.auth.restoreStoredSession(), { initialValue: null });
+  protected readonly authState = computed<'pending' | 'loggedIn' | 'guest'>(() => {
+    if (this.auth.session()) return 'loggedIn';
+    return this.restored() === null ? 'pending' : 'guest';
+  });
 }
