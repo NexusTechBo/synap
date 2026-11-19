@@ -22,6 +22,8 @@ export const SESSION_ACCESS = 'sessionAccess';
 
 export const FULL_HEIGHT = 'fullHeight';
 
+export const PRELOAD = 'preload';
+
 export function isFullHeightRoute(root: ActivatedRouteSnapshot): boolean {
   let route: ActivatedRouteSnapshot | null = root;
   let fullHeight = false;

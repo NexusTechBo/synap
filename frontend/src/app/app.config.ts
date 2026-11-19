@@ -8,7 +8,7 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { TitleStrategy, provideRouter } from '@angular/router';
+import { TitleStrategy, provideRouter, withPreloading } from '@angular/router';
 import { routes } from './app.routes';
 import {
   apiUrlInterceptor,
@@ -18,13 +18,14 @@ import {
 import { I18nTitleStrategy } from './core/i18n/i18n-title.strategy';
 import { I18nService } from './core/i18n/i18n.service';
 import { LOCALE_ID_PROVIDER } from './core/i18n/locale-id.provider';
+import { SessionPreloadingStrategy } from './core/navigation/session-preloading.strategy';
 
 registerLocaleData(localeEs);
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
+    provideRouter(routes, withPreloading(SessionPreloadingStrategy)),
     { provide: TitleStrategy, useExisting: I18nTitleStrategy },
     provideHttpClient(
       withXhr(),
