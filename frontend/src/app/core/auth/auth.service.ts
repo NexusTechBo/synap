@@ -3,7 +3,17 @@ import { DestroyRef, Injectable, NgZone, computed, inject, signal } from '@angul
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationExtras, Router } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
-import { EMPTY, Observable, catchError, firstValueFrom, from, map, of, throwError } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  firstValueFrom,
+  from,
+  map,
+  of,
+  throwError,
+  timeout,
+} from 'rxjs';
 import { AuthApi } from '../api/auth.api';
 import {
   ClinicLanguage,
@@ -36,6 +46,7 @@ const RENEW_LEEWAY_MS = 60_000;
 const MIN_RENEW_DELAY_MS = 5_000;
 const RENEW_RETRY_DELAYS_MS = [5_000, 15_000, 30_000];
 const MAX_TIMER_MS = 2_147_483_647;
+const RESTORE_TIMEOUT_MS = 5_000;
 
 function readStorage(key: string): string | null {
   try {
@@ -197,6 +208,18 @@ export class AuthService {
     if (this.isAuthenticated()) return of(true);
     const hadStoredToken = readStorage(TOKEN_KEY) !== null;
     if (!this.startupRestorePending && !hadStoredToken) return of(false);
+    return this.restoreByRefresh();
+  }
+
+  restoreStoredSession(): Observable<boolean> {
+    if (this.isAuthenticated()) return of(true);
+    if (readStorage(TOKEN_KEY) === null) return of(false);
+    return this.restoreByRefresh().pipe(
+      timeout({ first: RESTORE_TIMEOUT_MS, with: () => of(false) }),
+    );
+  }
+
+  private restoreByRefresh(): Observable<boolean> {
     this.startupRestorePending = false;
     return this.requestRefresh(this.token()).pipe(
       map(() => true),
