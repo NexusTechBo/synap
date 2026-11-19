@@ -19,6 +19,10 @@ export interface LandingStep {
 
 export interface LandingShot {
   src: string;
+  srcset: string;
+  sizes: string;
+  width: number;
+  height: number;
   altKey: string;
 }
 

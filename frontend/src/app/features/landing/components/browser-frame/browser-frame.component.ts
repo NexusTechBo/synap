@@ -21,9 +21,11 @@ import { LandingShot } from '../../landing.model';
       <img
         class="block h-auto w-full"
         [src]="shot().src"
+        [attr.srcset]="shot().srcset"
+        [attr.sizes]="shot().sizes"
         [alt]="shot().altKey | translate"
-        width="1600"
-        height="1000"
+        [attr.width]="shot().width"
+        [attr.height]="shot().height"
         [attr.loading]="eager() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="eager() ? 'high' : null"
         decoding="async"

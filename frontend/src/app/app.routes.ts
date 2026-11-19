@@ -5,6 +5,7 @@ import {
   FULL_HEIGHT,
   GUEST_BOOKING_PATH,
   PAGE_TITLES,
+  PRELOAD,
   SESSION_ACCESS,
 } from './core/navigation/navigation';
 
@@ -20,11 +21,12 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
-    data: { [SESSION_ACCESS]: 'required' },
+    data: { [SESSION_ACCESS]: 'required', [PRELOAD]: true },
     children: [
       {
         path: 'dashboard',
         title: PAGE_TITLES.dashboard,
+        data: { [PRELOAD]: true },
         loadComponent: () =>
           import('./features/dashboard/dashboard-page.component').then(
             (m) => m.DashboardPageComponent,
@@ -33,13 +35,14 @@ export const routes: Routes = [
       {
         path: 'board',
         title: PAGE_TITLES.board,
-        data: { [FULL_HEIGHT]: true },
+        data: { [FULL_HEIGHT]: true, [PRELOAD]: true },
         loadComponent: () =>
           import('./features/board/board-page.component').then((m) => m.BoardPageComponent),
       },
       {
         path: 'calendar',
         title: PAGE_TITLES.calendar,
+        data: { [PRELOAD]: true },
         loadComponent: () =>
           import('./features/calendar/calendar-page.component').then(
             (m) => m.CalendarPageComponent,
@@ -48,6 +51,7 @@ export const routes: Routes = [
       {
         path: 'appointments',
         title: PAGE_TITLES.appointments,
+        data: { [PRELOAD]: true },
         loadComponent: () =>
           import('./features/appointments/appointments-page.component').then(
             (m) => m.AppointmentsPageComponent,
