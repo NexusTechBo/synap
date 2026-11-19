@@ -279,6 +279,139 @@ describe('AuthService refresh', () => {
     });
   });
 
+  describe('restoreStoredSession()', () => {
+    it('returns true without a request when the session is valid', async () => {
+      const auth = createService(token(3600));
+
+      expect(await firstValueFrom(auth.restoreStoredSession())).toBe(true);
+      http.expectNone('auth/refresh');
+    });
+
+    it('returns false without a request when no token is stored', async () => {
+      const auth = createService(null);
+
+      expect(await firstValueFrom(auth.restoreStoredSession())).toBe(false);
+      await settle();
+
+      http.expectNone('auth/refresh');
+    });
+
+    it('keeps the startup restore so ensureSession still tries the cookie refresh', async () => {
+      const auth = createService(null);
+      await firstValueFrom(auth.restoreStoredSession());
+
+      const result = firstValueFrom(auth.ensureSession());
+      (await expectRefreshRequest()).flush({ token: token(3600) });
+
+      expect(await result).toBe(true);
+      expect(auth.session()).not.toBeNull();
+    });
+
+    it('restores the session from the cookie when the stored token is expired', async () => {
+      const auth = createService(token(-60));
+      const fresh = token(3600);
+
+      const result = firstValueFrom(auth.restoreStoredSession());
+      (await expectRefreshRequest()).flush({ token: fresh });
+
+      expect(await result).toBe(true);
+      expect(auth.session()?.token).toBe(fresh);
+      expect(localStorage.getItem(TOKEN_KEY)).toBe(fresh);
+    });
+
+    it('clears the session and the stored token when the refresh is rejected', async () => {
+      const auth = createService(token(-60));
+
+      const result = firstValueFrom(auth.restoreStoredSession());
+      (await expectRefreshRequest()).flush(null, { status: 401, statusText: 'Unauthorized' });
+
+      expect(await result).toBe(false);
+      expect(auth.session()).toBeNull();
+      expect(localStorage.getItem(TOKEN_KEY)).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it.each([500, 0])('keeps the stored token when the refresh fails with %s', async (status) => {
+      const expired = token(-60);
+      const auth = createService(expired);
+
+      const result = firstValueFrom(auth.restoreStoredSession());
+      (await expectRefreshRequest()).flush(null, { status, statusText: 'Error' });
+
+      expect(await result).toBe(false);
+      expect(localStorage.getItem(TOKEN_KEY)).toBe(expired);
+    });
+  });
+
+  describe('restore timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(NOW);
+    });
+
+    async function advance(ms: number): Promise<void> {
+      await vi.advanceTimersByTimeAsync(ms);
+      await settle();
+    }
+
+    it('emits false after 5 seconds without clearing the stored token when the refresh hangs', async () => {
+      const expired = token(-60);
+      const auth = createService(expired);
+      const emissions: boolean[] = [];
+
+      auth.restoreStoredSession().subscribe((value) => emissions.push(value));
+      await expectRefreshRequest();
+      await advance(4_999);
+      expect(emissions).toEqual([]);
+      await advance(1);
+
+      expect(emissions).toEqual([false]);
+      expect(localStorage.getItem(TOKEN_KEY)).toBe(expired);
+      expect(auth.session()).toBeNull();
+    });
+
+    it('still populates the session when the refresh succeeds after the timeout', async () => {
+      const auth = createService(token(-60));
+      const fresh = token(3600);
+      const emissions: boolean[] = [];
+
+      auth.restoreStoredSession().subscribe((value) => emissions.push(value));
+      const request = await expectRefreshRequest();
+      await advance(5_000);
+      expect(emissions).toEqual([false]);
+
+      request.flush({ token: fresh });
+      await settle();
+
+      expect(emissions).toEqual([false]);
+      expect(auth.session()?.token).toBe(fresh);
+      expect(localStorage.getItem(TOKEN_KEY)).toBe(fresh);
+    });
+
+    it('emits true once and no extra false when the refresh responds before the timeout', async () => {
+      const auth = createService(token(-60));
+      const emissions: boolean[] = [];
+
+      auth.restoreStoredSession().subscribe((value) => emissions.push(value));
+      (await expectRefreshRequest()).flush({ token: token(3600) });
+      await settle();
+      await advance(5_000);
+
+      expect(emissions).toEqual([true]);
+    });
+
+    it('does not apply the timeout to ensureSession', async () => {
+      const auth = createService(token(-60));
+      const emissions: boolean[] = [];
+
+      auth.ensureSession().subscribe((value) => emissions.push(value));
+      await expectRefreshRequest();
+      await advance(10_000);
+
+      expect(emissions).toEqual([]);
+    });
+  });
+
   describe('proactive renewal', () => {
     beforeEach(() => {
       vi.useFakeTimers();
