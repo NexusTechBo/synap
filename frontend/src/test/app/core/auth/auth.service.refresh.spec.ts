@@ -242,6 +242,41 @@ describe('AuthService refresh', () => {
 
       expect(await second).toBe(true);
     });
+
+    it('does not refresh after logout of a session loaded from storage', async () => {
+      const auth = createService(token(3600));
+      auth.logout();
+      http.expectOne('auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+
+      expect(await firstValueFrom(auth.ensureSession())).toBe(false);
+      await settle();
+
+      http.expectNone('auth/refresh');
+    });
+
+    it('does not refresh after logout of a session created by login', async () => {
+      const auth = createService(null);
+      const login = firstValueFrom(auth.login('admin', 'secret'));
+      http.expectOne('auth/login').flush({ token: token(3600) });
+      await login;
+      auth.logout();
+      http.expectOne('auth/logout').flush(null, { status: 204, statusText: 'No Content' });
+
+      expect(await firstValueFrom(auth.ensureSession())).toBe(false);
+      await settle();
+
+      http.expectNone('auth/refresh');
+    });
+
+    it('does not refresh after the session was expired', async () => {
+      const auth = createService(token(3600));
+      auth.expireSession(auth.token() as string);
+
+      expect(await firstValueFrom(auth.ensureSession())).toBe(false);
+      await settle();
+
+      http.expectNone('auth/refresh');
+    });
   });
 
   describe('proactive renewal', () => {

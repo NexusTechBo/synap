@@ -16,9 +16,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("SELECT t FROM RefreshToken t WHERE t.tokenHash = :tokenHash")
     Optional<RefreshToken> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 
-    @Query("SELECT t.familyId FROM RefreshToken t WHERE t.tokenHash = :tokenHash")
-    Optional<UUID> findFamilyIdByTokenHash(@Param("tokenHash") String tokenHash);
-
     @Modifying(flushAutomatically = true)
     @Query("UPDATE RefreshToken t SET t.revokedAt = :now WHERE t.familyId = :familyId AND t.revokedAt IS NULL")
     void revokeFamily(@Param("familyId") UUID familyId, @Param("now") LocalDateTime now);

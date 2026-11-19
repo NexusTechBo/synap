@@ -267,6 +267,7 @@ export class AuthService {
   private clearSession(): void {
     this.sessionEpoch++;
     this.refreshInFlight = undefined;
+    this.startupRestorePending = false;
     writeStorage(TOKEN_KEY, null);
     this.setSession(null);
   }

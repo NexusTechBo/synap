@@ -3,9 +3,11 @@ package com.example.pulso.service.impl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.config.refreshtoken.RefreshTokenProperties;
@@ -235,26 +237,47 @@ class RefreshTokenServiceImplTest {
 
         @Test
         void shouldRevokeFamilyOfKnownToken() {
-            var familyId = UUID.randomUUID();
-            when(refreshTokenRepository.findFamilyIdByTokenHash(TokenUtils.hash(RAW))).thenReturn(Optional.of(familyId));
+            var token = storedToken(NOW.plusDays(1), NOW.plusDays(30), null);
+            givenStored(token);
 
             service.revokeFamilyOfToken(RAW);
 
-            verify(refreshTokenRepository).revokeFamily(familyId, NOW);
+            verify(refreshTokenRepository).revokeFamily(token.getFamilyId(), NOW);
+        }
+
+        @Test
+        void shouldLockTokenRowByHashBeforeRevokingItsFamily() {
+            var token = storedToken(NOW.plusDays(1), NOW.plusDays(30), null);
+            givenStored(token);
+
+            service.revokeFamilyOfToken(RAW);
+
+            var order = inOrder(refreshTokenRepository);
+            order.verify(refreshTokenRepository).findByTokenHashForUpdate(TokenUtils.hash(RAW));
+            order.verify(refreshTokenRepository).revokeFamily(token.getFamilyId(), NOW);
+            verifyNoMoreInteractions(refreshTokenRepository);
         }
 
         @Test
         void shouldDoNothingWhenTokenIsUnknown() {
-            when(refreshTokenRepository.findFamilyIdByTokenHash(TokenUtils.hash(RAW))).thenReturn(Optional.empty());
+            when(refreshTokenRepository.findByTokenHashForUpdate(TokenUtils.hash(RAW))).thenReturn(Optional.empty());
 
-            service.revokeFamilyOfToken(RAW);
+            var thrown = catchThrowable(() -> service.revokeFamilyOfToken(RAW));
 
-            verify(refreshTokenRepository, never()).revokeFamily(any(), any());
+            assertThat(thrown).isNull();
+            verify(refreshTokenRepository).findByTokenHashForUpdate(TokenUtils.hash(RAW));
+            verifyNoMoreInteractions(refreshTokenRepository);
         }
 
         @Test
-        void shouldDoNothingWhenTokenIsNullOrBlank() {
+        void shouldDoNothingWhenTokenIsNull() {
             service.revokeFamilyOfToken(null);
+
+            verifyNoInteractions(refreshTokenRepository);
+        }
+
+        @Test
+        void shouldDoNothingWhenTokenIsBlank() {
             service.revokeFamilyOfToken(" ");
 
             verifyNoInteractions(refreshTokenRepository);
@@ -292,7 +315,7 @@ class RefreshTokenServiceImplTest {
 
         @Test
         void shouldNotPublishRevocationEventWhenRevokingFamilyOfToken() {
-            when(refreshTokenRepository.findFamilyIdByTokenHash(TokenUtils.hash(RAW))).thenReturn(Optional.of(UUID.randomUUID()));
+            givenStored(storedToken(NOW.plusDays(1), NOW.plusDays(30), null));
 
             service.revokeFamilyOfToken(RAW);
 

@@ -73,7 +73,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public void revokeFamilyOfToken(String rawToken) {
         if (!StringUtils.hasText(rawToken)) return;
-        refreshTokenRepository.findFamilyIdByTokenHash(TokenUtils.hash(rawToken)).ifPresent(this::revokeFamily);
+        refreshTokenRepository.findByTokenHashForUpdate(TokenUtils.hash(rawToken))
+                .ifPresent(token -> revokeFamily(token.getFamilyId()));
     }
 
     @Override
