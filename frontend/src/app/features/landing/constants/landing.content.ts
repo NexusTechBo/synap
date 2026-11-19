@@ -27,6 +27,7 @@ export const HERO_SHOT: LandingShot = {
   srcset: [
     SHOTS + '11-assistant-board-480.webp 480w',
     SHOTS + '11-assistant-board-960.webp 960w',
+    SHOTS + '11-assistant-board-1100.webp 1100w',
     SHOTS + '11-assistant-board.webp 1440w',
   ].join(', '),
   sizes:
