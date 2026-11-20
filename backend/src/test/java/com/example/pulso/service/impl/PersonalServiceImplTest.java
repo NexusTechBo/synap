@@ -189,9 +189,9 @@ class PersonalServiceImplTest {
         }
 
         @Test
-        void shouldPublishStaffCreatedEventWithSpanishLocaleWhenClinicLanguageIsPortuguese() {
+        void shouldPublishStaffCreatedEventWithPortugueseLocaleWhenClinicLanguageIsPortuguese() {
             assertThat(createWithClinicLanguage(ClinicLanguage.PT_BR).locale())
-                    .isEqualTo(Locale.forLanguageTag("es"));
+                    .isEqualTo(Locale.forLanguageTag("pt-BR"));
         }
 
         @Test

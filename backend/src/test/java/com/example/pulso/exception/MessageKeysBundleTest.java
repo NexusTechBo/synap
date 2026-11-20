@@ -10,18 +10,49 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class MessageKeysBundleTest {
+    private static final String ENGLISH = "messages.properties";
+    private static final String SPANISH = "messages_es.properties";
+    private static final String PORTUGUESE_BRAZIL = "messages_pt_BR.properties";
+
     @ParameterizedTest
-    @ValueSource(strings = {"messages.properties", "messages_es.properties"})
+    @ValueSource(strings = {ENGLISH, SPANISH, PORTUGUESE_BRAZIL})
     void shouldContainEveryMessageKeyWhenBundleIsLoaded(String bundle) throws IOException {
         var properties = load(bundle);
 
         assertThat(messageKeys())
                 .allSatisfy(key ->
                         assertThat(properties).as("%s in %s", key, bundle).containsKey(key));
+    }
+
+    @Test
+    void shouldHaveExactBidirectionalKeyParityAcrossAllBundles() throws IOException {
+        var englishKeys = load(ENGLISH).stringPropertyNames();
+
+        for (var bundle : new String[] {SPANISH, PORTUGUESE_BRAZIL}) {
+            var targetKeys = load(bundle).stringPropertyNames();
+            assertThat(targetKeys)
+                    .as("Missing keys in %s compared to %s", bundle, ENGLISH)
+                    .containsAll(englishKeys);
+            assertThat(englishKeys)
+                    .as("Extra keys in %s not present in %s", bundle, ENGLISH)
+                    .containsAll(targetKeys);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {ENGLISH, SPANISH, PORTUGUESE_BRAZIL})
+    void shouldNotHaveBlankValuesInAnyBundle(String bundle) throws IOException {
+        var properties = load(bundle);
+
+        assertThat(properties.stringPropertyNames())
+                .allSatisfy(key -> assertThat(properties.getProperty(key))
+                        .as("%s in %s", key, bundle)
+                        .isNotBlank());
     }
 
     private static List<String> messageKeys() {

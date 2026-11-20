@@ -13,20 +13,31 @@ import org.junit.jupiter.api.Test;
 class NotificationBundlesParityTest {
     private static final String ENGLISH = "notifications.properties";
     private static final String SPANISH = "notifications_es.properties";
+    private static final String PORTUGUESE_BRAZIL = "notifications_pt_BR.properties";
 
     @Test
-    void shouldDefineEveryEnglishKeyInSpanishBundle() throws IOException {
-        assertThat(load(SPANISH).stringPropertyNames()).containsAll(load(ENGLISH).stringPropertyNames());
+    void shouldDefineEveryEnglishKeyInAllBundles() throws IOException {
+        var englishKeys = load(ENGLISH).stringPropertyNames();
+        for (var bundle : new String[] {SPANISH, PORTUGUESE_BRAZIL}) {
+            assertThat(load(bundle).stringPropertyNames())
+                    .as("Missing English keys in %s", bundle)
+                    .containsAll(englishKeys);
+        }
     }
 
     @Test
-    void shouldDefineEverySpanishKeyInEnglishBundle() throws IOException {
-        assertThat(load(ENGLISH).stringPropertyNames()).containsAll(load(SPANISH).stringPropertyNames());
+    void shouldNotHaveExtraKeysInTranslatedBundles() throws IOException {
+        var englishKeys = load(ENGLISH).stringPropertyNames();
+        for (var bundle : new String[] {SPANISH, PORTUGUESE_BRAZIL}) {
+            assertThat(englishKeys)
+                    .as("Extra keys in %s not present in %s", bundle, ENGLISH)
+                    .containsAll(load(bundle).stringPropertyNames());
+        }
     }
 
     @Test
-    void shouldNotHaveBlankValuesInEitherBundle() throws IOException {
-        for (var bundle : new String[] {ENGLISH, SPANISH}) {
+    void shouldNotHaveBlankValuesInAnyBundle() throws IOException {
+        for (var bundle : new String[] {ENGLISH, SPANISH, PORTUGUESE_BRAZIL}) {
             var properties = load(bundle);
             assertThat(properties.stringPropertyNames())
                     .allSatisfy(key -> assertThat(properties.getProperty(key))
@@ -36,13 +47,15 @@ class NotificationBundlesParityTest {
     }
 
     @Test
-    void shouldUseSamePlaceholdersInBothBundles() throws IOException {
+    void shouldUseSamePlaceholdersInAllBundles() throws IOException {
         var english = load(ENGLISH);
-        var spanish = load(SPANISH);
 
-        assertThat(english.stringPropertyNames()).allSatisfy(key -> assertThat(placeholders(spanish.getProperty(key)))
-                .as(key)
-                .isEqualTo(placeholders(english.getProperty(key))));
+        for (var bundle : new String[] {SPANISH, PORTUGUESE_BRAZIL}) {
+            var target = load(bundle);
+            assertThat(english.stringPropertyNames()).allSatisfy(key -> assertThat(placeholders(target.getProperty(key)))
+                    .as("%s in %s", key, bundle)
+                    .isEqualTo(placeholders(english.getProperty(key))));
+        }
     }
 
     private static String placeholders(String value) {
