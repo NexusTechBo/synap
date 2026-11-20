@@ -35,6 +35,10 @@ public final class Utils {
         return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
     }
 
+    public static String addLeadingPlus(String digits) {
+        return StringUtils.hasText(digits) ? "+" + digits : null;
+    }
+
     public static String normalizeEmail(String email) {
         return StringUtils.hasText(email) ? email.strip().toLowerCase(Locale.ROOT) : null;
     }

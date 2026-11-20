@@ -79,6 +79,9 @@ public final class MessageKeys {
     public static final String WHATSAPP_UNAVAILABLE = "whatsapp.unavailable";
     public static final String WHATSAPP_SESSION_LIMIT = "whatsapp.sessionLimit";
     public static final String WHATSAPP_NO_ACTIVE_SESSION = "whatsapp.noActiveSession";
+    public static final String WHATSAPP_ALREADY_LINKED = "whatsapp.alreadyLinked";
+    public static final String WHATSAPP_INVALID_CLINIC_PHONE = "whatsapp.invalidClinicPhone";
+    public static final String WHATSAPP_PAIRING_TIMEOUT = "whatsapp.pairingTimeout";
 
     public static final String VALIDATION_PHONE_INVALID = "validation.phone.invalid";
     public static final String VALIDATION_DOCUMENT_CI_INVALID = "validation.document.ciInvalid";
