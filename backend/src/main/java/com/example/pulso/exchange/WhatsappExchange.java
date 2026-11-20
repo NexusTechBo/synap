@@ -1,6 +1,8 @@
 package com.example.pulso.exchange;
 
 import com.example.pulso.exchange.contract.whatsapp.MessageRequest;
+import com.example.pulso.exchange.contract.whatsapp.PairingCodeRequest;
+import com.example.pulso.exchange.contract.whatsapp.PairingCodeResponse;
 import com.example.pulso.exchange.contract.whatsapp.SessionStatusResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +18,9 @@ public interface WhatsappExchange {
 
     @GetExchange("/sessions/{id}/status")
     SessionStatusResponse getSessionStatus(@PathVariable("id") String id);
+
+    @PostExchange("/sessions/{id}/pairing-code")
+    PairingCodeResponse requestPairingCode(@PathVariable("id") String id, @RequestBody PairingCodeRequest request);
 
     @PostExchange("/sessions/{id}/logout")
     void logoutSession(@PathVariable("id") String id);

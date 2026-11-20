@@ -1,7 +1,7 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { WhatsappSessionStatusResponse } from '../models/api.models';
+import { WhatsappPairingCodeResponse, WhatsappSessionStatusResponse } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class WhatsappApi {
@@ -13,6 +13,10 @@ export class WhatsappApi {
 
   status(): Observable<WhatsappSessionStatusResponse> {
     return this.http.get<WhatsappSessionStatusResponse>('whatsapp/status');
+  }
+
+  pairingCode(): Observable<WhatsappPairingCodeResponse> {
+    return this.http.post<WhatsappPairingCodeResponse>('whatsapp/pairing-code', null);
   }
 
   logout(): Observable<void> {

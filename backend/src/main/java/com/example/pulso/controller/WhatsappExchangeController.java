@@ -1,5 +1,6 @@
 package com.example.pulso.controller;
 
+import com.example.pulso.dto.whatsapp.WhatsappPairingCodeResponse;
 import com.example.pulso.dto.whatsapp.WhatsappStatusResponse;
 import com.example.pulso.security.expression.RoleExpressions;
 import com.example.pulso.service.WhatsappExchangeService;
@@ -33,11 +34,20 @@ public class WhatsappExchangeController {
 
     @Operation(
             summary = "Status of the workspace's WhatsApp session",
-            description = "id is the session id (the workspace slug); clinicPhoneNumber is the workspace phone in E.164, the number expected to scan the QR"
+            description = "id is the session id (the workspace slug); clinicPhoneNumber is the workspace phone in E.164, the number expected to link; linkedPhoneNumber is the E.164 number currently linked to WhatsApp, or null"
     )
     @GetMapping("/status")
     public WhatsappStatusResponse getSessionStatus() {
         return whatsappExchangeService.getSessionStatus();
+    }
+
+    @Operation(
+            summary = "Pairing code to link the workspace's WhatsApp without scanning a QR",
+            description = "Generates an 8-character code (XXXX-XXXX) for the workspace phone; enter it in WhatsApp under Linked devices > Link with phone number. May take up to 60 seconds"
+    )
+    @PostMapping("/pairing-code")
+    public WhatsappPairingCodeResponse requestPairingCode() {
+        return whatsappExchangeService.requestPairingCode();
     }
 
     @Operation(summary = "Unlink the workspace's WhatsApp")
