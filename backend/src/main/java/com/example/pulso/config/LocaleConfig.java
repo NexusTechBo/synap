@@ -16,7 +16,8 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 public class LocaleConfig {
     public static final Locale SPANISH = Locale.forLanguageTag("es");
     public static final Locale ENGLISH = Locale.ENGLISH;
-    public static final List<Locale> SUPPORTED_LOCALES = List.of(SPANISH, ENGLISH);
+    public static final Locale PORTUGUESE_BRAZIL = Locale.forLanguageTag("pt-BR");
+    public static final List<Locale> SUPPORTED_LOCALES = List.of(SPANISH, ENGLISH, PORTUGUESE_BRAZIL);
     private static final String HIBERNATE_VALIDATION_BUNDLE = "org.hibernate.validator.ValidationMessages";
 
     @Bean
@@ -48,6 +49,7 @@ public class LocaleConfig {
         source.setFallbackToSystemLocale(false);
         return source;
     }
+
     @PostConstruct
     public void initDefaultLocale() {
         LocaleContextHolder.setDefaultLocale(SPANISH);

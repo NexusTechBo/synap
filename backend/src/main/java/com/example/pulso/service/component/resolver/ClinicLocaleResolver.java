@@ -24,7 +24,8 @@ public class ClinicLocaleResolver {
     private Locale resolve(ClinicLanguage language) {
         return switch (language) {
             case EN -> LocaleConfig.ENGLISH;
-            case ES, PT_BR -> LocaleConfig.SPANISH;
+            case ES -> LocaleConfig.SPANISH;
+            case PT_BR -> LocaleConfig.PORTUGUESE_BRAZIL;
         };
     }
 }
