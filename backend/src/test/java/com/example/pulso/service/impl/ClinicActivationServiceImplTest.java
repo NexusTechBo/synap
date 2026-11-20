@@ -40,6 +40,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @ExtendWith(MockitoExtension.class)
 class ClinicActivationServiceImplTest {
     private static final Long CLINIC_ID = 7L;
+    private static final Locale PORTUGUESE_BRAZIL = Locale.forLanguageTag("pt-BR");
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2030-01-15T10:00:00Z"), ZoneOffset.UTC);
 
     @Mock
@@ -94,12 +95,12 @@ class ClinicActivationServiceImplTest {
         }
 
         @Test
-        void shouldPublishActivationEventWithSpanishLocaleWhenClinicLanguageIsPortuguese() {
+        void shouldPublishActivationEventWithPortugueseLocaleWhenClinicLanguageIsPortuguese() {
             service.issueActivationToken(clinic(ClinicStatus.PENDING_ACTIVATION, ClinicLanguage.PT_BR), "Ana", "ana@example.com");
 
             var captor = ArgumentCaptor.forClass(ClinicActivationEvent.class);
             verify(eventPublisher).publishEvent(captor.capture());
-            assertThat(captor.getValue().locale()).isEqualTo(Locale.forLanguageTag("es"));
+            assertThat(captor.getValue().locale()).isEqualTo(PORTUGUESE_BRAZIL);
         }
     }
 
@@ -134,14 +135,14 @@ class ClinicActivationServiceImplTest {
         }
 
         @Test
-        void shouldPublishWelcomeEventWithSpanishLocaleWhenClinicLanguageIsPortuguese() {
+        void shouldPublishWelcomeEventWithPortugueseLocaleWhenClinicLanguageIsPortuguese() {
             givenPendingClinicWithValidToken(ClinicLanguage.PT_BR);
 
             service.activateClinic(new ActivateClinicRequest("raw-token"));
 
             var captor = ArgumentCaptor.forClass(ClinicActivatedEvent.class);
             verify(eventPublisher).publishEvent(captor.capture());
-            assertThat(captor.getValue().locale()).isEqualTo(Locale.forLanguageTag("es"));
+            assertThat(captor.getValue().locale()).isEqualTo(PORTUGUESE_BRAZIL);
         }
 
         @Test
