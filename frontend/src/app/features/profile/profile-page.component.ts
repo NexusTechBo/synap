@@ -1,51 +1,41 @@
-import { Dialog } from "@angular/cdk/dialog";
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from "@angular/core";
-import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
+import { Dialog } from '@angular/cdk/dialog';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
   ReactiveFormsModule,
   ValidationErrors,
   Validators,
-} from "@angular/forms";
-import { filter, finalize } from "rxjs";
-import { AuthService } from "../../core/auth/auth.service";
-import { ROLES } from "../../core/auth/roles";
-import { ClinicCountryService } from "../../core/clinic/clinic-country.service";
-import { apiErrorMessage } from "../../core/http/api-error";
-import { I18nService } from "../../core/i18n/i18n.service";
-import { Role } from "../../core/models/api.models";
-import { initials } from "../../core/utils/labels.util";
-import { DocumentFormatPipe } from "../../shared/pipes/document-format.pipe";
-import { TranslatePipe } from "../../shared/pipes/translate.pipe";
-import { AlertComponent } from "../../shared/ui/alert/alert.component";
-import { labelledByFrame } from "../../shared/ui/dialog-frame/dialog-frame.component";
-import { FormFieldComponent } from "../../shared/ui/forms/form-field/form-field.component";
-import { LoadErrorComponent } from "../../shared/ui/load-error/load-error.component";
-import { PageHeaderComponent } from "../../shared/ui/page-header/page-header.component";
-import { SkeletonComponent } from "../../shared/ui/skeleton/skeleton.component";
-import { notBlank, phoneValidator } from "../../shared/utils/validators.util";
-import { DoctorModeCardComponent } from "./components/doctor-mode-card/doctor-mode-card.component";
-import { RegionalSettingsCardComponent } from "./components/regional-settings-card/regional-settings-card.component";
-import { WhatsappQrComponent } from "./components/whatsapp-qr/whatsapp-qr.component";
-import { ProfileService } from "./profile.service";
+} from '@angular/forms';
+import { filter, finalize } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
+import { ROLES } from '../../core/auth/roles';
+import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
+import { apiErrorMessage } from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { Role } from '../../core/models/api.models';
+import { initials } from '../../core/utils/labels.util';
+import { DocumentFormatPipe } from '../../shared/pipes/document-format.pipe';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { AlertComponent } from '../../shared/ui/alert/alert.component';
+import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
+import { FormFieldComponent } from '../../shared/ui/forms/form-field/form-field.component';
+import { LoadErrorComponent } from '../../shared/ui/load-error/load-error.component';
+import { PageHeaderComponent } from '../../shared/ui/page-header/page-header.component';
+import { SkeletonComponent } from '../../shared/ui/skeleton/skeleton.component';
+import { notBlank, phoneValidator } from '../../shared/utils/validators.util';
+import { DoctorModeCardComponent } from './components/doctor-mode-card/doctor-mode-card.component';
+import { RegionalSettingsCardComponent } from './components/regional-settings-card/regional-settings-card.component';
+import { WhatsappQrComponent } from './components/whatsapp-qr/whatsapp-qr.component';
+import { ProfileService } from './profile.service';
 
-function currentPasswordWhenChanging(
-  control: AbstractControl,
-): ValidationErrors | null {
-  return control.parent?.get("newPassword")?.value && !control.value
-    ? { required: true }
-    : null;
+function currentPasswordWhenChanging(control: AbstractControl): ValidationErrors | null {
+  return control.parent?.get('newPassword')?.value && !control.value ? { required: true } : null;
 }
 
 @Component({
-  selector: "app-profile-page",
+  selector: 'app-profile-page',
   imports: [
     AlertComponent,
     DoctorModeCardComponent,
@@ -59,8 +49,8 @@ function currentPasswordWhenChanging(
     TranslatePipe,
   ],
   providers: [ProfileService],
-  templateUrl: "./profile-page.component.html",
-  host: { class: "flex flex-1 flex-col" },
+  templateUrl: './profile-page.component.html',
+  host: { class: 'flex flex-1 flex-col' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfilePageComponent {
@@ -74,13 +64,13 @@ export class ProfilePageComponent {
 
   protected readonly phoneErrors = computed(() => {
     this.i18n.currentLang();
-    return { pattern: this.i18n.translate("validation.phonePattern") };
+    return { pattern: this.i18n.translate('validation.phonePattern') };
   });
 
   protected readonly currentPasswordErrors = computed(() => {
     this.i18n.currentLang();
     return {
-      required: this.i18n.translate("profile.form.currentPasswordRequired"),
+      required: this.i18n.translate('profile.form.currentPasswordRequired'),
     };
   });
 
@@ -88,28 +78,22 @@ export class ProfilePageComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    name: ["", notBlank],
-    email: ["", [Validators.required, Validators.email]],
-    phoneNumber: ["", phoneValidator],
-    currentPassword: ["", currentPasswordWhenChanging],
-    newPassword: ["", Validators.minLength(8)],
+    name: ['', notBlank],
+    email: ['', [Validators.required, Validators.email]],
+    phoneNumber: ['', phoneValidator],
+    currentPassword: ['', currentPasswordWhenChanging],
+    newPassword: ['', Validators.minLength(8)],
   });
 
   protected readonly roleLabel = computed(() => {
     this.i18n.currentLang();
     const profile = this.me();
-    if (!profile) return "";
-    const roles: Role[] = profile.alsoDoctor
-      ? [profile.role, "DOCTOR"]
-      : [profile.role];
-    return roles
-      .map((role) => this.i18n.translate(`roles.${role}`))
-      .join(" · ");
+    if (!profile) return '';
+    const roles: Role[] = profile.alsoDoctor ? [profile.role, 'DOCTOR'] : [profile.role];
+    return roles.map((role) => this.i18n.translate(`roles.${role}`)).join(' · ');
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
-  protected readonly isAdmin = computed(() =>
-    this.auth.hasRole(...ROLES.admin),
-  );
+  protected readonly isAdmin = computed(() => this.auth.hasRole(...ROLES.admin));
 
   constructor() {
     toObservable(this.me)
@@ -118,17 +102,13 @@ export class ProfilePageComponent {
         this.form.reset({
           name: profile.name,
           email: profile.email,
-          phoneNumber: profile.phoneNumber ?? "",
+          phoneNumber: profile.phoneNumber ?? '',
         }),
       );
     this.form.controls.newPassword.valueChanges
       .pipe(takeUntilDestroyed())
-      .subscribe(() =>
-        this.form.controls.currentPassword.updateValueAndValidity(),
-      );
-    this.form.valueChanges
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.error.set(null));
+      .subscribe(() => this.form.controls.currentPassword.updateValueAndValidity());
+    this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.error.set(null));
   }
 
   protected save(): void {
@@ -137,8 +117,7 @@ export class ProfilePageComponent {
       this.form.markAllAsTouched();
       return;
     }
-    const { name, email, phoneNumber, currentPassword, newPassword } =
-      this.form.getRawValue();
+    const { name, email, phoneNumber, currentPassword, newPassword } = this.form.getRawValue();
     this.saving.set(true);
     this.profile
       .update({
@@ -151,11 +130,7 @@ export class ProfilePageComponent {
       .subscribe({
         error: (error) =>
           this.error.set(
-            apiErrorMessage(
-              error,
-              this.i18n,
-              this.i18n.translate("profile.errors.update"),
-            ),
+            apiErrorMessage(error, this.i18n, this.i18n.translate('profile.errors.update')),
           ),
       });
   }

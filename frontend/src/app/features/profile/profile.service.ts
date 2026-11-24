@@ -1,40 +1,26 @@
-import { Dialog } from "@angular/cdk/dialog";
-import { Injectable, computed, inject, signal } from "@angular/core";
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  filter,
-  map,
-  of,
-  switchMap,
-  tap,
-  throwError,
-} from "rxjs";
-import { StaffApi } from "../../core/api/staff.api";
-import { AuthService } from "../../core/auth/auth.service";
-import { ROLES } from "../../core/auth/roles";
-import { DoctorsStore } from "../../core/catalogs/doctors.store";
-import { SpecialtiesStore } from "../../core/catalogs/specialties.store";
+import { Dialog } from '@angular/cdk/dialog';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { EMPTY, Observable, catchError, filter, map, of, switchMap, tap, throwError } from 'rxjs';
+import { StaffApi } from '../../core/api/staff.api';
+import { AuthService } from '../../core/auth/auth.service';
+import { ROLES } from '../../core/auth/roles';
+import { DoctorsStore } from '../../core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../core/catalogs/specialties.store';
 import {
   apiErrorMessage,
   doctorModeAppointmentsConflict,
   resourceError,
-} from "../../core/http/api-error";
-import { I18nService } from "../../core/i18n/i18n.service";
-import {
-  DoctorModeRequest,
-  ProfileUpdateRequest,
-  Staff,
-} from "../../core/models/api.models";
-import { ConfirmService } from "../../shared/services/confirm.service";
-import { NotificationService } from "../../shared/services/notification.service";
-import { labelledByFrame } from "../../shared/ui/dialog-frame/dialog-frame.component";
+} from '../../core/http/api-error';
+import { I18nService } from '../../core/i18n/i18n.service';
+import { DoctorModeRequest, ProfileUpdateRequest, Staff } from '../../core/models/api.models';
+import { ConfirmService } from '../../shared/services/confirm.service';
+import { NotificationService } from '../../shared/services/notification.service';
+import { labelledByFrame } from '../../shared/ui/dialog-frame/dialog-frame.component';
 import {
   DoctorModeAppointmentsData,
   DoctorModeAppointmentsDialogComponent,
   DoctorModeAppointmentsResult,
-} from "./components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component";
+} from './components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component';
 
 @Injectable()
 export class ProfileService {
@@ -59,12 +45,10 @@ export class ProfileService {
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
     this.i18n,
-    this.i18n.translate("profile.errors.load"),
+    this.i18n.translate('profile.errors.load'),
   );
-  readonly canToggleDoctorMode = computed(() =>
-    this.auth.hasRole(...ROLES.admin),
-  );
-  readonly doctorMode = computed(() => this.auth.hasRole("DOCTOR"));
+  readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
+  readonly doctorMode = computed(() => this.auth.hasRole('DOCTOR'));
 
   constructor() {
     if (this.canToggleDoctorMode()) this.specialtiesStore.load();
@@ -88,13 +72,11 @@ export class ProfileService {
 
     return this.staffApi.updateSelf(request).pipe(
       tap((profile) => {
-        this.notifications.success(
-          this.i18n.translate("profile.notifications.updated"),
-        );
+        this.notifications.success(this.i18n.translate('profile.notifications.updated'));
         if (isAdmin && (profile.phoneNumber ?? null) !== previousPhone) {
           this._whatsappRelinkNeeded.set(true);
           this.notifications.success(
-            this.i18n.translate("profile.notifications.whatsappRelinkRequired"),
+            this.i18n.translate('profile.notifications.whatsappRelinkRequired'),
           );
         }
         this.auth.setProfile(profile);
@@ -112,9 +94,7 @@ export class ProfileService {
   enableDoctorMode(specialtyId: number): Observable<unknown> {
     return this.changeDoctorMode({ enabled: true, specialtyId }).pipe(
       tap(() =>
-        this.notifications.success(
-          this.i18n.translate("profile.notifications.doctorModeEnabled"),
-        ),
+        this.notifications.success(this.i18n.translate('profile.notifications.doctorModeEnabled')),
       ),
     );
   }
@@ -122,27 +102,21 @@ export class ProfileService {
   disableDoctorMode(): Observable<unknown> {
     return this.confirm
       .ask({
-        title: this.i18n.translate("profile.doctorMode.disableConfirmTitle"),
-        message: this.i18n.translate(
-          "profile.doctorMode.disableConfirmMessage",
-        ),
-        confirmLabel: this.i18n.translate(
-          "profile.doctorMode.disableConfirmLabel",
-        ),
+        title: this.i18n.translate('profile.doctorMode.disableConfirmTitle'),
+        message: this.i18n.translate('profile.doctorMode.disableConfirmMessage'),
+        confirmLabel: this.i18n.translate('profile.doctorMode.disableConfirmLabel'),
         danger: true,
       })
       .pipe(
         filter(Boolean),
         switchMap(() => this.disableCountingCancelled()),
-        tap((cancelled) =>
-          this.notifications.success(this.disabledMessage(cancelled)),
-        ),
+        tap((cancelled) => this.notifications.success(this.disabledMessage(cancelled))),
         catchError((error) => {
           this.notifications.error(
             apiErrorMessage(
               error,
               this.i18n,
-              this.i18n.translate("profile.errors.disableDoctorMode"),
+              this.i18n.translate('profile.errors.disableDoctorMode'),
             ),
           );
           return EMPTY;
@@ -151,13 +125,10 @@ export class ProfileService {
   }
 
   private disabledMessage(cancelled: number): string {
-    if (cancelled === 0)
-      return this.i18n.translate(
-        "profile.notifications.doctorModeDisabledNone",
-      );
+    if (cancelled === 0) return this.i18n.translate('profile.notifications.doctorModeDisabledNone');
     return cancelled === 1
-      ? this.i18n.translate("profile.notifications.doctorModeDisabledOne")
-      : this.i18n.translate("profile.notifications.doctorModeDisabledMany");
+      ? this.i18n.translate('profile.notifications.doctorModeDisabledOne')
+      : this.i18n.translate('profile.notifications.doctorModeDisabledMany');
   }
 
   private disableCountingCancelled(): Observable<number> {
@@ -165,19 +136,17 @@ export class ProfileService {
       map(() => 0),
       catchError((error) => {
         const count = doctorModeAppointmentsConflict(error);
-        return count === null
-          ? throwError(() => error)
-          : this.disableCancellingAppointments(count);
+        return count === null ? throwError(() => error) : this.disableCancellingAppointments(count);
       }),
     );
   }
 
   private disableCancellingAppointments(count: number): Observable<number> {
     return this.dialog
-      .open<
-        DoctorModeAppointmentsResult,
-        DoctorModeAppointmentsData
-      >(DoctorModeAppointmentsDialogComponent, { ...labelledByFrame(), data: { count } })
+      .open<DoctorModeAppointmentsResult, DoctorModeAppointmentsData>(
+        DoctorModeAppointmentsDialogComponent,
+        { ...labelledByFrame(), data: { count } },
+      )
       .closed.pipe(
         filter((result): result is DoctorModeAppointmentsResult => !!result),
         switchMap(({ reason }) =>

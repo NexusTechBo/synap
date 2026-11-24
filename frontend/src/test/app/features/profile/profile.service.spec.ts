@@ -1,31 +1,31 @@
-import { Dialog } from "@angular/cdk/dialog";
-import { HttpErrorResponse } from "@angular/common/http";
-import { signal } from "@angular/core";
-import { TestBed } from "@angular/core/testing";
-import { Subject, of, throwError } from "rxjs";
-import { StaffApi } from "../../../../app/core/api/staff.api";
-import { AuthService } from "../../../../app/core/auth/auth.service";
-import { DoctorsStore } from "../../../../app/core/catalogs/doctors.store";
-import { SpecialtiesStore } from "../../../../app/core/catalogs/specialties.store";
-import { API_ERROR_CODES } from "../../../../app/core/http/api-error";
-import { DoctorModeAppointmentsDialogComponent } from "../../../../app/features/profile/components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component";
-import { ProfileService } from "../../../../app/features/profile/profile.service";
-import { ConfirmService } from "../../../../app/shared/services/confirm.service";
-import { NotificationService } from "../../../../app/shared/services/notification.service";
+import { Dialog } from '@angular/cdk/dialog';
+import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { Subject, of, throwError } from 'rxjs';
+import { StaffApi } from '../../../../app/core/api/staff.api';
+import { AuthService } from '../../../../app/core/auth/auth.service';
+import { DoctorsStore } from '../../../../app/core/catalogs/doctors.store';
+import { SpecialtiesStore } from '../../../../app/core/catalogs/specialties.store';
+import { API_ERROR_CODES } from '../../../../app/core/http/api-error';
+import { DoctorModeAppointmentsDialogComponent } from '../../../../app/features/profile/components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component';
+import { ProfileService } from '../../../../app/features/profile/profile.service';
+import { ConfirmService } from '../../../../app/shared/services/confirm.service';
+import { NotificationService } from '../../../../app/shared/services/notification.service';
 
 function conflict(count: number): HttpErrorResponse {
   return new HttpErrorResponse({
     status: 409,
     error: {
       status: 409,
-      message: "Citas activas",
+      message: 'Citas activas',
       code: API_ERROR_CODES.doctorModeActiveAppointmentsConflict,
       details: { count },
     },
   });
 }
 
-describe("ProfileService", () => {
+describe('ProfileService', () => {
   let service: ProfileService;
   let staffApi: {
     updateDoctorMode: ReturnType<typeof vi.fn>;
@@ -92,28 +92,26 @@ describe("ProfileService", () => {
 
   function run(): { completed: boolean } {
     const state = { completed: false };
-    service
-      .disableDoctorMode()
-      .subscribe({ complete: () => (state.completed = true) });
+    service.disableDoctorMode().subscribe({ complete: () => (state.completed = true) });
     return state;
   }
 
-  describe("disableDoctorMode", () => {
-    it("does nothing when the initial confirmation is declined", () => {
+  describe('disableDoctorMode', () => {
+    it('does nothing when the initial confirmation is declined', () => {
       confirm.ask.mockReturnValue(of(false));
       const state = run();
       expect(staffApi.updateDoctorMode).not.toHaveBeenCalled();
       expect(state.completed).toBe(true);
     });
 
-    it("asks with a text that keeps the availabilities", () => {
+    it('asks with a text that keeps the availabilities', () => {
       run();
       const options = confirm.ask.mock.calls[0][0] as { message: string };
-      expect(options.message).toContain("se conservan");
-      expect(options.message).not.toContain("desactivar tus horarios");
+      expect(options.message).toContain('se conservan');
+      expect(options.message).not.toContain('desactivar tus horarios');
     });
 
-    it("turns it off with a single call when there is no conflict", () => {
+    it('turns it off with a single call when there is no conflict', () => {
       run();
       expect(staffApi.updateDoctorMode).toHaveBeenCalledOnce();
       expect(staffApi.updateDoctorMode).toHaveBeenCalledWith({
@@ -124,12 +122,10 @@ describe("ProfileService", () => {
       expect(auth.refresh).toHaveBeenCalled();
       expect(auth.reloadProfile).toHaveBeenCalledOnce();
       expect(doctorsStore.invalidate).toHaveBeenCalledOnce();
-      expect(notifications.success).toHaveBeenCalledWith(
-        "Ya no atiendes como doctor",
-      );
+      expect(notifications.success).toHaveBeenCalledWith('Ya no atiendes como doctor');
     });
 
-    it("opens the dialog on conflict and resends cancelling the appointments with the reason", () => {
+    it('opens the dialog on conflict and resends cancelling the appointments with the reason', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(3)))
         .mockReturnValueOnce(of(undefined));
@@ -144,7 +140,7 @@ describe("ProfileService", () => {
       );
       expect(staffApi.updateDoctorMode).toHaveBeenCalledOnce();
 
-      dialogClosed.next({ reason: "Vacaciones" });
+      dialogClosed.next({ reason: 'Vacaciones' });
       dialogClosed.complete();
 
       expect(staffApi.updateDoctorMode).toHaveBeenCalledTimes(2);
@@ -152,21 +148,21 @@ describe("ProfileService", () => {
         enabled: false,
         specialtyId: null,
         cancelAppointments: true,
-        cancellationReason: "Vacaciones",
+        cancellationReason: 'Vacaciones',
       });
       expect(auth.refresh).toHaveBeenCalled();
       expect(notifications.success).toHaveBeenCalledWith(
-        "Ya no atiendes como doctor. Se cancelaron las citas y se notificó a los pacientes",
+        'Ya no atiendes como doctor. Se cancelaron las citas y se notificó a los pacientes',
       );
       expect(state.completed).toBe(true);
     });
 
-    it("omits the reason when blank and uses the singular message for one appointment", () => {
+    it('omits the reason when blank and uses the singular message for one appointment', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(1)))
         .mockReturnValueOnce(of(undefined));
       run();
-      dialogClosed.next({ reason: "" });
+      dialogClosed.next({ reason: '' });
       dialogClosed.complete();
 
       expect(staffApi.updateDoctorMode).toHaveBeenLastCalledWith({
@@ -175,14 +171,12 @@ describe("ProfileService", () => {
         cancelAppointments: true,
       });
       expect(notifications.success).toHaveBeenCalledWith(
-        "Ya no atiendes como doctor. Se canceló la cita y se notificó al paciente",
+        'Ya no atiendes como doctor. Se canceló la cita y se notificó al paciente',
       );
     });
 
-    it("does nothing more when the dialog is dismissed", () => {
-      staffApi.updateDoctorMode.mockReturnValueOnce(
-        throwError(() => conflict(2)),
-      );
+    it('does nothing more when the dialog is dismissed', () => {
+      staffApi.updateDoctorMode.mockReturnValueOnce(throwError(() => conflict(2)));
       const state = run();
       dialogClosed.next(undefined);
       dialogClosed.complete();
@@ -195,19 +189,15 @@ describe("ProfileService", () => {
       expect(state.completed).toBe(true);
     });
 
-    it("notifies other errors without opening the dialog", () => {
-      staffApi.updateDoctorMode.mockReturnValueOnce(
-        throwError(() => new Error("x")),
-      );
+    it('notifies other errors without opening the dialog', () => {
+      staffApi.updateDoctorMode.mockReturnValueOnce(throwError(() => new Error('x')));
       const state = run();
       expect(dialog.open).not.toHaveBeenCalled();
-      expect(notifications.error).toHaveBeenCalledWith(
-        "No se pudo desactivar el modo doctor",
-      );
+      expect(notifications.error).toHaveBeenCalledWith('No se pudo desactivar el modo doctor');
       expect(state.completed).toBe(true);
     });
 
-    it("notifies an error of the second call", () => {
+    it('notifies an error of the second call', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(2)))
         .mockReturnValueOnce(
@@ -215,23 +205,21 @@ describe("ProfileService", () => {
             () =>
               new HttpErrorResponse({
                 status: 500,
-                error: { message: "Falló" },
+                error: { message: 'Falló' },
               }),
           ),
         );
       run();
-      dialogClosed.next({ reason: "" });
+      dialogClosed.next({ reason: '' });
       dialogClosed.complete();
-      expect(notifications.error).toHaveBeenCalledWith("Falló");
+      expect(notifications.error).toHaveBeenCalledWith('Falló');
       expect(auth.refresh).not.toHaveBeenCalled();
     });
   });
 
-  describe("session refresh after profile changes", () => {
-    it("keeps the doctor mode change successful when the refresh fails", () => {
-      auth.refresh.mockReturnValue(
-        throwError(() => new HttpErrorResponse({ status: 503 })),
-      );
+  describe('session refresh after profile changes', () => {
+    it('keeps the doctor mode change successful when the refresh fails', () => {
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
       let completed = false;
       let failed = false;
 
@@ -250,11 +238,9 @@ describe("ProfileService", () => {
       expect(doctorsStore.invalidate).toHaveBeenCalledOnce();
     });
 
-    it("refreshes the session after updating the own profile", () => {
-      const profile = { id: 1, name: "Ana" };
-      (staffApi as Record<string, unknown>)["updateSelf"] = vi.fn(() =>
-        of(profile),
-      );
+    it('refreshes the session after updating the own profile', () => {
+      const profile = { id: 1, name: 'Ana' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(profile));
       let result: unknown;
 
       service.update({} as never).subscribe((value) => (result = value));
@@ -263,14 +249,10 @@ describe("ProfileService", () => {
       expect(auth.refresh).toHaveBeenCalledOnce();
     });
 
-    it("returns the updated profile when the refresh fails after updating", () => {
-      const profile = { id: 1, name: "Ana" };
-      (staffApi as Record<string, unknown>)["updateSelf"] = vi.fn(() =>
-        of(profile),
-      );
-      auth.refresh.mockReturnValue(
-        throwError(() => new HttpErrorResponse({ status: 0 })),
-      );
+    it('returns the updated profile when the refresh fails after updating', () => {
+      const profile = { id: 1, name: 'Ana' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(profile));
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
       let result: unknown;
 
       service.update({} as never).subscribe((value) => (result = value));
@@ -278,37 +260,33 @@ describe("ProfileService", () => {
       expect(result).toBe(profile);
     });
 
-    it("notifies and flags WhatsApp relink when administrator changes own phone number", () => {
+    it('notifies and flags WhatsApp relink when administrator changes own phone number', () => {
       auth.hasRole.mockReturnValue(true);
-      auth.profile.set({ id: 1, name: "Admin", phoneNumber: "+59170000001" });
-      const updated = { id: 1, name: "Admin", phoneNumber: "+59171234567" };
-      (staffApi as Record<string, unknown>)["updateSelf"] = vi.fn(() =>
-        of(updated),
-      );
+      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
+      const updated = { id: 1, name: 'Admin', phoneNumber: '+59171234567' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
 
       service.update({} as never).subscribe();
 
       expect(service.whatsappRelinkNeeded()).toBe(true);
-      expect(notifications.success).toHaveBeenCalledWith("Perfil actualizado");
+      expect(notifications.success).toHaveBeenCalledWith('Perfil actualizado');
       expect(notifications.success).toHaveBeenCalledWith(
-        "El número del espacio de trabajo se actualizó. Vuelve a vincular WhatsApp con QR o código de 8 dígitos.",
+        'El número del espacio de trabajo se actualizó. Vuelve a vincular WhatsApp con QR o código de 8 dígitos.',
       );
 
       service.clearWhatsappRelinkNotice();
       expect(service.whatsappRelinkNeeded()).toBe(false);
     });
 
-    it("does not flag WhatsApp relink when administrator phone number does not change", () => {
+    it('does not flag WhatsApp relink when administrator phone number does not change', () => {
       auth.hasRole.mockReturnValue(true);
-      auth.profile.set({ id: 1, name: "Admin", phoneNumber: "+59170000001" });
+      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
       const updated = {
         id: 1,
-        name: "Admin Renamed",
-        phoneNumber: "+59170000001",
+        name: 'Admin Renamed',
+        phoneNumber: '+59170000001',
       };
-      (staffApi as Record<string, unknown>)["updateSelf"] = vi.fn(() =>
-        of(updated),
-      );
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
 
       service.update({} as never).subscribe();
 
