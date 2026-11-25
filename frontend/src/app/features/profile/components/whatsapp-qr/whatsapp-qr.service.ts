@@ -26,12 +26,27 @@ import { I18nService } from '../../../../core/i18n/i18n.service';
 import { WhatsappSessionStatusResponse } from '../../../../core/models/api.models';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
+export type WhatsappLinkMethod = 'qr' | 'code';
+
 export type WhatsappView =
   'loading' | 'connected' | 'linking' | 'reconnecting' | 'expired' | 'error';
 
 const STATUS_POLL_MS = 3_000;
 const QR_REFRESH_MS = 20_000;
 const QR_MAX_CODES = 6;
+const PAIRING_CODE_TTL_MS = 160_000;
+
+function comparableDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('55') && digits.length === 13 && digits[4] === '9') {
+    return digits.slice(0, 4) + digits.slice(5);
+  }
+  return digits;
+}
+
+function prefersCodeMethod(): boolean {
+  return globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
+}
 
 function withJsonErrorBody(error: unknown): Observable<never> {
   if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
@@ -71,20 +86,47 @@ export class WhatsappQrService {
   private readonly _error = signal<string | null>(null);
   private readonly _expired = signal(false);
   private readonly _loggingOut = signal(false);
+  private readonly preferredMethod = signal<WhatsappLinkMethod>(
+    prefersCodeMethod() ? 'code' : 'qr',
+  );
+  private readonly _pairingCode = signal<string | null>(null);
 
   readonly session = this._session.asReadonly();
   readonly qrUrl = this._qrUrl.asReadonly();
   readonly error = this._error.asReadonly();
   readonly expired = this._expired.asReadonly();
   readonly loggingOut = this._loggingOut.asReadonly();
+  readonly pairingCode = this._pairingCode.asReadonly();
 
   readonly status = computed(() => this.session()?.status ?? null);
   readonly statusLabel = computed(() => {
     this.i18n.currentLang();
     const status = this.status();
-    return status ? this.i18n.translate(`profile.whatsapp.status.${status}`) : '';
+    if (!status) return '';
+    const key =
+      status === 'QR_PENDING' || status === 'PAIRING_PENDING'
+        ? this.method() === 'code'
+          ? 'PAIRING_PENDING'
+          : 'QR_PENDING'
+        : status;
+    return this.i18n.translate(`profile.whatsapp.status.${key}`);
   });
   readonly clinicPhoneNumber = computed(() => this.session()?.clinicPhoneNumber ?? null);
+  readonly canUseCode = computed(() => !!this.clinicPhoneNumber());
+  readonly method = computed<WhatsappLinkMethod>(() =>
+    this.canUseCode() ? this.preferredMethod() : 'qr',
+  );
+  readonly linkedPhoneNumber = computed(() => this.session()?.linkedPhoneNumber ?? null);
+  readonly phoneMismatch = computed(() => {
+    const linked = this.linkedPhoneNumber();
+    const clinic = this.clinicPhoneNumber();
+    return (
+      this.status() === 'READY' &&
+      !!linked &&
+      !!clinic &&
+      comparableDigits(linked) !== comparableDigits(clinic)
+    );
+  });
   readonly view = computed<WhatsappView>(() => {
     if (this.error()) return 'error';
     const status = this.status();
@@ -102,12 +144,14 @@ export class WhatsappQrService {
       )
       .subscribe();
 
-    toObservable(computed(() => this.view() === 'linking'))
+    toObservable(computed(() => (this.view() === 'linking' ? this.method() : null)))
       .pipe(
         distinctUntilChanged(),
-        switchMap((linking) => {
-          if (linking) return this.refreshQr();
+        switchMap((method) => {
           this.setQr(null);
+          this._pairingCode.set(null);
+          if (method === 'qr') return this.refreshQr();
+          if (method === 'code') return this.requestPairingCode();
           return EMPTY;
         }),
         takeUntilDestroyed(),
@@ -115,6 +159,15 @@ export class WhatsappQrService {
       .subscribe();
 
     inject(DestroyRef).onDestroy(() => this.setQr(null));
+  }
+
+  selectMethod(method: WhatsappLinkMethod): void {
+    this.preferredMethod.set(method);
+  }
+
+  useQr(): void {
+    this.preferredMethod.set('qr');
+    this.restart();
   }
 
   restart(): void {
@@ -155,6 +208,18 @@ export class WhatsappQrService {
     );
   }
 
+  private requestPairingCode(): Observable<never> {
+    return concat(
+      this.api.pairingCode().pipe(tap((response) => this._pairingCode.set(response.code))),
+      timer(PAIRING_CODE_TTL_MS).pipe(tap(() => this._expired.set(true))),
+    ).pipe(
+      ignoreElements(),
+      catchError((error) =>
+        this.fail(error, this.i18n.translate('profile.whatsapp.pairingCodeError')),
+      ),
+    );
+  }
+
   private fetchQr(): Observable<Blob | null> {
     return this.api.qr().pipe(
       map((response) => (response.status === HttpStatusCode.NoContent ? null : response.body)),
@@ -165,6 +230,14 @@ export class WhatsappQrService {
   private onStatus(session: WhatsappSessionStatusResponse): void {
     const previous = this.status();
     this._session.set(session);
+    if (
+      previous === 'PAIRING_PENDING' &&
+      session.status === 'IDLE' &&
+      this.method() === 'code' &&
+      this._pairingCode() !== null
+    ) {
+      this._expired.set(true);
+    }
     if (session.status === 'READY' && previous && previous !== 'READY') {
       this.notifications.success(this.i18n.translate('profile.whatsapp.linkedSuccess'));
     }

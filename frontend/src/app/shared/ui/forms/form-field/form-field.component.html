@@ -1,5 +1,10 @@
 @if (label()) {
-  <label class="field-label" [for]="fieldId()">{{ label() }}</label>
+  <div class="field-label-row">
+    <label class="field-label" [for]="fieldId()">{{ label() }}</label>
+    @if (tooltip(); as tooltipText) {
+      <app-help-tooltip [text]="tooltipText" />
+    }
+  </div>
 }
 <ng-content />
 @if (error(); as message) {

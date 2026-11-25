@@ -3,14 +3,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RegionsStore } from '../../../../../../app/core/clinic/regions.store';
 import { I18nService } from '../../../../../../app/core/i18n/i18n.service';
+import { RegionCountry } from '../../../../../../app/core/models/api.models';
 import { RegisterFormComponent } from '../../../../../../app/features/register/components/register-form/register-form.component';
 import { RegisterService } from '../../../../../../app/features/register/register.service';
+import { CI_MESSAGE, FormDom, formDom } from '../../../../../testing/form-dom';
 
-const CI_MESSAGE = 'Solo números, de 5 a 10 dígitos';
+const BOLIVIA: RegionCountry = {
+  code: 'BO',
+  defaultTimezone: 'America/La_Paz',
+  timezones: ['America/La_Paz'],
+  defaultLanguage: 'es',
+  phonePlaceholder: '+591 70000000',
+};
 
 describe('RegisterFormComponent', () => {
   let fixture: ComponentFixture<RegisterFormComponent>;
   let element: HTMLElement;
+  let dom: FormDom;
   let register: { register: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
@@ -22,7 +31,13 @@ describe('RegisterFormComponent', () => {
         provideRouter([]),
         {
           provide: RegionsStore,
-          useValue: { available: signal(false), countries: signal([]), country: () => undefined },
+          useValue: {
+            available: signal(true),
+            hasError: signal(false),
+            countries: signal([BOLIVIA]),
+            languages: signal(['es']),
+            country: () => BOLIVIA,
+          },
         },
         {
           provide: RegisterService,
@@ -38,42 +53,25 @@ describe('RegisterFormComponent', () => {
     });
     await TestBed.inject(I18nService).init();
     fixture = TestBed.createComponent(RegisterFormComponent);
+    dom = formDom(fixture);
     fixture.autoDetectChanges();
     element = fixture.nativeElement;
     await fixture.whenStable();
   });
 
-  function field(label: string): HTMLInputElement {
-    const labelElement = [...element.querySelectorAll('label')].find(
-      (l) => l.textContent?.trim() === label,
-    );
-    return element.querySelector<HTMLInputElement>(`[id="${labelElement!.htmlFor}"]`)!;
-  }
-
-  async function type(label: string, value: string): Promise<void> {
-    const input = field(label);
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-  }
-
   async function fillValid(document: string): Promise<void> {
-    await type('Nombre del espacio de trabajo', 'Mi consultorio');
-    await type('Teléfono', '70000000');
-    await type('Identificador del espacio de trabajo', 'miconsultorio');
-    await type('Nombre completo', 'Ana Rojas');
-    await type('CI (opcional)', document);
-    await type('Usuario', 'admin');
-    await type('Correo electrónico', 'admin@email.com');
-    await type('Contraseña', 'secreto123');
+    await dom.type('Nombre del espacio de trabajo', 'Mi consultorio');
+    await dom.type('Teléfono', '70000000');
+    await dom.type('Identificador del espacio de trabajo', 'miconsultorio');
+    await dom.type('Nombre completo', 'Ana Rojas');
+    await dom.type('CI (opcional)', document);
+    await dom.type('Usuario', 'admin');
+    await dom.type('Correo electrónico', 'admin@email.com');
+    await dom.type('Contraseña', 'secreto123');
   }
 
-  async function submit(): Promise<void> {
-    [...element.querySelectorAll<HTMLButtonElement>('button')]
-      .find((b) => b.textContent?.trim() === 'Crear mi espacio de trabajo')!
-      .click();
-    await fixture.whenStable();
+  function submit(): Promise<void> {
+    return dom.clickButton('Crear mi espacio de trabajo');
   }
 
   function ciError(): string | undefined {
@@ -89,7 +87,7 @@ describe('RegisterFormComponent', () => {
 
   describe('admin CI validation (DEF-02)', () => {
     it('limits the CI input to 10 characters', () => {
-      expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
+      expect(dom.field('CI (opcional)').getAttribute('maxlength')).toBe('10');
     });
 
     it.each(['1234', '12a45', '12 345', '12345678901'])(

@@ -1,6 +1,7 @@
-package com.example.pulso.notification;
+package com.example.pulso.notification.listener;
 
 import com.example.pulso.config.AsyncConfig;
+import com.example.pulso.notification.NotificationChannel;
 import com.example.pulso.notification.event.AppointmentNotificationEvent;
 import com.example.pulso.notification.template.WhatsappTemplates;
 import com.example.pulso.service.WhatsappExchangeService;

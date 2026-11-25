@@ -1,4 +1,4 @@
-package com.example.pulso.security;
+package com.example.pulso.security.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.pulso.repository.ClinicRepository;
-import com.example.pulso.security.cache.ClinicSettingsVersionCache;
 import com.example.pulso.websocket.event.SessionRefreshEvent;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;

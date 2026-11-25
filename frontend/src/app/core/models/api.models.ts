@@ -10,7 +10,7 @@ export type DayOfWeek =
   'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
 
 export type WhatsappSessionStatus =
-  'IDLE' | 'INITIALIZING' | 'QR_PENDING' | 'READY' | 'DISCONNECTED';
+  'IDLE' | 'INITIALIZING' | 'QR_PENDING' | 'PAIRING_PENDING' | 'READY' | 'DISCONNECTED';
 
 export interface Page<T> {
   content: T[];
@@ -390,4 +390,10 @@ export interface WhatsappSessionStatusResponse {
   id: string;
   status: WhatsappSessionStatus;
   clinicPhoneNumber: string | null;
+  linkedPhoneNumber: string | null;
+}
+
+export interface WhatsappPairingCodeResponse {
+  status: WhatsappSessionStatus;
+  code: string;
 }

@@ -40,6 +40,7 @@ import com.example.pulso.service.component.provider.ClinicTimeProvider;
 import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
+import com.example.pulso.whatsapp.event.AdminPhoneChangedEvent;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -136,9 +137,9 @@ class PersonalServiceImplTest {
                 .specialty(
                         alsoDoctor
                                 ? Specialty.builder()
-                                        .id(SPECIALTY_ID)
-                                        .name("Cardio")
-                                        .build()
+                                    .id(SPECIALTY_ID)
+                                    .name("Cardio")
+                                    .build()
                                 : null
                 )
                 .build();
@@ -189,9 +190,9 @@ class PersonalServiceImplTest {
         }
 
         @Test
-        void shouldPublishStaffCreatedEventWithSpanishLocaleWhenClinicLanguageIsPortuguese() {
+        void shouldPublishStaffCreatedEventWithPortugueseLocaleWhenClinicLanguageIsPortuguese() {
             assertThat(createWithClinicLanguage(ClinicLanguage.PT_BR).locale())
-                    .isEqualTo(Locale.forLanguageTag("es"));
+                    .isEqualTo(Locale.forLanguageTag("pt-BR"));
         }
 
         @Test
@@ -520,13 +521,33 @@ class PersonalServiceImplTest {
         }
 
         @Test
-        void shouldNotRevokeWhenTargetIsAdministratorAndOnlyRequestedRoleDiffers() {
+        void shouldNotRevokeWhenAdminEndpointTargetsAdministrator() {
             target(ERole.ADMINISTRATOR);
+            var request = new PersonalUpdateRequest("Target", "target@mail.test", "71234567", null, ERole.ASSISTANT, null);
 
-            service.updatePersonalByAdmin(
-                    TARGET_ID, new PersonalUpdateRequest("Target", "target@mail.test", null, null, ERole.ASSISTANT, null));
+            var thrown = catchThrowable(() -> service.updatePersonalByAdmin(TARGET_ID, request));
 
+            assertThat(thrown).isInstanceOf(ForbiddenException.class);
             verifyNoInteractions(refreshTokenService);
+        }
+
+        @Test
+        void shouldNotMutateNorPersistNorEncodeWhenAdminEndpointTargetsAdministrator() {
+            var personal = target(ERole.ADMINISTRATOR);
+            var name = personal.getName();
+            var email = personal.getEmail();
+            var phone = personal.getPhoneNumber();
+            var request = new PersonalUpdateRequest("Other", "other@mail.test", "71234567", "newSecret123", ERole.ASSISTANT, null);
+
+            var thrown = catchThrowable(() -> service.updatePersonalByAdmin(TARGET_ID, request));
+
+            assertThat(thrown).isInstanceOf(ForbiddenException.class);
+            assertThat(personal.getName()).isEqualTo(name);
+            assertThat(personal.getEmail()).isEqualTo(email);
+            assertThat(personal.getPhoneNumber()).isEqualTo(phone);
+            assertThat(personal.getRole()).isEqualTo(ERole.ADMINISTRATOR);
+            verify(personalRepository, never()).save(any());
+            verifyNoInteractions(passwordEncoder, refreshTokenService, eventPublisher, currentClinicProvider);
         }
 
         @Test
@@ -580,6 +601,139 @@ class PersonalServiceImplTest {
             service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(true, SPECIALTY_ID, null, null));
 
             verifyNoInteractions(refreshTokenService);
+        }
+    }
+
+    @Nested
+    class AdminPhoneSync {
+        private static final Long CLINIC_ID = 1L;
+        private static final Long TARGET_ID = 9L;
+
+        private Clinic clinic(String phone) {
+            var c = Clinic.builder()
+                    .id(CLINIC_ID)
+                    .country(SupportedCountry.BO)
+                    .phoneNumber(phone)
+                    .build();
+            when(currentClinicProvider.getCurrentClinic()).thenReturn(c);
+            return c;
+        }
+
+        private Personal person(Long id, ERole role, String phone) {
+            var p = Personal.builder()
+                    .id(id)
+                    .name("User")
+                    .email("user@mail.test")
+                    .phoneNumber(phone)
+                    .role(role)
+                    .active(true)
+                    .build();
+            givenPersonal(p);
+            return p;
+        }
+
+        @Test
+        void shouldSyncClinicPhoneNormalizedToE164AndPublishEventWhenAdminUpdatesOwnPhone() {
+            var c = clinic("+59170000001");
+            person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+
+            service.updateOwnProfile(
+                    ADMIN_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Admin", "user@mail.test", "71234567", null, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+59171234567");
+            var captor = ArgumentCaptor.forClass(AdminPhoneChangedEvent.class);
+            verify(eventPublisher).publishEvent(captor.capture());
+            assertThat(captor.getValue())
+                    .isEqualTo(new AdminPhoneChangedEvent(CLINIC_ID, "+59170000001", "+59171234567"));
+        }
+
+        @Test
+        void shouldRejectUpdateByAdminEndpointWhenTargetIsAdministrator() {
+            var personal = person(TARGET_ID, ERole.ADMINISTRATOR, "+59170000001");
+            var request = new PersonalUpdateRequest("Admin", "user@mail.test", "71234567", null, ERole.ADMINISTRATOR, null);
+
+            var thrown = catchThrowable(() -> service.updatePersonalByAdmin(TARGET_ID, request));
+
+            assertThat(thrown).isInstanceOf(ForbiddenException.class);
+            assertThat(((ForbiddenException) thrown).getMessageKey())
+                    .isEqualTo(MessageKeys.PERSONAL_ADMIN_NOT_EDITABLE);
+            assertThat(personal.getPhoneNumber()).isEqualTo("+59170000001");
+            verifyNoInteractions(currentClinicProvider, eventPublisher);
+        }
+
+        @Test
+        void shouldSyncClinicPhoneAndPublishEventWithClinicPreviousPhoneWhenLegacyPhonesDiffer() {
+            var c = clinic("+59170000009");
+            person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+
+            service.updateOwnProfile(
+                    ADMIN_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Admin", "user@mail.test", "70000001", null, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+59170000001");
+            verify(eventPublisher).publishEvent(
+                    new AdminPhoneChangedEvent(CLINIC_ID, "+59170000009", "+59170000001")
+            );
+        }
+
+        @Test
+        void shouldRejectBlankPhoneWhenAdminUpdatesOwnProfile() {
+            var personal = person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+            var request = new PersonalProfileUpdateRequest("Admin", "user@mail.test", " ", null, null);
+            var sessionId = UUID.randomUUID();
+
+            var thrown = catchThrowable(() -> service.updateOwnProfile(ADMIN_ID, sessionId, request));
+
+            assertThat(thrown).isInstanceOf(BusinessException.class);
+            assertThat(((BusinessException) thrown).getMessageKey())
+                    .isEqualTo(MessageKeys.PERSONAL_ADMIN_PHONE_REQUIRED);
+            assertThat(personal.getPhoneNumber()).isEqualTo("+59170000001");
+            verifyNoInteractions(currentClinicProvider, eventPublisher);
+        }
+
+        @Test
+        void shouldNotPublishEventWhenClinicPhoneAlreadyMatches() {
+            var c = clinic("+59170000001");
+            person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+
+            service.updateOwnProfile(
+                    ADMIN_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Admin", "user@mail.test", "70000001", null, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+59170000001");
+            verifyNoInteractions(eventPublisher);
+        }
+
+        @Test
+        void shouldNotTouchClinicOrPublishEventWhenNonAdminPhoneChanges() {
+            person(TARGET_ID, ERole.DOCTOR, "+59170000001");
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID,
+                    new PersonalUpdateRequest("Doctor", "user@mail.test", "79999999", null, ERole.DOCTOR, null)
+            );
+
+            verifyNoInteractions(currentClinicProvider, eventPublisher);
+        }
+
+        @Test
+        void shouldAllowNullPhoneWhenNonAdminLeavesPhoneEmpty() {
+            var personal = person(TARGET_ID, ERole.DOCTOR, "+59170000001");
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID,
+                    new PersonalUpdateRequest("Doctor", "user@mail.test", null, null, ERole.DOCTOR, null)
+            );
+
+            assertThat(personal.getPhoneNumber()).isNull();
+            verifyNoInteractions(currentClinicProvider, eventPublisher);
         }
     }
 }

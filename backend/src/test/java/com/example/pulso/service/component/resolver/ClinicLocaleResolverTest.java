@@ -19,6 +19,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 @ExtendWith(MockitoExtension.class)
 class ClinicLocaleResolverTest {
     private static final Locale SPANISH = Locale.forLanguageTag("es");
+    private static final Locale PORTUGUESE_BRAZIL = Locale.forLanguageTag("pt-BR");
 
     @Mock
     private CurrentClinicProvider currentClinicProvider;
@@ -52,8 +53,8 @@ class ClinicLocaleResolverTest {
         }
 
         @Test
-        void shouldReturnSpanishWhenClinicLanguageIsPortuguese() {
-            assertThat(resolver.resolve(clinic(ClinicLanguage.PT_BR))).isEqualTo(SPANISH);
+        void shouldReturnPortugueseWhenClinicLanguageIsPortuguese() {
+            assertThat(resolver.resolve(clinic(ClinicLanguage.PT_BR))).isEqualTo(PORTUGUESE_BRAZIL);
         }
     }
 
@@ -67,10 +68,10 @@ class ClinicLocaleResolverTest {
         }
 
         @Test
-        void shouldMapPortugueseOfCurrentClinicToSpanish() {
+        void shouldReturnPortugueseForCurrentClinic() {
             when(currentClinicProvider.getCurrentClinic()).thenReturn(clinic(ClinicLanguage.PT_BR));
 
-            assertThat(resolver.resolveCurrent()).isEqualTo(SPANISH);
+            assertThat(resolver.resolveCurrent()).isEqualTo(PORTUGUESE_BRAZIL);
         }
 
         @Test

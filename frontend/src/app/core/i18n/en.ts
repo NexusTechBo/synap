@@ -13,6 +13,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     close: 'Close',
     confirm: 'Confirm',
     back: 'Back',
+    retry: 'Retry',
   },
   errors: {
     unexpected: 'An unexpected error occurred',
@@ -116,6 +117,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
     successSpamHelp: "Didn't receive it? Check your spam folder or request a new one.",
     goToLogin: 'Go to sign in',
+    clinicSlugTooltip:
+      'Unique code for your workspace. Used in your public booking link and team login usernames (@identifier.com). Lowercase letters and numbers only (3–50 characters), and cannot be changed later.',
+    adminUsernameTooltip:
+      'Short username used to sign in. It is automatically combined with your workspace identifier (username@identifier.com).',
   },
 
   activation: {
@@ -320,6 +325,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     save: 'Save settings',
     saving: 'Saving…',
     loadError: 'Could not load the regional catalog',
+    retrying: 'The service is not available yet. Retrying…',
     saveError: 'Could not save the regional settings',
     saved: 'Regional settings updated',
     confirmTitle: 'Change time zone',
@@ -343,6 +349,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     documentCi: 'Numbers only, 5 to 10 digits',
     documentCpf: 'Invalid CPF: 11 digits with a valid check digit',
     phonePattern: '7 to 20 characters: numbers, spaces, +, - or parentheses',
+    phoneRequired: 'Administrators must have a phone number',
     usernamePattern: '3 to 50 characters: lowercase letters, numbers, dot, hyphen or underscore',
     rangeRequired: 'Enter the time range',
     endBeforeStart: 'End time must be after start time',
@@ -599,6 +606,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       saving: 'Saving…',
       saveChanges: 'Save changes',
       createMember: 'Create member',
+      roleTooltip:
+        'Doctors manage their own availability and schedule. Assistants manage all workspace appointments and patients without a personal schedule.',
+      usernameTooltip:
+        'Unique sign-in handle. It is automatically combined with your workspace domain (username@identifier.com) and cannot be changed later.',
     },
   },
 
@@ -616,6 +627,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       fullNameLabel: 'Full name',
       emailLabel: 'Email',
       phoneLabel: 'Phone (optional)',
+      phoneRequiredLabel: 'Phone',
       changePasswordTitle: 'Change password',
       changePasswordSubtitle: 'Optional. Leave blank to keep your current one.',
       currentPasswordLabel: 'Current password',
@@ -639,6 +651,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         'You are no longer practicing as a doctor. The appointment was cancelled and the patient was notified',
       doctorModeDisabledMany:
         'You are no longer practicing as a doctor. Appointments were cancelled and patients were notified',
+      whatsappRelinkRequired:
+        'Workspace phone number updated. Please link WhatsApp again using QR or an 8-digit code.',
     },
     doctorMode: {
       title: 'Practice as a doctor',
@@ -676,7 +690,26 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         'Appointment confirmations and cancellations are sent to your patients from the linked WhatsApp account.',
       reconnectingDescription:
         'Connection to WhatsApp was lost. We are trying to reconnect, please wait a few seconds.',
-      clinicPhoneTip: 'We recommend scanning it with the workspace phone number:',
+      clinicPhoneTip: 'We recommend linking the workspace phone number:',
+      methodLegend: 'Linking method',
+      methodQr: 'QR',
+      methodCode: 'Code',
+      generatingPairingCode: 'Generating code…',
+      pairingCodeLabel: 'Pairing code',
+      pairingCodeFor: 'Code for the number',
+      useQr: 'Use QR code',
+      copyCode: 'Copy',
+      codeCopied: 'Code copied',
+      codeCopyError: 'Could not copy the code',
+      codeStep3Prefix: 'Choose',
+      codeStep3LinkWithPhone: 'Link with phone number',
+      codeStep3Suffix: 'and enter the code below.',
+      expiredCodeDescription: 'The code has expired. Generate a new one to link your WhatsApp.',
+      pairingCodeError: 'Could not generate the pairing code',
+      mismatchTitle: 'The linked number is not the workspace number',
+      mismatchLinkedPrefix: 'Linked number:',
+      mismatchClinicPrefix: 'Workspace number:',
+      mismatchAdvice: 'We recommend unlinking and linking again with the workspace phone number.',
       step1: 'Open WhatsApp on the phone that will send notifications to your patients.',
       step2Prefix: 'Go to',
       step2LinkedDevices: 'Linked devices',
@@ -702,6 +735,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         IDLE: 'Unlinked',
         INITIALIZING: 'Starting…',
         QR_PENDING: 'Waiting for scan',
+        PAIRING_PENDING: 'Waiting for code',
         READY: 'Connected',
         DISCONNECTED: 'Reconnecting…',
       },
@@ -722,6 +756,7 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       ariaLabel: 'Specialty',
     },
     closeNotificationAria: 'Close notification',
+    moreInfoAria: 'More information',
     pagination: {
       page: 'Page',
       of: 'of',
@@ -934,6 +969,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
+      legendTooltip:
+        'If you have visited before, we only need your phone number to find your record. If it is your first time, we will ask for your contact details.',
+      phoneTooltip:
+        'We will use this number to send you appointment confirmations and reminders via WhatsApp.',
     },
     summary: {
       doctorLabel: 'Doctor',

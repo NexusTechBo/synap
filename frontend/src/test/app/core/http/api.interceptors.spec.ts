@@ -37,7 +37,11 @@ describe('API interceptors', () => {
       expireSession: vi.fn(),
       refresh: vi.fn(() => of({ token: 'new-token' })),
     };
-    guest = { ensureToken: vi.fn(() => of('guest-token')), clear: vi.fn(), fail: vi.fn() };
+    guest = {
+      ensureToken: vi.fn(() => of('guest-token')),
+      clear: vi.fn(),
+      fail: vi.fn(),
+    };
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([apiUrlInterceptor, authInterceptor])),
@@ -285,7 +289,7 @@ describe('languageInterceptor', () => {
 
   it.each([
     ['en-US', 'en'],
-    ['pt-BR', 'en'],
+    ['pt-BR', 'pt-BR'],
     ['es-BO', 'es'],
     ['es', 'es'],
   ])('sends Accept-Language for browser %s as %s', (browserLanguage, expected) => {

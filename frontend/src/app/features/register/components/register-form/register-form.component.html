@@ -26,6 +26,7 @@
       </app-form-field>
       <app-form-field
         [label]="'register.clinicSlugLabel' | translate"
+        [tooltip]="'register.clinicSlugTooltip' | translate"
         fieldId="register-slug"
         [hint]="
           ('register.slugHintPrefix' | translate) +
@@ -47,6 +48,29 @@
 
     @if (regionalAvailable()) {
       <app-regional-fields class="mt-4" idPrefix="register" [form]="form.controls.regional" />
+    } @else if (regionalError()) {
+      <app-load-error
+        class="mt-4"
+        [message]="'regional.loadError' | translate"
+        [retryLabel]="'common.retry' | translate"
+        (retry)="retryRegions()"
+      />
+    } @else {
+      <div role="status" class="mt-4">
+        @if (regionalRetrying()) {
+          <div
+            class="flex items-center gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+          >
+            <span
+              class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-amber-600 border-t-transparent"
+              aria-hidden="true"
+            ></span>
+            {{ 'regional.retrying' | translate }}
+          </div>
+        } @else {
+          <p class="text-xs font-medium text-gray-500">{{ 'common.loading' | translate }}</p>
+        }
+      </div>
     }
 
     <p class="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-gray-500">
@@ -85,6 +109,7 @@
       </div>
       <app-form-field
         [label]="'register.adminUsernameLabel' | translate"
+        [tooltip]="'register.adminUsernameTooltip' | translate"
         fieldId="register-admin-username"
         [errorMessages]="usernameErrors"
       >
@@ -152,7 +177,9 @@
     <button
       type="submit"
       class="btn btn-primary mt-6 w-full"
-      [attr.aria-disabled]="register.submitting() || register.coolingDown() || null"
+      [attr.aria-disabled]="
+        register.submitting() || register.coolingDown() || !regionalAvailable() || null
+      "
     >
       @if (register.submitting()) {
         {{ 'register.submitting' | translate }}

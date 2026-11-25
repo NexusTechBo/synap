@@ -3,7 +3,8 @@ package com.example.pulso.mapper;
 import com.example.pulso.dto.personal.PersonalResponse;
 import com.example.pulso.entity.Personal;
 import java.util.List;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PersonalMapper {

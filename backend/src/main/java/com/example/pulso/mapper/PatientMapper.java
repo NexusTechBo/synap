@@ -3,7 +3,7 @@ package com.example.pulso.mapper;
 import com.example.pulso.dto.patient.PatientResponse;
 import com.example.pulso.entity.Patient;
 import java.util.List;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")
 public interface PatientMapper {

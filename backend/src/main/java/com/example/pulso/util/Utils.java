@@ -13,6 +13,7 @@ import org.springframework.web.util.HtmlUtils;
 
 public final class Utils {
     public static final String USERNAME_DOMAIN = ".com";
+    private static final int MASKED_PHONE_VISIBLE_CHARS = 4;
     private static final Pattern CONTROL_CHARS = Pattern.compile("\\p{Cntrl}");
     private static final Pattern DOCUMENT_SEPARATORS = Pattern.compile("[.\\-\\s]");
 
@@ -27,12 +28,22 @@ public final class Utils {
         throw new BadRequestException(MessageKeys.VALIDATION_PHONE_INVALID);
     }
 
+    public static String maskPhone(String phoneNumber) {
+        if (!StringUtils.hasText(phoneNumber)) return "none";
+        var visible = Math.min(MASKED_PHONE_VISIBLE_CHARS, phoneNumber.length());
+        return "***" + phoneNumber.substring(phoneNumber.length() - visible);
+    }
+
     public static String stripDocumentSeparators(String document) {
         return DOCUMENT_SEPARATORS.matcher(document).replaceAll("");
     }
 
     public static String stripLeadingPlus(String phoneNumber) {
         return phoneNumber != null ? phoneNumber.replaceFirst("^\\+", "") : null;
+    }
+
+    public static String addLeadingPlus(String digits) {
+        return StringUtils.hasText(digits) ? "+" + digits : null;
     }
 
     public static String normalizeEmail(String email) {

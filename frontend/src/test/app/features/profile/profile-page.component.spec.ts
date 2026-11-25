@@ -20,9 +20,16 @@ class DoctorModeCardStub {}
 describe('ProfilePageComponent regional settings card', () => {
   let fixture: ComponentFixture<ProfilePageComponent>;
   let element: HTMLElement;
+  let whatsappRelinkNeeded: ReturnType<typeof signal<boolean>>;
+  let clearWhatsappRelinkNotice: ReturnType<typeof vi.fn>;
+  let update: ReturnType<typeof vi.fn>;
 
   async function setup(role: Role): Promise<void> {
     const isAdmin = role === 'ADMINISTRATOR';
+    whatsappRelinkNeeded = signal(false);
+    clearWhatsappRelinkNotice = vi.fn();
+    update = vi.fn(() => of({}));
+
     TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
       providers: [
@@ -42,7 +49,9 @@ describe('ProfilePageComponent regional settings card', () => {
       ],
     });
     TestBed.overrideComponent(ProfilePageComponent, {
-      remove: { imports: [RegionalSettingsCardComponent, DoctorModeCardComponent] },
+      remove: {
+        imports: [RegionalSettingsCardComponent, DoctorModeCardComponent],
+      },
       add: { imports: [RegionalSettingsCardStub, DoctorModeCardStub] },
     });
     TestBed.overrideComponent(ProfilePageComponent, {
@@ -62,9 +71,11 @@ describe('ProfilePageComponent regional settings card', () => {
               }),
               isLoading: signal(false),
               errorMessage: signal(null),
-              canToggleDoctorMode: () => isAdmin,
+              whatsappRelinkNeeded,
+              clearWhatsappRelinkNotice,
+              isAdmin: () => isAdmin,
               reload: vi.fn(),
-              update: vi.fn(),
+              update,
             },
           },
         ],
@@ -78,6 +89,57 @@ describe('ProfilePageComponent regional settings card', () => {
   }
 
   afterEach(() => fixture.destroy());
+
+  function whatsappButtons(): HTMLButtonElement[] {
+    return [...element.querySelectorAll('button')].filter((b) =>
+      b.textContent?.includes('WhatsApp del espacio de trabajo'),
+    );
+  }
+
+  function phoneLabel(): string | undefined {
+    return element.querySelector('label[for="profile-phone"]')?.textContent?.trim();
+  }
+
+  async function submitWithEmptyPhone(): Promise<void> {
+    const input = element.querySelector<HTMLInputElement>('#profile-phone')!;
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    element.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+    await fixture.whenStable();
+  }
+
+  it('shows exactly one WhatsApp button to an administrator', async () => {
+    await setup('ADMINISTRATOR');
+
+    expect(whatsappButtons()).toHaveLength(1);
+  });
+
+  it.each<Role>(['DOCTOR', 'ASSISTANT'])('shows no WhatsApp button to a %s', async (role) => {
+    await setup(role);
+
+    expect(whatsappButtons()).toHaveLength(0);
+  });
+
+  it('requires the phone for an administrator and shows the required message', async () => {
+    await setup('ADMINISTRATOR');
+
+    await submitWithEmptyPhone();
+
+    expect(phoneLabel()).toBe('Teléfono');
+    expect(update).not.toHaveBeenCalled();
+    expect(element.textContent).toContain('El administrador debe tener un número de teléfono');
+  });
+
+  it.each<Role>(['DOCTOR', 'ASSISTANT'])('keeps the phone optional for a %s', async (role) => {
+    await setup(role);
+
+    await submitWithEmptyPhone();
+
+    expect(phoneLabel()).toBe('Teléfono (opcional)');
+    expect(update).toHaveBeenCalledOnce();
+  });
 
   it('shows the regional settings card to an administrator', async () => {
     await setup('ADMINISTRATOR');
@@ -93,14 +155,43 @@ describe('ProfilePageComponent regional settings card', () => {
       expect(element.querySelector('app-regional-settings-card')).toBeNull();
     },
   );
+
+  it('shows a relink alert for administrator when whatsappRelinkNeeded is true and clears it on open', async () => {
+    await setup('ADMINISTRATOR');
+    expect(element.querySelector('[role="alert"]')).toBeNull();
+
+    whatsappRelinkNeeded.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const alert = element.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Vuelve a vincular WhatsApp con QR o código de 8 dígitos');
+
+    const whatsappBtn = [...element.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('WhatsApp del espacio de trabajo'),
+    );
+    whatsappBtn?.click();
+
+    expect(clearWhatsappRelinkNotice).toHaveBeenCalledOnce();
+  });
 });
 
 describe('ProfilePageComponent password change validation', () => {
   let fixture: ComponentFixture<ProfilePageComponent>;
   let element: HTMLElement;
   let update: ReturnType<typeof vi.fn>;
+  let me: ReturnType<typeof signal<Record<string, unknown>>>;
 
   beforeEach(async () => {
+    me = signal({
+      id: 1,
+      name: 'Ana Rojas',
+      email: 'ana@clinic.test',
+      username: 'ana',
+      role: 'ASSISTANT',
+      phoneNumber: null,
+      alsoDoctor: false,
+    });
     update = vi.fn(() => of({}));
     TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
@@ -126,18 +217,12 @@ describe('ProfilePageComponent password change validation', () => {
           {
             provide: ProfileService,
             useValue: {
-              me: signal({
-                id: 1,
-                name: 'Ana Rojas',
-                email: 'ana@clinic.test',
-                username: 'ana',
-                role: 'ASSISTANT',
-                phoneNumber: null,
-                alsoDoctor: false,
-              }),
+              me,
               isLoading: signal(false),
               errorMessage: signal(null),
-              canToggleDoctorMode: () => false,
+              whatsappRelinkNeeded: signal(false),
+              clearWhatsappRelinkNotice: vi.fn(),
+              isAdmin: () => false,
               reload: vi.fn(),
               update,
             },
@@ -167,6 +252,36 @@ describe('ProfilePageComponent password change validation', () => {
     await fixture.whenStable();
   }
 
+  function saveButton(): HTMLButtonElement {
+    return element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  }
+
+  it('disables the save button while the form is pristine', () => {
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it('enables the save button once a field is edited', async () => {
+    await type('profile-name', 'Ana R.');
+
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('disables the save button again after saving and resetting from the updated profile', async () => {
+    await type('profile-name', 'Ana R.');
+    expect(saveButton().disabled).toBe(false);
+
+    update.mockImplementation(() => {
+      me.set({ ...me(), name: 'Ana R.' });
+      return of({});
+    });
+    await submit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(update).toHaveBeenCalledOnce();
+    expect(saveButton().disabled).toBe(true);
+  });
+
   it('requires the current password when a new password is typed', async () => {
     await type('profile-new-password', 'nuevaclave1');
     await submit();
@@ -181,7 +296,10 @@ describe('ProfilePageComponent password change validation', () => {
     await submit();
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ currentPassword: 'claveactual', newPassword: 'nuevaclave1' }),
+      expect.objectContaining({
+        currentPassword: 'claveactual',
+        newPassword: 'nuevaclave1',
+      }),
     );
   });
 
@@ -235,7 +353,9 @@ describe('ProfilePageComponent document by country', () => {
               }),
               isLoading: signal(false),
               errorMessage: signal(null),
-              canToggleDoctorMode: () => false,
+              whatsappRelinkNeeded: signal(false),
+              clearWhatsappRelinkNotice: vi.fn(),
+              isAdmin: () => false,
               reload: vi.fn(),
               update: vi.fn(),
             },

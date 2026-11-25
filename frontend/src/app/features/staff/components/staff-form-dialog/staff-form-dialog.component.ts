@@ -19,6 +19,7 @@ import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 import { DialogFrameComponent } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
 import { SelectComponent, SelectOption } from '../../../../shared/ui/forms/select/select.component';
+import { HelpTooltipComponent } from '../../../../shared/ui/help-tooltip/help-tooltip.component';
 import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
   documentValidator,
@@ -40,17 +41,13 @@ function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
 
 const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
-function initialRole(staff: Staff | undefined): Role {
-  if (!staff) return 'DOCTOR';
-  return staff.alsoDoctor ? 'DOCTOR' : staff.role;
-}
-
 @Component({
   selector: 'app-staff-form-dialog',
   imports: [
     AlertComponent,
     DialogFrameComponent,
     FormFieldComponent,
+    HelpTooltipComponent,
     ReactiveFormsModule,
     SelectComponent,
     TranslatePipe,
@@ -69,7 +66,6 @@ export class StaffFormDialogComponent {
   protected readonly country = this.clinicCountry.country;
   protected readonly phonePlaceholder = this.clinicCountry.phonePlaceholder;
   protected readonly documentMaxLength = DOCUMENT_MAX_LENGTH[this.country()];
-  protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
 
   protected readonly roles = computed(() => {
     this.i18n.currentLang();
@@ -91,14 +87,16 @@ export class StaffFormDialogComponent {
 
   protected readonly specialtyErrors = computed(() => {
     this.i18n.currentLang();
-    return { required: this.i18n.translate('staff.formDialog.specialtyRequired') };
+    return {
+      required: this.i18n.translate('staff.formDialog.specialtyRequired'),
+    };
   });
 
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    role: [initialRole(this.staff)],
+    role: [this.staff?.role ?? 'DOCTOR'],
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],
@@ -145,7 +143,10 @@ export class StaffFormDialogComponent {
       specialtyId: value.role === 'DOCTOR' ? value.specialtyId : null,
     };
     const request: Observable<Staff> = this.staff
-      ? this.staffService.update(this.staff.id, { ...common, password: value.password || null })
+      ? this.staffService.update(this.staff.id, {
+          ...common,
+          password: value.password || null,
+        })
       : this.staffService.create({
           ...common,
           document: value.document.trim() || null,

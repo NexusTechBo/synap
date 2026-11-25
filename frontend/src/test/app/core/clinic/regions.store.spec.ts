@@ -106,4 +106,152 @@ describe('RegionsStore', () => {
     expect(store.hasError()).toBe(false);
     expect(store.available()).toBe(true);
   });
+
+  describe('transient failures', () => {
+    beforeEach(() => vi.useFakeTimers());
+
+    afterEach(() => vi.useRealTimers());
+
+    async function elapse(ms: number): Promise<void> {
+      await vi.advanceTimersByTimeAsync(ms);
+      TestBed.tick();
+    }
+
+    it.each([0, 502, 503, 504])('retries on status %i and recovers', async (status) => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status, statusText: 'Transient' });
+      await elapse(0);
+
+      expect(store.isLoading()).toBe(true);
+      expect(store.hasError()).toBe(false);
+
+      await elapse(1_000);
+      http.expectOne('regions').flush(CATALOG);
+      await elapse(0);
+
+      expect(store.available()).toBe(true);
+      expect(store.hasError()).toBe(false);
+      expect(store.isLoading()).toBe(false);
+    });
+
+    it('backs off exponentially up to the maximum delay', async () => {
+      TestBed.tick();
+      const delays = [1_000, 2_000, 4_000, 5_000, 5_000];
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+
+      for (const delay of delays) {
+        await elapse(delay - 1);
+        http.expectNone('regions');
+        await elapse(1);
+        http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      }
+      await elapse(0);
+
+      expect(store.isLoading()).toBe(true);
+    });
+
+    it('flags the error once the retries are exhausted', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+
+      for (let attempt = 0; attempt < 7; attempt++) {
+        await elapse(5_000);
+        http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      }
+      await elapse(5_000);
+      http.expectNone('regions');
+
+      expect(store.hasError()).toBe(true);
+      expect(store.isLoading()).toBe(false);
+      expect(store.available()).toBe(false);
+    });
+
+    it('is not retrying initially', () => {
+      TestBed.tick();
+
+      expect(store.retrying()).toBe(false);
+      http.expectOne('regions');
+    });
+
+    it('is retrying after a transient failure and stops once the catalog loads', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      await elapse(0);
+
+      expect(store.retrying()).toBe(true);
+
+      await elapse(1_000);
+      http.expectOne('regions').flush(CATALOG);
+      await elapse(0);
+
+      expect(store.retrying()).toBe(false);
+    });
+
+    it('stops retrying when the attempts are exhausted', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      for (let attempt = 0; attempt < 7; attempt++) {
+        await elapse(5_000);
+        http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      }
+      await elapse(0);
+
+      expect(store.hasError()).toBe(true);
+      expect(store.retrying()).toBe(false);
+    });
+
+    it('keeps retrying state when reload is ignored while a retry is pending', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      await elapse(0);
+
+      store.reload();
+      await elapse(0);
+
+      expect(store.retrying()).toBe(true);
+      http.expectNone('regions');
+    });
+
+    it('is not retrying after reload from the error state', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 400, statusText: 'Bad Request' });
+      await elapse(0);
+
+      store.reload();
+      await elapse(0);
+
+      expect(store.retrying()).toBe(false);
+      expect(store.isLoading()).toBe(true);
+      http.expectOne('regions');
+    });
+
+    it('stops retrying when the stream is cancelled by destroying the store', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 502, statusText: 'Bad Gateway' });
+      await elapse(0);
+      expect(store.retrying()).toBe(true);
+
+      TestBed.resetTestingModule();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(store.retrying()).toBe(false);
+    });
+
+    it('does not mark a non transient failure as retrying', async () => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status: 400, statusText: 'Bad Request' });
+      await elapse(0);
+
+      expect(store.retrying()).toBe(false);
+    });
+
+    it.each([400, 404, 500])('does not retry on status %i', async (status) => {
+      TestBed.tick();
+      http.expectOne('regions').flush(null, { status, statusText: 'Failure' });
+      await elapse(10_000);
+
+      http.expectNone('regions');
+      expect(store.hasError()).toBe(true);
+    });
+  });
 });

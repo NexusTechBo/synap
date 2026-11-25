@@ -4,30 +4,34 @@
   (closed)="ref.close()"
 >
   <form id="staff-form" [formGroup]="form" (ngSubmit)="save()" class="space-y-4">
-    @if (canChangeRole) {
-      <fieldset>
-        <legend class="field-label">{{ 'staff.formDialog.roleLabel' | translate }}</legend>
-        <div class="grid grid-cols-2 gap-2">
-          @for (role of roles(); track role.id) {
-            <label
-              class="flex cursor-pointer items-center justify-center rounded-2xl border-2 py-2.5 text-sm font-bold transition-colors"
-              [class]="
-                form.controls.role.value === role.id
-                  ? 'border-primary bg-white text-primary'
-                  : 'border-transparent bg-white/50 text-gray-600'
-              "
-            >
-              <input type="radio" class="sr-only" formControlName="role" [value]="role.id" />
-              {{ role.label }}
-            </label>
-          }
-        </div>
-      </fieldset>
-    }
+    <fieldset aria-labelledby="staff-role-legend">
+      <legend class="field-label-row">
+        <span id="staff-role-legend" class="field-label">{{
+          'staff.formDialog.roleLabel' | translate
+        }}</span>
+        <app-help-tooltip [text]="'staff.formDialog.roleTooltip' | translate" />
+      </legend>
+      <div class="grid grid-cols-2 gap-2">
+        @for (role of roles(); track role.id) {
+          <label
+            class="flex cursor-pointer items-center justify-center rounded-2xl border-2 py-2.5 text-sm font-bold transition-colors"
+            [class]="
+              form.controls.role.value === role.id
+                ? 'border-primary bg-white text-primary'
+                : 'border-transparent bg-white/50 text-gray-600'
+            "
+          >
+            <input type="radio" class="sr-only" formControlName="role" [value]="role.id" />
+            {{ role.label }}
+          </label>
+        }
+      </div>
+    </fieldset>
 
     <app-form-field [label]="'staff.formDialog.fullNameLabel' | translate" fieldId="staff-name">
       <input
         id="staff-name"
+        cdkFocusInitial
         class="field-input"
         formControlName="name"
         [placeholder]="'staff.formDialog.fullNamePlaceholder' | translate"
@@ -95,6 +99,7 @@
         </app-form-field>
         <app-form-field
           [label]="'staff.formDialog.usernameLabel' | translate"
+          [tooltip]="'staff.formDialog.usernameTooltip' | translate"
           fieldId="staff-username"
           [errorMessages]="usernameErrors()"
         >

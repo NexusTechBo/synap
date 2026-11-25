@@ -1,10 +1,16 @@
 <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4" novalidate>
   <fieldset
+    aria-labelledby="guest-kind-legend"
     [attr.aria-describedby]="
       form.controls.kind.touched && form.controls.kind.invalid ? 'guest-kind-error' : null
     "
   >
-    <legend class="field-label">{{ 'guestBooking.patientForm.legend' | translate }}</legend>
+    <legend class="field-label-row">
+      <span id="guest-kind-legend" class="field-label">{{
+        'guestBooking.patientForm.legend' | translate
+      }}</span>
+      <app-help-tooltip [text]="'guestBooking.patientForm.legendTooltip' | translate" />
+    </legend>
     <div class="grid gap-2 sm:grid-cols-2">
       @for (option of kinds; track option.id) {
         <label
@@ -60,6 +66,7 @@
 
     <app-form-field
       [label]="'guestBooking.patientForm.phoneLabel' | translate"
+      [tooltip]="'guestBooking.patientForm.phoneTooltip' | translate"
       fieldId="guest-phone"
       [errorMessages]="phoneErrors"
     >

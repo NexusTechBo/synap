@@ -26,6 +26,7 @@ import com.example.pulso.enums.ERole;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ErrorResponseWriter;
+import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.security.ActiveUserChecker;
 import com.example.pulso.security.jwt.JwtUtils;
@@ -230,6 +231,37 @@ class PersonalControllerTest {
                     .andExpect(status().isForbidden());
 
             verifyNoInteractions(personalService);
+        }
+    }
+
+    @Nested
+    class AdminPhoneRequired {
+        @Test
+        void shouldReturnLocalizedConflictWhenOwnProfileUpdateClearsAdminPhone() throws Exception {
+            when(personalService.updateOwnProfile(anyLong(), any(), any()))
+                    .thenThrow(new BusinessException(MessageKeys.PERSONAL_ADMIN_PHONE_REQUIRED));
+
+            mvc.perform(as(ADMIN_TOKEN, put("/api/personal/update"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"Admin\",\"email\":\"admin@mail.test\"}"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value(MessageKeys.PERSONAL_ADMIN_PHONE_REQUIRED))
+                    .andExpect(jsonPath("$.message").value("El administrador debe tener un número de teléfono."))
+                    .andExpect(jsonPath("$.path").value("/api/personal/update"));
+        }
+
+        @Test
+        void shouldReturnLocalizedForbiddenWhenAdminEndpointTargetsAdministrator() throws Exception {
+            when(personalService.updatePersonalByAdmin(anyLong(), any()))
+                    .thenThrow(new ForbiddenException(MessageKeys.PERSONAL_ADMIN_NOT_EDITABLE));
+
+            mvc.perform(as(ADMIN_TOKEN, put("/api/personal/update/5"))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"name\":\"Admin\",\"email\":\"admin@mail.test\",\"role\":\"ASSISTANT\"}"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value(MessageKeys.PERSONAL_ADMIN_NOT_EDITABLE))
+                    .andExpect(jsonPath("$.message").value("El administrador solo puede editarse desde su propio perfil."))
+                    .andExpect(jsonPath("$.path").value("/api/personal/update/5"));
         }
     }
 }

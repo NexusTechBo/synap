@@ -272,12 +272,12 @@ class ClinicServiceImplTest {
     }
 
     @Test
-    void shouldCreateDefaultSpecialtyInSpanishWhenClinicLanguageIsPtBr() {
+    void shouldCreateDefaultSpecialtyInPortugueseWhenClinicLanguageIsPtBr() {
         stubHappyPath();
 
         service().createClinic(request(null, null, "pt-BR"));
 
-        assertThat(savedSpecialty().getName()).isEqualTo("Medicina general");
+        assertThat(savedSpecialty().getName()).isEqualTo("Clínica geral");
     }
 
     @Test

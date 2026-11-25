@@ -1,4 +1,4 @@
-package com.example.pulso.service;
+package com.example.pulso.service.component.resolver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
@@ -7,7 +7,6 @@ import com.example.pulso.enums.ClinicLanguage;
 import com.example.pulso.enums.SupportedCountry;
 import com.example.pulso.exception.BadRequestException;
 import com.example.pulso.exception.MessageKeys;
-import com.example.pulso.service.component.resolver.RegionalSettingsResolver;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 

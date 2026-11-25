@@ -142,6 +142,14 @@ app-board-card:nth-of-type(3n + 3) {
     @apply mb-1.5 block text-xs font-bold tracking-wide text-gray-500;
   }
 
+  .field-label-row {
+    @apply mb-1.5 flex items-center gap-1.5;
+
+    & > .field-label {
+      @apply mb-0;
+    }
+  }
+
   .field-input {
     @apply w-full rounded-2xl border border-gray-900/10 bg-gray-900/4 px-4 py-2.5 text-sm text-gray-700 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] transition-colors focus:ring-2 focus:ring-primary/60 focus:outline-none disabled:opacity-60;
   }

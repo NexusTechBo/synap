@@ -1,11 +1,12 @@
-import { provideZoneChangeDetection, signal } from '@angular/core';
+import { WritableSignal, provideZoneChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { RegionsStore } from '../../../../../../app/core/clinic/regions.store';
 import { I18nService } from '../../../../../../app/core/i18n/i18n.service';
-import { RegionCountry } from '../../../../../../app/core/models/api.models';
+import { ClinicLanguage, RegionCountry } from '../../../../../../app/core/models/api.models';
 import { RegisterFormComponent } from '../../../../../../app/features/register/components/register-form/register-form.component';
 import { RegisterService } from '../../../../../../app/features/register/register.service';
+import { FormDom, formDom } from '../../../../../testing/form-dom';
 
 const COUNTRIES: RegionCountry[] = [
   {
@@ -24,13 +25,31 @@ const COUNTRIES: RegionCountry[] = [
   },
 ];
 
+const LANGUAGES: ClinicLanguage[] = ['es', 'en', 'pt-BR'];
+
 describe('RegisterFormComponent regional settings', () => {
   let fixture: ComponentFixture<RegisterFormComponent>;
   let element: HTMLElement;
+  let dom: FormDom;
   let register: { register: ReturnType<typeof vi.fn> };
+  let reload: ReturnType<typeof vi.fn>;
+  let store: {
+    available: WritableSignal<boolean>;
+    retrying: WritableSignal<boolean>;
+    countries: WritableSignal<RegionCountry[]>;
+    languages: WritableSignal<ClinicLanguage[]>;
+  };
 
-  async function setup(catalogAvailable: boolean): Promise<void> {
+  async function setup(catalog: 'available' | 'loading' | 'retrying' | 'error'): Promise<void> {
+    const catalogAvailable = catalog === 'available';
     register = { register: vi.fn() };
+    reload = vi.fn();
+    store = {
+      available: signal(catalogAvailable),
+      retrying: signal(catalog === 'retrying'),
+      countries: signal(catalogAvailable ? COUNTRIES : []),
+      languages: signal<ClinicLanguage[]>(catalogAvailable ? LANGUAGES : []),
+    };
     TestBed.configureTestingModule({
       imports: [RegisterFormComponent],
       providers: [
@@ -39,11 +58,13 @@ describe('RegisterFormComponent regional settings', () => {
         {
           provide: RegionsStore,
           useValue: {
-            available: signal(catalogAvailable),
-            countries: signal(catalogAvailable ? COUNTRIES : []),
-            languages: signal(catalogAvailable ? ['es', 'en', 'pt-BR'] : []),
-            country: (code: string) =>
-              catalogAvailable ? COUNTRIES.find((c) => c.code === code) : undefined,
+            available: store.available,
+            hasError: signal(catalog === 'error'),
+            retrying: store.retrying,
+            reload,
+            countries: store.countries,
+            languages: store.languages,
+            country: (code: string) => store.countries().find((c) => c.code === code),
           },
         },
         {
@@ -60,6 +81,7 @@ describe('RegisterFormComponent regional settings', () => {
     });
     await TestBed.inject(I18nService).init();
     fixture = TestBed.createComponent(RegisterFormComponent);
+    dom = formDom(fixture);
     fixture.autoDetectChanges();
     element = fixture.nativeElement;
     await fixture.whenStable();
@@ -67,49 +89,43 @@ describe('RegisterFormComponent regional settings', () => {
 
   afterEach(() => fixture.destroy());
 
-  function field(label: string): HTMLInputElement {
-    const labelElement = [...element.querySelectorAll('label')].find(
-      (l) => l.textContent?.trim() === label,
-    );
-    return element.querySelector<HTMLInputElement>(`[id="${labelElement!.htmlFor}"]`)!;
-  }
-
-  async function type(label: string, value: string): Promise<void> {
-    const input = field(label);
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-  }
-
   async function fillValid(): Promise<void> {
-    await type('Nombre del espacio de trabajo', 'Mi consultorio');
-    await type('Teléfono', '70000000');
-    await type('Identificador del espacio de trabajo', 'miconsultorio');
-    await type('Nombre completo', 'Ana Rojas');
-    await type('Usuario', 'admin');
-    await type('Correo electrónico', 'admin@email.com');
-    await type('Contraseña', 'secreto123');
+    await dom.type('Nombre del espacio de trabajo', 'Mi consultorio');
+    await dom.type('Teléfono', '70000000');
+    await dom.type('Identificador del espacio de trabajo', 'miconsultorio');
+    await dom.type('Nombre completo', 'Ana Rojas');
+    await dom.type('Usuario', 'admin');
+    await dom.type('Correo electrónico', 'admin@email.com');
+    await dom.type('Contraseña', 'secreto123');
   }
 
-  async function submit(): Promise<void> {
-    [...element.querySelectorAll<HTMLButtonElement>('button')]
-      .find((b) => b.textContent?.trim() === 'Crear mi espacio de trabajo')!
-      .click();
-    await fixture.whenStable();
+  function submitButton(): HTMLButtonElement {
+    return element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  }
+
+  function submit(): Promise<void> {
+    return dom.clickButton('Crear mi espacio de trabajo');
   }
 
   async function pickCountry(label: string): Promise<void> {
-    element.querySelector<HTMLButtonElement>('button[id="register-country"]')!.click();
+    const select = element.querySelector<HTMLButtonElement>('button[id="register-country"]');
+    if (!select) throw new Error('Country select not found');
+    select.click();
     await fixture.whenStable();
-    [...document.querySelectorAll<HTMLElement>('[role="option"]')]
-      .find((el) => el.textContent?.trim() === label)!
-      .click();
+    const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(
+      (el) => el.textContent?.trim() === label,
+    );
+    if (!option) throw new Error(`Option "${label}" not found`);
+    option.click();
     await fixture.whenStable();
   }
 
   describe('with the regional catalog available', () => {
-    beforeEach(() => setup(true));
+    beforeEach(() => setup('available'));
+
+    it('does not mark the submit button as aria-disabled', () => {
+      expect(submitButton().hasAttribute('aria-disabled')).toBe(false);
+    });
 
     it('renders the regional selects', () => {
       expect(element.querySelector('app-regional-fields')).not.toBeNull();
@@ -155,7 +171,7 @@ describe('RegisterFormComponent regional settings', () => {
 
     it('sends the administrator CI in the default Bolivian country', async () => {
       await fillValid();
-      await type('CI (opcional)', '1234567');
+      await dom.type('CI (opcional)', '1234567');
 
       await submit();
 
@@ -165,17 +181,17 @@ describe('RegisterFormComponent regional settings', () => {
     });
 
     it('switches the document label, placeholder and limit when the country changes to BR', async () => {
-      expect(field('CI (opcional)').placeholder).toBe('12345678');
+      expect(dom.field('CI (opcional)').placeholder).toBe('12345678');
 
       await pickCountry('Brasil');
 
-      expect(field('CPF (opcional)').placeholder).toBe('000.000.000-00');
-      expect(field('CPF (opcional)').getAttribute('maxlength')).toBe('14');
+      expect(dom.field('CPF (opcional)').placeholder).toBe('000.000.000-00');
+      expect(dom.field('CPF (opcional)').getAttribute('maxlength')).toBe('14');
     });
 
     it('invalidates a CI that was valid once the country changes to BR', async () => {
       await fillValid();
-      await type('CI (opcional)', '1234567');
+      await dom.type('CI (opcional)', '1234567');
       await pickCountry('Brasil');
 
       await submit();
@@ -186,7 +202,7 @@ describe('RegisterFormComponent regional settings', () => {
     it('accepts a valid CPF once the country changes to BR', async () => {
       await fillValid();
       await pickCountry('Brasil');
-      await type('CPF (opcional)', '529.982.247-25');
+      await dom.type('CPF (opcional)', '529.982.247-25');
 
       await submit();
 
@@ -198,7 +214,7 @@ describe('RegisterFormComponent regional settings', () => {
     it('invalidates a CPF that was valid once the country returns to BO', async () => {
       await fillValid();
       await pickCountry('Brasil');
-      await type('CPF (opcional)', '529.982.247-25');
+      await dom.type('CPF (opcional)', '529.982.247-25');
       await pickCountry('Bolivia');
 
       await submit();
@@ -207,36 +223,123 @@ describe('RegisterFormComponent regional settings', () => {
     });
 
     it('shows the phone placeholder of the selected country', async () => {
-      expect(field('Teléfono').placeholder).toBe('+591 70000000');
+      expect(dom.field('Teléfono').placeholder).toBe('+591 70000000');
 
       await pickCountry('Brasil');
 
-      expect(field('Teléfono').placeholder).toBe('+55 11 91234-5678');
+      expect(dom.field('Teléfono').placeholder).toBe('+55 11 91234-5678');
     });
   });
 
-  describe('when the catalog failed to load', () => {
-    beforeEach(() => setup(false));
+  describe('while the catalog is loading', () => {
+    beforeEach(() => setup('loading'));
 
-    it('does not render the regional selects', () => {
+    it('shows a discreet loading text without any unavailable notice', () => {
       expect(element.querySelector('app-regional-fields')).toBeNull();
+      expect(element.querySelector('app-load-error')).toBeNull();
+      expect(element.querySelector('[role="status"]')?.textContent?.trim()).toBe('Cargando...');
+      expect(element.textContent).not.toContain('El servicio no está disponible');
     });
 
-    it('falls back to the generic phone placeholder', () => {
-      expect(field('Teléfono').placeholder).toBe('Incluye el código de país');
+    it('keeps the same status live region when the retry notice replaces the loading text', async () => {
+      const before = element.querySelector('[role="status"]');
+
+      store.retrying.set(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(element.querySelector('[role="status"]')).toBe(before);
+      expect(before?.textContent?.trim()).toBe(
+        'El servicio no está disponible todavía. Reintentando…',
+      );
     });
 
-    it('registers without country, timezone nor defaultLanguage', async () => {
+    it('marks the submit button as aria-disabled', () => {
+      expect(submitButton().getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('enables the submit button and registers once the catalog loads', async () => {
+      store.countries.set(COUNTRIES);
+      store.languages.set(LANGUAGES);
+      store.available.set(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
       await fillValid();
 
       await submit();
 
+      expect(submitButton().hasAttribute('aria-disabled')).toBe(false);
       expect(register.register).toHaveBeenCalledOnce();
-      const request = register.register.mock.calls[0][0];
-      expect(request).not.toHaveProperty('country');
-      expect(request).not.toHaveProperty('timezone');
-      expect(request).not.toHaveProperty('defaultLanguage');
-      expect(request).not.toHaveProperty('regional');
+    });
+
+    it('does not register without a region', async () => {
+      await fillValid();
+
+      await submit();
+
+      expect(register.register).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('while the catalog request is being retried', () => {
+    beforeEach(() => setup('retrying'));
+
+    it('shows an informative status notice with a spinner instead of the selects', () => {
+      expect(element.querySelector('app-regional-fields')).toBeNull();
+      expect(element.querySelector('app-load-error')).toBeNull();
+      const status = element.querySelector('[role="status"]');
+      expect(status?.textContent?.trim()).toBe(
+        'El servicio no está disponible todavía. Reintentando…',
+      );
+      expect(status?.querySelector('.animate-spin')).not.toBeNull();
+      expect(element.querySelector('[role="alert"]')).toBeNull();
+    });
+
+    it('marks the submit button as aria-disabled', () => {
+      expect(submitButton().getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('does not register without a region', async () => {
+      await fillValid();
+
+      await submit();
+
+      expect(register.register).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the catalog failed to load', () => {
+    beforeEach(() => setup('error'));
+
+    it('shows the error with a retry button instead of the regional selects', () => {
+      expect(element.querySelector('app-regional-fields')).toBeNull();
+      expect(element.querySelector('[role="status"]')).toBeNull();
+      expect(element.querySelector('app-load-error')?.textContent).toContain(
+        'No se pudo cargar el catálogo regional',
+      );
+    });
+
+    it('marks the submit button as aria-disabled', () => {
+      expect(submitButton().getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('reloads the catalog when retry is clicked', async () => {
+      await dom.clickButton('Reintentar');
+
+      expect(reload).toHaveBeenCalledOnce();
+    });
+
+    it('falls back to the generic phone placeholder', () => {
+      expect(dom.field('Teléfono').placeholder).toBe('Incluye el código de país');
+    });
+
+    it('does not register without a region and keeps the retry visible', async () => {
+      await fillValid();
+
+      await submit();
+
+      expect(register.register).not.toHaveBeenCalled();
+      expect(element.querySelector('app-load-error')).not.toBeNull();
     });
   });
 });

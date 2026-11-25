@@ -5,5 +5,6 @@ import com.example.pulso.exchange.contract.whatsapp.SessionStatus;
 public record WhatsappStatusResponse(
         String id,
         SessionStatus status,
-        String clinicPhoneNumber
+        String clinicPhoneNumber,
+        String linkedPhoneNumber
 ) {}

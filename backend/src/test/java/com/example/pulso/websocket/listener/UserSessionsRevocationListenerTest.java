@@ -9,7 +9,6 @@ import com.example.pulso.websocket.StompConnectionRegistry;
 import com.example.pulso.websocket.StompSessionCloser;
 import com.example.pulso.websocket.event.UserSessionsRevokedEvent;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

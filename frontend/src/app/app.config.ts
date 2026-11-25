@@ -2,6 +2,7 @@ import { DEFAULT_DIALOG_CONFIG, DialogConfig } from '@angular/cdk/dialog';
 import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import localeEs from '@angular/common/locales/es';
+import localePt from '@angular/common/locales/pt';
 import {
   ApplicationConfig,
   inject,
@@ -21,6 +22,7 @@ import { LOCALE_ID_PROVIDER } from './core/i18n/locale-id.provider';
 import { SessionPreloadingStrategy } from './core/navigation/session-preloading.strategy';
 
 registerLocaleData(localeEs);
+registerLocaleData(localePt);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -35,7 +37,11 @@ export const appConfig: ApplicationConfig = {
     LOCALE_ID_PROVIDER,
     {
       provide: DEFAULT_DIALOG_CONFIG,
-      useValue: { ...new DialogConfig(), backdropClass: 'glass-backdrop', ariaModal: true },
+      useValue: {
+        ...new DialogConfig(),
+        backdropClass: 'glass-backdrop',
+        ariaModal: true,
+      },
     },
   ],
 };

@@ -1568,6 +1568,7 @@ class AppointmentServiceImplTest {
         }
 
         private static final Locale SPANISH = Locale.forLanguageTag("es");
+        private static final Locale PORTUGUESE_BRAZIL = Locale.forLanguageTag("pt-BR");
 
         @Test
         void shouldPublishClinicLocaleOnConfirm() {
@@ -1589,7 +1590,7 @@ class AppointmentServiceImplTest {
 
             service.cancelAppointmentById(APPOINTMENT_ID, new CancelAppointmentRequest("Viaje"), 1L, false);
 
-            assertThat(singleNotification().locale()).isEqualTo(SPANISH);
+            assertThat(singleNotification().locale()).isEqualTo(PORTUGUESE_BRAZIL);
         }
 
         @Test
@@ -1636,19 +1637,19 @@ class AppointmentServiceImplTest {
 
         @Test
         void shouldPublishSpanishLocaleWhenClinicLanguageIsSpanish() {
-            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(Locale.forLanguageTag("es"));
+            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(SPANISH);
         }
 
         @Test
-        void shouldPublishSpanishLocaleWhenClinicLanguageIsPortuguese() {
-            assertThat(bookGuestAppointment(ClinicLanguage.PT_BR).locale()).isEqualTo(Locale.forLanguageTag("es"));
+        void shouldPublishPortugueseLocaleWhenClinicLanguageIsPortuguese() {
+            assertThat(bookGuestAppointment(ClinicLanguage.PT_BR).locale()).isEqualTo(PORTUGUESE_BRAZIL);
         }
 
         @Test
         void shouldIgnoreRequestLocale() {
             LocaleContextHolder.setLocale(Locale.ENGLISH);
 
-            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(Locale.forLanguageTag("es"));
+            assertThat(bookGuestAppointment(ClinicLanguage.ES).locale()).isEqualTo(SPANISH);
         }
     }
 }
