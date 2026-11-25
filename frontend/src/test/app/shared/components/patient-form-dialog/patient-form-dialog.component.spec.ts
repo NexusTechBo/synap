@@ -10,8 +10,7 @@ import {
   PatientFormDialogComponent,
 } from '../../../../../app/shared/components/patient-form-dialog/patient-form-dialog.component';
 import { PatientFormService } from '../../../../../app/shared/components/patient-form-dialog/patient-form.service';
-
-const CI_MESSAGE = 'Solo números, de 5 a 10 dígitos';
+import { CI_MESSAGE, CPF_MESSAGE, FormDom, formDom } from '../../../../testing/form-dom';
 
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
@@ -25,13 +24,24 @@ function patient(overrides: Partial<Patient> = {}): Patient {
   };
 }
 
+interface SetupOptions {
+  data?: PatientFormData;
+  country?: CountryCode;
+  phonePlaceholder?: string;
+}
+
 describe('PatientFormDialogComponent', () => {
   let fixture: ComponentFixture<PatientFormDialogComponent>;
   let element: HTMLElement;
+  let dom: FormDom;
   let patients: { save: ReturnType<typeof vi.fn> };
   let dialogRef: { id: string; close: ReturnType<typeof vi.fn> };
 
-  async function setup(data: PatientFormData = {}): Promise<void> {
+  async function setup({
+    data = {},
+    country = 'BO',
+    phonePlaceholder = '',
+  }: SetupOptions = {}): Promise<void> {
     patients = { save: vi.fn((_: unknown, request: object) => of(patient(request))) };
     dialogRef = { id: 'patient-dialog', close: vi.fn() };
     TestBed.configureTestingModule({
@@ -40,7 +50,7 @@ describe('PatientFormDialogComponent', () => {
         provideZoneChangeDetection(),
         {
           provide: ClinicCountryService,
-          useValue: { country: signal('BO'), phonePlaceholder: signal('') },
+          useValue: { country: signal(country), phonePlaceholder: signal(phonePlaceholder) },
         },
         { provide: PatientFormService, useValue: patients },
         { provide: DialogRef, useValue: dialogRef },
@@ -48,43 +58,24 @@ describe('PatientFormDialogComponent', () => {
       ],
     });
     fixture = TestBed.createComponent(PatientFormDialogComponent);
+    dom = formDom(fixture);
     fixture.autoDetectChanges();
     element = fixture.nativeElement;
     await fixture.whenStable();
-  }
-
-  function field(label: string): HTMLInputElement {
-    const labelElement = [...element.querySelectorAll('label')].find(
-      (l) => l.textContent?.trim() === label,
-    );
-    return element.querySelector<HTMLInputElement>(`[id="${labelElement!.htmlFor}"]`)!;
   }
 
   function submitButton(): HTMLButtonElement {
     return element.querySelector<HTMLButtonElement>('button[type="submit"]')!;
   }
 
-  function ciError(): string | undefined {
+  function documentError(): string | undefined {
     return element.querySelector('#patient-document-error')?.textContent?.trim();
   }
 
-  async function type(label: string, value: string): Promise<void> {
-    const input = field(label);
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-  }
-
   async function fillValid(document = '1234567'): Promise<void> {
-    await type('Nombre completo', '  Ana Rojas  ');
-    await type('Teléfono', '70000000');
-    await type('CI (opcional)', document);
-  }
-
-  async function submit(): Promise<void> {
-    submitButton().click();
-    await fixture.whenStable();
+    await dom.type('Nombre completo', '  Ana Rojas  ');
+    await dom.type('Teléfono', '70000000');
+    await dom.type('CI (opcional)', document);
   }
 
   describe('create mode', () => {
@@ -92,15 +83,15 @@ describe('PatientFormDialogComponent', () => {
 
     it('renders the create title and an empty CI limited to 10 characters', () => {
       expect(element.querySelector('h2')?.textContent).toContain('Nuevo paciente');
-      expect(field('CI (opcional)').value).toBe('');
-      expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
+      expect(dom.field('CI (opcional)').value).toBe('');
+      expect(dom.field('CI (opcional)').getAttribute('maxlength')).toBe('10');
       expect(submitButton().textContent).toContain('Crear paciente');
     });
 
     it('creates the patient with trimmed values and closes with the saved patient', async () => {
       await fillValid('1234567');
 
-      await submit();
+      await dom.submit();
 
       expect(patients.save).toHaveBeenCalledWith(undefined, {
         name: 'Ana Rojas',
@@ -114,9 +105,9 @@ describe('PatientFormDialogComponent', () => {
     });
 
     it('asks for the required fields on an empty submit but not for the optional CI', async () => {
-      await submit();
+      await dom.submit();
 
-      expect(ciError()).toBeUndefined();
+      expect(documentError()).toBeUndefined();
       expect(element.querySelector('#patient-name-error')).not.toBeNull();
       expect(patients.save).not.toHaveBeenCalled();
     });
@@ -124,9 +115,9 @@ describe('PatientFormDialogComponent', () => {
     it('is valid with an empty CI and sends null', async () => {
       await fillValid('');
 
-      await submit();
+      await dom.submit();
 
-      expect(ciError()).toBeUndefined();
+      expect(documentError()).toBeUndefined();
       expect(patients.save).toHaveBeenCalledWith(
         undefined,
         expect.objectContaining({ document: null }),
@@ -136,8 +127,8 @@ describe('PatientFormDialogComponent', () => {
     it('treats a whitespace-only CI as invalid and does not send it', async () => {
       await fillValid('   ');
 
-      expect(ciError()).toBe(CI_MESSAGE);
-      await submit();
+      expect(documentError()).toBe(CI_MESSAGE);
+      await dom.submit();
       expect(patients.save).not.toHaveBeenCalled();
     });
 
@@ -149,9 +140,9 @@ describe('PatientFormDialogComponent', () => {
       ])('shows the CI rule and blocks submit for "%s" (%s)', async (document) => {
         await fillValid(document);
 
-        expect(ciError()).toBe(CI_MESSAGE);
-        expect(field('CI (opcional)').getAttribute('aria-invalid')).toBe('true');
-        await submit();
+        expect(documentError()).toBe(CI_MESSAGE);
+        expect(dom.field('CI (opcional)').getAttribute('aria-invalid')).toBe('true');
+        await dom.submit();
         expect(patients.save).not.toHaveBeenCalled();
         expect(dialogRef.close).not.toHaveBeenCalled();
       });
@@ -159,16 +150,16 @@ describe('PatientFormDialogComponent', () => {
       it('shows the CI rule, not the length message, for a pasted value over 10 digits', async () => {
         await fillValid('12345678901');
 
-        expect(ciError()).toBe(CI_MESSAGE);
-        await submit();
+        expect(documentError()).toBe(CI_MESSAGE);
+        await dom.submit();
         expect(patients.save).not.toHaveBeenCalled();
       });
 
       it.each(['12345', '1234567890'])('accepts the boundary value "%s"', async (document) => {
         await fillValid(document);
 
-        expect(ciError()).toBeUndefined();
-        await submit();
+        expect(documentError()).toBeUndefined();
+        await dom.submit();
         expect(patients.save).toHaveBeenCalledWith(
           undefined,
           expect.objectContaining({ document }),
@@ -180,7 +171,7 @@ describe('PatientFormDialogComponent', () => {
       patients.save.mockReturnValue(new Subject<Patient>());
       await fillValid();
 
-      await submit();
+      await dom.submit();
       expect(submitButton().disabled).toBe(true);
       expect(submitButton().textContent).toContain('Guardando…');
 
@@ -200,7 +191,7 @@ describe('PatientFormDialogComponent', () => {
       );
       await fillValid();
 
-      await submit();
+      await dom.submit();
 
       expect(element.querySelector('[role="alert"]')?.textContent?.trim()).toBe(
         'Ya existe un paciente con ese CI',
@@ -209,10 +200,8 @@ describe('PatientFormDialogComponent', () => {
       expect(submitButton().disabled).toBe(false);
     });
 
-    it('closes without saving from the cancel button', () => {
-      [...element.querySelectorAll<HTMLButtonElement>('button')]
-        .find((b) => b.textContent?.trim() === 'Cancelar')!
-        .click();
+    it('closes without saving from the cancel button', async () => {
+      await dom.clickButton('Cancelar');
 
       expect(dialogRef.close).toHaveBeenCalledWith();
       expect(patients.save).not.toHaveBeenCalled();
@@ -222,11 +211,11 @@ describe('PatientFormDialogComponent', () => {
   describe('edit mode', () => {
     it('prefills the form and updates the patient', async () => {
       const existing = patient();
-      await setup({ patient: existing });
+      await setup({ data: { patient: existing } });
 
       expect(element.querySelector('h2')?.textContent).toContain('Editar paciente');
-      expect(field('CI (opcional)').value).toBe('1234567');
-      await submit();
+      expect(dom.field('CI (opcional)').value).toBe('1234567');
+      await dom.submit();
 
       expect(patients.save).toHaveBeenCalledWith(existing, {
         name: 'Ana Rojas',
@@ -237,10 +226,10 @@ describe('PatientFormDialogComponent', () => {
     });
 
     it('edits a patient without CI and keeps it null', async () => {
-      await setup({ patient: patient({ document: null }) });
+      await setup({ data: { patient: patient({ document: null }) } });
 
-      expect(field('CI (opcional)').value).toBe('');
-      await submit();
+      expect(dom.field('CI (opcional)').value).toBe('');
+      await dom.submit();
 
       expect(patients.save).toHaveBeenCalledWith(
         expect.anything(),
@@ -249,11 +238,11 @@ describe('PatientFormDialogComponent', () => {
     });
 
     it('allows saving an existing patient whose unchanged document no longer matches the rule', async () => {
-      await setup({ patient: patient({ document: '1234567-LP' }) });
+      await setup({ data: { patient: patient({ document: '1234567-LP' }) } });
 
-      await submit();
+      await dom.submit();
 
-      expect(ciError()).toBeUndefined();
+      expect(documentError()).toBeUndefined();
       expect(patients.save).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ document: '1234567-LP' }),
@@ -261,137 +250,92 @@ describe('PatientFormDialogComponent', () => {
     });
 
     it('blocks saving an existing patient whose edited document breaks the rule', async () => {
-      await setup({ patient: patient({ document: '1234567-LP' }) });
+      await setup({ data: { patient: patient({ document: '1234567-LP' }) } });
 
-      await type('CI (opcional)', '12');
-      await submit();
+      await dom.type('CI (opcional)', '12');
+      await dom.submit();
 
-      expect(ciError()).toBe(CI_MESSAGE);
+      expect(documentError()).toBe(CI_MESSAGE);
       expect(patients.save).not.toHaveBeenCalled();
     });
   });
-});
 
-describe('PatientFormDialogComponent in a BR clinic', () => {
-  const CPF_MESSAGE = 'CPF inválido: 11 dígitos con dígito verificador válido';
-  let fixture: ComponentFixture<PatientFormDialogComponent>;
-  let element: HTMLElement;
-  let patients: { save: ReturnType<typeof vi.fn> };
+  describe('in a BR clinic', () => {
+    const BR: SetupOptions = { country: 'BR', phonePlaceholder: '+55 11 91234-5678' };
 
-  async function setup(data: PatientFormData = {}, country: CountryCode = 'BR'): Promise<void> {
-    patients = { save: vi.fn((_: unknown, request: object) => of(patient(request))) };
-    TestBed.configureTestingModule({
-      imports: [PatientFormDialogComponent],
-      providers: [
-        provideZoneChangeDetection(),
-        {
-          provide: ClinicCountryService,
-          useValue: { country: signal(country), phonePlaceholder: signal('+55 11 91234-5678') },
-        },
-        { provide: PatientFormService, useValue: patients },
-        { provide: DialogRef, useValue: { id: 'patient-dialog', close: vi.fn() } },
-        { provide: DIALOG_DATA, useValue: data },
-      ],
+    async function fillValidBr(document: string): Promise<void> {
+      await dom.type('Nombre completo', 'Ana Rojas');
+      await dom.type('Teléfono', '11912345678');
+      await dom.type('CPF (opcional)', document);
+    }
+
+    it('shows the CPF label, placeholders and a 14 character limit', async () => {
+      await setup(BR);
+
+      expect(dom.field('CPF (opcional)').placeholder).toBe('000.000.000-00');
+      expect(dom.field('CPF (opcional)').getAttribute('maxlength')).toBe('14');
+      expect(dom.field('Teléfono').placeholder).toBe('+55 11 91234-5678');
     });
-    fixture = TestBed.createComponent(PatientFormDialogComponent);
-    fixture.autoDetectChanges();
-    element = fixture.nativeElement;
-    await fixture.whenStable();
-  }
 
-  function field(label: string): HTMLInputElement {
-    const labelElement = [...element.querySelectorAll('label')].find(
-      (l) => l.textContent?.trim() === label,
+    it.each(['529.982.247-25', '52998224725'])(
+      'accepts the valid CPF "%s" and sends it as document',
+      async (document) => {
+        await setup(BR);
+        await fillValidBr(document);
+
+        await dom.submit();
+
+        expect(documentError()).toBeUndefined();
+        expect(patients.save).toHaveBeenCalledWith(
+          undefined,
+          expect.objectContaining({ document }),
+        );
+      },
     );
-    return element.querySelector<HTMLInputElement>(`[id="${labelElement!.htmlFor}"]`)!;
-  }
 
-  async function type(label: string, value: string): Promise<void> {
-    const input = field(label);
-    input.value = value;
-    input.dispatchEvent(new Event('input'));
-    input.dispatchEvent(new Event('blur'));
-    await fixture.whenStable();
-  }
+    it('shows the CPF message and blocks submit for a wrong check digit', async () => {
+      await setup(BR);
+      await fillValidBr('52998224724');
 
-  async function submit(): Promise<void> {
-    element.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
-    await fixture.whenStable();
-  }
+      await dom.submit();
 
-  function documentError(): string | undefined {
-    return element.querySelector('#patient-document-error')?.textContent?.trim();
-  }
+      expect(documentError()).toBe(CPF_MESSAGE);
+      expect(patients.save).not.toHaveBeenCalled();
+    });
 
-  async function fillValid(document: string): Promise<void> {
-    await type('Nombre completo', 'Ana Rojas');
-    await type('Teléfono', '11912345678');
-    await type('CPF (opcional)', document);
-  }
+    it('rejects a CI-shaped value that is not a CPF', async () => {
+      await setup(BR);
+      await fillValidBr('1234567');
 
-  it('shows the CPF label, placeholders and a 14 character limit', async () => {
-    await setup();
+      expect(documentError()).toBe(CPF_MESSAGE);
+    });
 
-    expect(field('CPF (opcional)').placeholder).toBe('000.000.000-00');
-    expect(field('CPF (opcional)').getAttribute('maxlength')).toBe('14');
-    expect(field('Teléfono').placeholder).toBe('+55 11 91234-5678');
-  });
+    it('allows saving an existing patient whose unchanged document is not a valid CPF', async () => {
+      await setup({ ...BR, data: { patient: patient({ document: '1234567' }) } });
 
-  it.each(['529.982.247-25', '52998224725'])(
-    'accepts the valid CPF "%s" and sends it as document',
-    async (document) => {
-      await setup();
-      await fillValid(document);
-
-      await submit();
+      await dom.submit();
 
       expect(documentError()).toBeUndefined();
-      expect(patients.save).toHaveBeenCalledWith(undefined, expect.objectContaining({ document }));
-    },
-  );
+      expect(patients.save).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ document: '1234567' }),
+      );
+    });
 
-  it('shows the CPF message and blocks submit for a wrong check digit', async () => {
-    await setup();
-    await fillValid('52998224724');
+    it('blocks saving an existing patient whose document was edited to an invalid CPF', async () => {
+      await setup({ ...BR, data: { patient: patient({ document: '1234567' }) } });
 
-    await submit();
+      await dom.type('CPF (opcional)', '52998224724');
+      await dom.submit();
 
-    expect(documentError()).toBe(CPF_MESSAGE);
-    expect(patients.save).not.toHaveBeenCalled();
-  });
+      expect(documentError()).toBe(CPF_MESSAGE);
+      expect(patients.save).not.toHaveBeenCalled();
+    });
 
-  it('rejects a CI-shaped value that is not a CPF', async () => {
-    await setup();
-    await fillValid('1234567');
+    it('keeps the CI label and limit in a BO clinic', async () => {
+      await setup({ country: 'BO' });
 
-    expect(documentError()).toBe(CPF_MESSAGE);
-  });
-
-  it('allows saving an existing patient whose unchanged document is not a valid CPF', async () => {
-    await setup({ patient: patient({ document: '1234567' }) });
-
-    await submit();
-
-    expect(documentError()).toBeUndefined();
-    expect(patients.save).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ document: '1234567' }),
-    );
-  });
-
-  it('blocks saving an existing patient whose document was edited to an invalid CPF', async () => {
-    await setup({ patient: patient({ document: '1234567' }) });
-
-    await type('CPF (opcional)', '52998224724');
-    await submit();
-
-    expect(documentError()).toBe(CPF_MESSAGE);
-    expect(patients.save).not.toHaveBeenCalled();
-  });
-
-  it('keeps the CI label and limit in a BO clinic', async () => {
-    await setup({}, 'BO');
-
-    expect(field('CI (opcional)').getAttribute('maxlength')).toBe('10');
+      expect(dom.field('CI (opcional)').getAttribute('maxlength')).toBe('10');
+    });
   });
 });

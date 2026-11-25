@@ -57,7 +57,14 @@ describe('PatientsPageComponent', () => {
     dialog = { open: vi.fn(() => ({ closed: EMPTY })) };
     TestBed.configureTestingModule({
       imports: [PatientsPageComponent],
-      providers: [provideZoneChangeDetection(), { provide: Dialog, useValue: dialog }],
+      providers: [
+        provideZoneChangeDetection(),
+        { provide: Dialog, useValue: dialog },
+        {
+          provide: ClinicCountryService,
+          useValue: { country: signal('BO'), phonePlaceholder: signal('') },
+        },
+      ],
     });
     TestBed.overrideComponent(PatientsPageComponent, {
       set: { providers: [{ provide: PatientsService, useValue: patients }] },

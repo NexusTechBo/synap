@@ -1,6 +1,6 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
@@ -8,9 +8,8 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { filter, finalize } from 'rxjs';
+import { filter, finalize, map } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
-import { ROLES } from '../../core/auth/roles';
 import { ClinicCountryService } from '../../core/clinic/clinic-country.service';
 import { apiErrorMessage } from '../../core/http/api-error';
 import { I18nService } from '../../core/i18n/i18n.service';
@@ -61,10 +60,14 @@ export class ProfilePageComponent {
   protected readonly country = inject(ClinicCountryService).country;
 
   protected readonly me = this.profile.me;
+  protected readonly isAdmin = this.profile.isAdmin;
 
   protected readonly phoneErrors = computed(() => {
     this.i18n.currentLang();
-    return { pattern: this.i18n.translate('validation.phonePattern') };
+    return {
+      required: this.i18n.translate('validation.phoneRequired'),
+      pattern: this.i18n.translate('validation.phonePattern'),
+    };
   });
 
   protected readonly currentPasswordErrors = computed(() => {
@@ -80,9 +83,13 @@ export class ProfilePageComponent {
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', notBlank],
     email: ['', [Validators.required, Validators.email]],
-    phoneNumber: ['', phoneValidator],
+    phoneNumber: ['', this.isAdmin() ? [notBlank, phoneValidator] : phoneValidator],
     currentPassword: ['', currentPasswordWhenChanging],
     newPassword: ['', Validators.minLength(8)],
+  });
+
+  protected readonly pristine = toSignal(this.form.events.pipe(map(() => this.form.pristine)), {
+    initialValue: true,
   });
 
   protected readonly roleLabel = computed(() => {
@@ -93,7 +100,6 @@ export class ProfilePageComponent {
     return roles.map((role) => this.i18n.translate(`roles.${role}`)).join(' · ');
   });
   protected readonly avatar = computed(() => initials(this.me()?.name));
-  protected readonly isAdmin = computed(() => this.auth.hasRole(...ROLES.admin));
 
   constructor() {
     toObservable(this.me)

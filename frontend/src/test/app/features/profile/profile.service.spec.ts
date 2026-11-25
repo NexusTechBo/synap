@@ -4,10 +4,12 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { StaffApi } from '../../../../app/core/api/staff.api';
+import { WhatsappApi } from '../../../../app/core/api/whatsapp.api';
 import { AuthService } from '../../../../app/core/auth/auth.service';
 import { DoctorsStore } from '../../../../app/core/catalogs/doctors.store';
 import { SpecialtiesStore } from '../../../../app/core/catalogs/specialties.store';
 import { API_ERROR_CODES } from '../../../../app/core/http/api-error';
+import { WhatsappSessionStatus } from '../../../../app/core/models/api.models';
 import { DoctorModeAppointmentsDialogComponent } from '../../../../app/features/profile/components/doctor-mode-appointments-dialog/doctor-mode-appointments-dialog.component';
 import { ProfileService } from '../../../../app/features/profile/profile.service';
 import { ConfirmService } from '../../../../app/shared/services/confirm.service';
@@ -30,6 +32,8 @@ describe('ProfileService', () => {
   let staffApi: {
     updateDoctorMode: ReturnType<typeof vi.fn>;
   };
+  let whatsappApi: { status: ReturnType<typeof vi.fn> };
+  let adminRole: ReturnType<typeof signal<boolean>>;
   let auth: {
     profile: ReturnType<typeof signal>;
     profileLoading: ReturnType<typeof signal>;
@@ -52,11 +56,13 @@ describe('ProfileService', () => {
     staffApi = {
       updateDoctorMode: vi.fn(() => of(undefined)),
     };
+    whatsappApi = { status: vi.fn(() => of({ status: 'IDLE' })) };
+    adminRole = signal(false);
     auth = {
       profile: signal(null),
       profileLoading: signal(false),
       profileError: signal(null),
-      hasRole: vi.fn(() => false),
+      hasRole: vi.fn(() => adminRole()),
       refresh: vi.fn(() => of(null)),
       reloadProfile: vi.fn(),
       setProfile: vi.fn(),
@@ -70,6 +76,7 @@ describe('ProfileService', () => {
       providers: [
         ProfileService,
         { provide: StaffApi, useValue: staffApi },
+        { provide: WhatsappApi, useValue: whatsappApi },
         { provide: AuthService, useValue: auth },
         { provide: ConfirmService, useValue: confirm },
         { provide: Dialog, useValue: dialog },
@@ -260,38 +267,129 @@ describe('ProfileService', () => {
       expect(result).toBe(profile);
     });
 
-    it('notifies and flags WhatsApp relink when administrator changes own phone number', () => {
-      auth.hasRole.mockReturnValue(true);
+    function updateAsAdmin(
+      phoneNumber: string | null | undefined,
+      statuses: (WhatsappSessionStatus | Error)[],
+    ): void {
+      adminRole.set(true);
       auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
-      const updated = { id: 1, name: 'Admin', phoneNumber: '+59171234567' };
-      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
-
-      service.update({} as never).subscribe();
-
-      expect(service.whatsappRelinkNeeded()).toBe(true);
-      expect(notifications.success).toHaveBeenCalledWith('Perfil actualizado');
-      expect(notifications.success).toHaveBeenCalledWith(
-        'El número del espacio de trabajo se actualizó. Vuelve a vincular WhatsApp con QR o código de 8 dígitos.',
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() =>
+        of({ id: 1, name: 'Admin', phoneNumber }),
       );
+      const queue = [...statuses];
+      whatsappApi.status.mockImplementation(() => {
+        const next = queue.shift()!;
+        return next instanceof Error ? throwError(() => next) : of({ status: next });
+      });
+      service.update({ phoneNumber } as never).subscribe();
+    }
+
+    it('flags the relink alert when the session goes from active to inactive', () => {
+      updateAsAdmin('+59171234567', ['READY', 'IDLE']);
+
+      expect(whatsappApi.status).toHaveBeenCalledTimes(2);
+      expect(service.whatsappRelinkNeeded()).toBe(true);
+      expect(notifications.success).toHaveBeenCalledTimes(1);
 
       service.clearWhatsappRelinkNotice();
       expect(service.whatsappRelinkNeeded()).toBe(false);
     });
 
-    it('does not flag WhatsApp relink when administrator phone number does not change', () => {
-      auth.hasRole.mockReturnValue(true);
-      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
-      const updated = {
-        id: 1,
-        name: 'Admin Renamed',
-        phoneNumber: '+59170000001',
-      };
-      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
-
-      service.update({} as never).subscribe();
+    it('does not flag the alert when the session stays active', () => {
+      updateAsAdmin('+59171234567', ['READY', 'READY']);
 
       expect(service.whatsappRelinkNeeded()).toBe(false);
-      expect(notifications.success).toHaveBeenCalledTimes(1);
+    });
+
+    it.each<WhatsappSessionStatus>(['IDLE', 'DISCONNECTED'])(
+      'does not query again nor flag when the session was %s before',
+      (status) => {
+        updateAsAdmin('+59171234567', [status]);
+
+        expect(whatsappApi.status).toHaveBeenCalledOnce();
+        expect(service.whatsappRelinkNeeded()).toBe(false);
+      },
+    );
+
+    it('does not flag the alert when the status check fails after saving', () => {
+      updateAsAdmin('+59171234567', ['READY', new Error('boom')]);
+
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+    });
+
+    it('still saves the profile when the status check fails before saving', () => {
+      updateAsAdmin('+59171234567', [new Error('boom')]);
+
+      expect(whatsappApi.status).toHaveBeenCalledOnce();
+      expect(auth.setProfile).toHaveBeenCalledOnce();
+      expect(notifications.success).toHaveBeenCalledOnce();
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+    });
+
+    it('does not query status again nor flag the alert when the update fails', () => {
+      adminRole.set(true);
+      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() =>
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
+      whatsappApi.status.mockReturnValue(of({ status: 'READY' }));
+      const errors: unknown[] = [];
+
+      service
+        .update({ phoneNumber: '+59171234567' } as never)
+        .subscribe({ error: (error) => errors.push(error) });
+
+      expect(errors).toHaveLength(1);
+      expect(whatsappApi.status).toHaveBeenCalledOnce();
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+      expect(notifications.success).not.toHaveBeenCalled();
+      expect(auth.refresh).not.toHaveBeenCalled();
+    });
+
+    it('keeps the toast and refreshes the session when the status check fails after saving', () => {
+      updateAsAdmin('+59171234567', ['READY', new Error('boom')]);
+
+      expect(notifications.success).toHaveBeenCalledOnce();
+      expect(auth.refresh).toHaveBeenCalledOnce();
+    });
+
+    it('keeps the toast and refreshes the session when the status check fails before saving', () => {
+      updateAsAdmin('+59171234567', [new Error('boom')]);
+
+      expect(notifications.success).toHaveBeenCalledOnce();
+      expect(auth.refresh).toHaveBeenCalledOnce();
+    });
+
+    it('keeps the toast and the alert when the refresh fails after the relink was flagged', () => {
+      auth.refresh.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+
+      updateAsAdmin('+59171234567', ['READY', 'IDLE']);
+
+      expect(service.whatsappRelinkNeeded()).toBe(true);
+      expect(notifications.success).toHaveBeenCalledOnce();
+    });
+
+    it('does not query WhatsApp when the administrator phone does not change', () => {
+      updateAsAdmin('+59170000001', []);
+
+      expect(whatsappApi.status).not.toHaveBeenCalled();
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+    });
+
+    it('does not query WhatsApp when the phone is not part of the request', () => {
+      updateAsAdmin(undefined, []);
+
+      expect(whatsappApi.status).not.toHaveBeenCalled();
+    });
+
+    it('does not query WhatsApp when a non administrator changes the phone', () => {
+      auth.profile.set({ id: 1, name: 'Ana', phoneNumber: '+59170000001' });
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of({ id: 1 }));
+
+      service.update({ phoneNumber: '+59171234567' } as never).subscribe();
+
+      expect(whatsappApi.status).not.toHaveBeenCalled();
+      expect(service.whatsappRelinkNeeded()).toBe(false);
     });
   });
 });

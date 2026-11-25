@@ -1,161 +1,107 @@
-import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
+import { FocusMonitor, _IdGenerator } from '@angular/cdk/a11y';
+import { CdkOverlayOrigin, ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
+  DestroyRef,
+  afterNextRender,
   computed,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
-let nextTooltipId = 0;
+const GAP = 8;
+const ALIGNMENTS = ['center', 'start', 'end'] as const;
 
-const TOP_POSITIONS: ConnectedPosition[] = [
-  {
-    originX: 'center',
-    originY: 'top',
-    overlayX: 'center',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-  {
-    originX: 'start',
-    originY: 'top',
-    overlayX: 'start',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-  {
-    originX: 'end',
-    originY: 'top',
-    overlayX: 'end',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-  {
-    originX: 'center',
-    originY: 'bottom',
-    overlayX: 'center',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-  {
-    originX: 'start',
-    originY: 'bottom',
-    overlayX: 'start',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-  {
-    originX: 'end',
-    originY: 'bottom',
-    overlayX: 'end',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-];
+const ABOVE: ConnectedPosition[] = ALIGNMENTS.map((alignment) => ({
+  originX: alignment,
+  originY: 'top',
+  overlayX: alignment,
+  overlayY: 'bottom',
+  offsetY: -GAP,
+}));
 
-const BOTTOM_POSITIONS: ConnectedPosition[] = [
-  {
-    originX: 'center',
-    originY: 'bottom',
-    overlayX: 'center',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-  {
-    originX: 'start',
-    originY: 'bottom',
-    overlayX: 'start',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-  {
-    originX: 'end',
-    originY: 'bottom',
-    overlayX: 'end',
-    overlayY: 'top',
-    offsetY: 8,
-  },
-  {
-    originX: 'center',
-    originY: 'top',
-    overlayX: 'center',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-  {
-    originX: 'start',
-    originY: 'top',
-    overlayX: 'start',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-  {
-    originX: 'end',
-    originY: 'top',
-    overlayX: 'end',
-    overlayY: 'bottom',
-    offsetY: -8,
-  },
-];
+const BELOW: ConnectedPosition[] = ALIGNMENTS.map((alignment) => ({
+  originX: alignment,
+  originY: 'bottom',
+  overlayX: alignment,
+  overlayY: 'top',
+  offsetY: GAP,
+}));
 
-/**
- * Reusable accessible help tooltip triggered by an info (`ⓘ`) button alongside form labels or controls.
- *
- * Uses Angular CDK Overlay so popovers render outside scrolling modals without clipping and
- * automatically flip/shift to stay within the viewport.
- */
+const TOP_POSITIONS = [...ABOVE, ...BELOW];
+const BOTTOM_POSITIONS = [...BELOW, ...ABOVE];
+
 @Component({
   selector: 'app-help-tooltip',
-  imports: [UiIconComponent, OverlayModule],
+  imports: [UiIconComponent, OverlayModule, TranslatePipe],
   templateUrl: './help-tooltip.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    class: 'inline-flex items-center align-middle',
-    '(document:click)': 'onDocumentClick($event)',
-    '(document:keydown.escape)': 'close()',
-  },
+  host: { class: 'inline-flex items-center align-middle' },
 })
 export class HelpTooltipComponent {
-  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly focusMonitor = inject(FocusMonitor);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly origin = viewChild.required(CdkOverlayOrigin);
 
-  /** Explanatory message displayed inside the tooltip popover. */
   readonly text = input.required<string>();
-  /** Accessible label announced by screen readers for the trigger button. */
-  readonly ariaLabel = input('Más información');
-  /** Preferred vertical placement relative to the trigger button. */
+  readonly ariaLabel = input<string>();
   readonly position = input<'top' | 'bottom'>('top');
 
   protected readonly isOpen = signal(false);
-  protected readonly tooltipId = `synap-tooltip-${++nextTooltipId}`;
+  private readonly pinned = signal(false);
+  protected readonly tooltipId = inject(_IdGenerator).getId('synap-tooltip-');
   protected readonly positions = computed(() =>
     this.position() === 'bottom' ? BOTTOM_POSITIONS : TOP_POSITIONS,
   );
 
-  protected open(): void {
+  constructor() {
+    afterNextRender(() => {
+      const trigger = this.origin().elementRef.nativeElement;
+      this.focusMonitor.monitor(trigger).subscribe((origin) => {
+        if (origin === 'keyboard') {
+          this.pinned.set(true);
+          this.isOpen.set(true);
+        } else if (origin === null) {
+          this.close();
+        }
+      });
+      this.destroyRef.onDestroy(() => this.focusMonitor.stopMonitoring(trigger));
+    });
+  }
+
+  protected hover(): void {
     this.isOpen.set(true);
   }
 
+  protected leave(): void {
+    if (!this.pinned()) {
+      this.isOpen.set(false);
+    }
+  }
+
+  protected toggle(): void {
+    const pinned = !this.pinned();
+    this.pinned.set(pinned);
+    this.isOpen.set(pinned);
+  }
+
   protected close(): void {
+    this.pinned.set(false);
     this.isOpen.set(false);
   }
 
-  protected toggle(event: Event): void {
-    event.stopPropagation();
-    this.isOpen.update((v) => !v);
-  }
-
-  protected onDocumentClick(event: Event): void {
-    if (!this.isOpen()) {
+  protected onOverlayKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') {
       return;
     }
 
-    const target = event.target as Node | null;
-    if (target && !this.elementRef.nativeElement.contains(target)) {
-      this.close();
-    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.close();
   }
 }

@@ -14,6 +14,7 @@ import {
 } from '../../../../shared/components/regional-fields/regional-fields.component';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import { LoadErrorComponent } from '../../../../shared/ui/load-error/load-error.component';
 import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
   PHONE_ERRORS,
@@ -32,6 +33,7 @@ import { RegisterService } from '../../register.service';
     ReactiveFormsModule,
     RouterLink,
     FormFieldComponent,
+    LoadErrorComponent,
     RegionalFieldsComponent,
     TranslatePipe,
   ],
@@ -55,7 +57,7 @@ export class RegisterFormComponent {
     adminUsername: ['', [Validators.required, usernameValidator]],
     adminEmail: ['', [Validators.required, Validators.email]],
     adminPassword: ['', [Validators.required, Validators.minLength(8)]],
-    regional: createRegionalForm({ country: 'BO' }),
+    regional: createRegionalForm({ country: 'BO' }, [Validators.required]),
   });
 
   protected readonly phoneErrors = PHONE_ERRORS;
@@ -81,6 +83,8 @@ export class RegisterFormComponent {
     () => DOCUMENT_MAX_LENGTH[this.documentCountry()],
   );
   protected readonly regionalAvailable = this.regions.available;
+  protected readonly regionalError = this.regions.hasError;
+  protected readonly regionalRetrying = this.regions.retrying;
   protected readonly phonePlaceholder = computed(() => {
     this.i18n.currentLang();
     return (
@@ -99,23 +103,20 @@ export class RegisterFormComponent {
       });
   }
 
+  protected retryRegions(): void {
+    this.regions.reload();
+  }
+
   protected submit(): void {
+    if (!this.regionalAvailable()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const { regional, ...clinic } = this.form.getRawValue();
-    const request: ClinicRequest = { ...clinic };
-    if (
-      this.regionalAvailable() &&
-      regional.country &&
-      regional.timezone &&
-      regional.defaultLanguage
-    ) {
-      request.country = regional.country;
-      request.timezone = regional.timezone;
-      request.defaultLanguage = regional.defaultLanguage;
-    }
+    const { country, timezone, defaultLanguage } = regional;
+    if (!country || !defaultLanguage) return;
+    const request: ClinicRequest = { ...clinic, country, timezone, defaultLanguage };
     this.register.register(request);
   }
 }

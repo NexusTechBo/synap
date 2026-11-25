@@ -16,10 +16,8 @@ import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.mapper.PersonalMapper;
-import com.example.pulso.notification.event.AdminPhoneChangedEvent;
 import com.example.pulso.notification.event.StaffCreatedEvent;
 import com.example.pulso.repository.AppointmentRepository;
-import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
@@ -31,6 +29,7 @@ import com.example.pulso.service.component.provider.CurrentClinicProvider;
 import com.example.pulso.service.component.resolver.ClinicLocaleResolver;
 import com.example.pulso.service.component.resolver.IdentityDocumentResolver;
 import com.example.pulso.util.Utils;
+import com.example.pulso.whatsapp.event.AdminPhoneChangedEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,12 +48,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PersonalServiceImpl implements PersonalService {
-    private static final List<AppointmentStatus> ACTIVE_STATUSES =
-            List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
+    private static final List<AppointmentStatus> ACTIVE_STATUSES = List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
 
     private final PersonalRepository personalRepository;
     private final SpecialtyRepository specialtyRepository;
-    private final ClinicRepository clinicRepository;
     private final CurrentClinicProvider currentClinicProvider;
     private final PersonalMapper personalMapper;
     private final PasswordEncoder passwordEncoder;
@@ -133,10 +130,12 @@ public class PersonalServiceImpl implements PersonalService {
     @Transactional
     public PersonalResponse updatePersonalByAdmin(Long personalId, PersonalUpdateRequest request) {
         var personal = getPersonalOrThrowById(personalId);
+        if (personal.getRole() == ERole.ADMINISTRATOR)
+            throw new ForbiddenException(MessageKeys.PERSONAL_ADMIN_NOT_EDITABLE);
         if (personal.getRole() == ERole.DOCTOR && request.role() == ERole.ASSISTANT)
             verifyCanStopBeingDoctor(personalId);
         updateContactData(personal, request.name(), request.email(), request.phoneNumber());
-        var roleChanged = personal.getRole() != ERole.ADMINISTRATOR && personal.getRole() != request.role();
+        var roleChanged = personal.getRole() != request.role();
         if (roleChanged)
             personal.setRole(request.role());
         personal.setSpecialty(getSpecialtyOrNull(request.specialtyId()));
@@ -209,11 +208,10 @@ public class PersonalServiceImpl implements PersonalService {
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
 
         var isAdmin = personal.getRole() == ERole.ADMINISTRATOR;
-        var clinic = isAdmin ? currentClinicProvider.getCurrentClinic() : null;
-        var country = clinic != null ? clinic.getCountry() : TenantContext.getCurrentCountry();
-
         var previousPhoneNumber = personal.getPhoneNumber();
-        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, country);
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, TenantContext.getCurrentCountry());
+        if (isAdmin && phoneNumber == null)
+            throw new BusinessException(MessageKeys.PERSONAL_ADMIN_PHONE_REQUIRED);
         if (phoneNumber != null && !Objects.equals(previousPhoneNumber, phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
 
@@ -221,15 +219,15 @@ public class PersonalServiceImpl implements PersonalService {
         personal.setEmail(email);
         personal.setPhoneNumber(phoneNumber);
 
-        if (isAdmin && !Objects.equals(previousPhoneNumber, phoneNumber)) {
-            clinic.setPhoneNumber(phoneNumber);
-            clinicRepository.save(clinic);
-            eventPublisher.publishEvent(new AdminPhoneChangedEvent(
-                    clinic.getId(),
-                    previousPhoneNumber,
-                    phoneNumber
-            ));
-        }
+        if (isAdmin) syncClinicPhone(phoneNumber);
+    }
+
+    private void syncClinicPhone(String phoneNumber) {
+        var clinic = currentClinicProvider.getCurrentClinic();
+        var previousClinicPhone = clinic.getPhoneNumber();
+        if (Objects.equals(previousClinicPhone, phoneNumber)) return;
+        clinic.setPhoneNumber(phoneNumber);
+        eventPublisher.publishEvent(new AdminPhoneChangedEvent(clinic.getId(), previousClinicPhone, phoneNumber));
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {

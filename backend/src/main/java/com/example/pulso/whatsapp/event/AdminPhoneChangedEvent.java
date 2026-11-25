@@ -1,4 +1,4 @@
-package com.example.pulso.notification.event;
+package com.example.pulso.whatsapp.event;
 
 public record AdminPhoneChangedEvent(
         Long clinicId,

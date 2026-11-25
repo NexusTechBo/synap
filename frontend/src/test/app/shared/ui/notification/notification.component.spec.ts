@@ -17,7 +17,7 @@ describe('NotificationComponent', () => {
   }
 
   function liveRegion(): HTMLElement {
-    return element.querySelector('[aria-live="polite"]') as HTMLElement;
+    return element.querySelectorAll('[aria-live="polite"]')[0] as HTMLElement;
   }
 
   function alertRegion(): HTMLElement {

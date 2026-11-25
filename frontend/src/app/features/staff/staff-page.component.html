@@ -99,18 +99,20 @@
               </td>
               <td class="whitespace-nowrap">
                 <div class="flex flex-nowrap justify-end gap-1">
-                  <button
-                    type="button"
-                    class="btn-icon h-10 w-10"
-                    [title]="'staff.actions.edit' | translate"
-                    [id]="'staff-edit-' + staff.id"
-                    [attr.aria-label]="
-                      ('staff.actions.editMemberAriaPrefix' | translate) + ' ' + staff.name
-                    "
-                    (click)="openForm(staff)"
-                  >
-                    <app-ui-icon name="edit" class="h-4 w-4" />
-                  </button>
+                  @if (staff.role !== 'ADMINISTRATOR') {
+                    <button
+                      type="button"
+                      class="btn-icon h-10 w-10"
+                      [title]="'staff.actions.edit' | translate"
+                      [id]="'staff-edit-' + staff.id"
+                      [attr.aria-label]="
+                        ('staff.actions.editMemberAriaPrefix' | translate) + ' ' + staff.name
+                      "
+                      (click)="openForm(staff)"
+                    >
+                      <app-ui-icon name="edit" class="h-4 w-4" />
+                    </button>
+                  }
                   @if (staff.active && staff.id !== myId) {
                     <button
                       type="button"

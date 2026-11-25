@@ -29,6 +29,8 @@ public final class MessageKeys {
     public static final String PERSONAL_USERNAME_TAKEN = "personal.usernameTaken";
     public static final String PERSONAL_EMAIL_ALREADY_EXISTS = "personal.emailAlreadyExists";
     public static final String PERSONAL_PHONE_ALREADY_EXISTS = "personal.phoneAlreadyExists";
+    public static final String PERSONAL_ADMIN_PHONE_REQUIRED = "personal.adminPhoneRequired";
+    public static final String PERSONAL_ADMIN_NOT_EDITABLE = "personal.adminNotEditable";
     public static final String PERSONAL_CURRENT_PASSWORD_INCORRECT = "personal.currentPasswordIncorrect";
     public static final String PERSONAL_CANNOT_DEACTIVATE_SELF = "personal.cannotDeactivateSelf";
     public static final String PERSONAL_DOCTOR_HAS_UPCOMING_APPOINTMENTS = "personal.doctorHasUpcomingAppointments";

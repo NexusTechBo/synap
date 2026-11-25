@@ -41,11 +41,6 @@ function specialtyForDoctor(control: AbstractControl): ValidationErrors | null {
 
 const EDITABLE_ROLES: Role[] = ['DOCTOR', 'ASSISTANT'];
 
-function initialRole(staff: Staff | undefined): Role {
-  if (!staff) return 'DOCTOR';
-  return staff.alsoDoctor ? 'DOCTOR' : staff.role;
-}
-
 @Component({
   selector: 'app-staff-form-dialog',
   imports: [
@@ -71,7 +66,6 @@ export class StaffFormDialogComponent {
   protected readonly country = this.clinicCountry.country;
   protected readonly phonePlaceholder = this.clinicCountry.phonePlaceholder;
   protected readonly documentMaxLength = DOCUMENT_MAX_LENGTH[this.country()];
-  protected readonly canChangeRole = this.staff?.role !== 'ADMINISTRATOR';
 
   protected readonly roles = computed(() => {
     this.i18n.currentLang();
@@ -102,7 +96,7 @@ export class StaffFormDialogComponent {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    role: [initialRole(this.staff)],
+    role: [this.staff?.role ?? 'DOCTOR'],
     name: [this.staff?.name ?? '', notBlank],
     email: [this.staff?.email ?? '', [Validators.required, Validators.email]],
     phoneNumber: [this.staff?.phoneNumber ?? '', phoneValidator],

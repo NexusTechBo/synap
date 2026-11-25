@@ -2,6 +2,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, of, switchMap, tap, throwError } from 'rxjs';
 import { StaffApi } from '../../core/api/staff.api';
+import { WhatsappApi } from '../../core/api/whatsapp.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLES } from '../../core/auth/roles';
 import { DoctorsStore } from '../../core/catalogs/doctors.store';
@@ -25,6 +26,7 @@ import {
 @Injectable()
 export class ProfileService {
   private readonly staffApi = inject(StaffApi);
+  private readonly whatsappApi = inject(WhatsappApi);
   private readonly specialtiesStore = inject(SpecialtiesStore);
   private readonly doctorsStore = inject(DoctorsStore);
   private readonly dialog = inject(Dialog);
@@ -47,11 +49,11 @@ export class ProfileService {
     this.i18n,
     this.i18n.translate('profile.errors.load'),
   );
-  readonly canToggleDoctorMode = computed(() => this.auth.hasRole(...ROLES.admin));
+  readonly isAdmin = computed(() => this.auth.hasRole(...ROLES.admin));
   readonly doctorMode = computed(() => this.auth.hasRole('DOCTOR'));
 
   constructor() {
-    if (this.canToggleDoctorMode()) this.specialtiesStore.load();
+    if (this.isAdmin()) this.specialtiesStore.load();
   }
 
   reload(): void {
@@ -67,21 +69,24 @@ export class ProfileService {
   }
 
   update(request: ProfileUpdateRequest): Observable<Staff> {
-    const previousPhone = this.me()?.phoneNumber ?? null;
-    const isAdmin = this.auth.hasRole(...ROLES.admin);
-
-    return this.staffApi.updateSelf(request).pipe(
-      tap((profile) => {
-        this.notifications.success(this.i18n.translate('profile.notifications.updated'));
-        if (isAdmin && (profile.phoneNumber ?? null) !== previousPhone) {
-          this._whatsappRelinkNeeded.set(true);
-          this.notifications.success(
-            this.i18n.translate('profile.notifications.whatsappRelinkRequired'),
-          );
-        }
-        this.auth.setProfile(profile);
-        if (this.doctorMode()) this.doctorsStore.invalidate();
-      }),
+    return this.whatsappActiveBeforePhoneChange(request).pipe(
+      switchMap((wasActive) =>
+        this.staffApi.updateSelf(request).pipe(
+          tap((profile) => {
+            this.notifications.success(this.i18n.translate('profile.notifications.updated'));
+            this.auth.setProfile(profile);
+            if (this.doctorMode()) this.doctorsStore.invalidate();
+          }),
+          switchMap((profile) =>
+            this.relinkNeededAfter(wasActive).pipe(
+              tap((needed) => {
+                if (needed) this._whatsappRelinkNeeded.set(true);
+              }),
+              map(() => profile),
+            ),
+          ),
+        ),
+      ),
       switchMap((profile) =>
         this.auth.refresh().pipe(
           map(() => profile),
@@ -122,6 +127,29 @@ export class ProfileService {
           return EMPTY;
         }),
       );
+  }
+
+  private whatsappActiveBeforePhoneChange(request: ProfileUpdateRequest): Observable<boolean> {
+    const phoneChanges =
+      this.isAdmin() &&
+      request.phoneNumber !== undefined &&
+      request.phoneNumber !== (this.me()?.phoneNumber ?? null);
+    return phoneChanges ? this.isWhatsappActive().pipe(catchError(() => of(false))) : of(false);
+  }
+
+  private relinkNeededAfter(wasActive: boolean): Observable<boolean> {
+    return wasActive
+      ? this.isWhatsappActive().pipe(
+          map((active) => !active),
+          catchError(() => of(false)),
+        )
+      : of(false);
+  }
+
+  private isWhatsappActive(): Observable<boolean> {
+    return this.whatsappApi
+      .status()
+      .pipe(map(({ status }) => status !== 'IDLE' && status !== 'DISCONNECTED'));
   }
 
   private disabledMessage(cancelled: number): string {
