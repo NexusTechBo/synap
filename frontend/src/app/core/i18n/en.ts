@@ -116,6 +116,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     successSentToSuffix: 'to activate your account. The link expires in 48 hours.',
     successSpamHelp: "Didn't receive it? Check your spam folder or request a new one.",
     goToLogin: 'Go to sign in',
+    clinicSlugTooltip:
+      'Unique code for your workspace. Used in your public booking link and team login usernames (@identifier.com). Lowercase letters and numbers only (3–50 characters), and cannot be changed later.',
+    adminUsernameTooltip:
+      'Short username used to sign in. It is automatically combined with your workspace identifier (username@identifier.com).',
   },
 
   activation: {
@@ -599,6 +603,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       saving: 'Saving…',
       saveChanges: 'Save changes',
       createMember: 'Create member',
+      roleTooltip:
+        'Doctors manage their own availability and schedule. Assistants manage all workspace appointments and patients without a personal schedule.',
+      usernameTooltip:
+        'Unique sign-in handle. It is automatically combined with your workspace domain (username@identifier.com) and cannot be changed later.',
     },
   },
 
@@ -954,6 +962,10 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       nameLabel: 'Full name',
       phoneLabel: 'Phone',
       emailLabel: 'Email (optional)',
+      legendTooltip:
+        'If you have visited before, we only need your phone number to find your record. If it is your first time, we will ask for your contact details.',
+      phoneTooltip:
+        'We will use this number to send you appointment confirmations and reminders via WhatsApp.',
     },
     summary: {
       doctorLabel: 'Doctor',

@@ -1,11 +1,14 @@
 @if (visible()) {
-  <button
-    type="button"
-    class="btn btn-secondary"
-    [attr.title]="'appointments.guestLink.tooltip' | translate"
-    (click)="copy()"
-  >
-    <app-ui-icon name="link" class="h-4 w-4" />
-    {{ 'appointments.guestLink.button' | translate }}
-  </button>
+  <div class="inline-flex items-center gap-1.5">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      [attr.title]="'appointments.guestLink.tooltip' | translate"
+      (click)="copy()"
+    >
+      <app-ui-icon name="link" class="h-4 w-4" />
+      {{ 'appointments.guestLink.button' | translate }}
+    </button>
+    <app-help-tooltip [text]="'appointments.guestLink.tooltip' | translate" position="bottom" />
+  </div>
 }

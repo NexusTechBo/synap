@@ -5,28 +5,41 @@ import {
   inject,
   input,
   signal,
-} from "@angular/core";
-import { UiIconComponent } from "../ui-icon/ui-icon.component";
+} from '@angular/core';
+import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 let nextTooltipId = 0;
 
+/**
+ * Reusable accessible help tooltip triggered by an info (`ⓘ`) button alongside form labels or controls.
+ *
+ * Supports mouse hover, keyboard focus (`Tab` / `Escape`), and mobile tap with outside-click dismissal.
+ *
+ * @example
+ * ```html
+ * <app-help-tooltip [text]="'register.clinicSlugTooltip' | translate" />
+ * ```
+ */
 @Component({
-  selector: "app-help-tooltip",
+  selector: 'app-help-tooltip',
   imports: [UiIconComponent],
-  templateUrl: "./help-tooltip.component.html",
+  templateUrl: './help-tooltip.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: "relative inline-flex items-center align-middle",
-    "(document:click)": "onDocumentClick($event)",
-    "(document:keydown.escape)": "close()",
+    class: 'relative inline-flex items-center align-middle',
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'close()',
   },
 })
 export class HelpTooltipComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
+  /** Explanatory message displayed inside the tooltip popover. */
   readonly text = input.required<string>();
-  readonly ariaLabel = input("Más información");
-  readonly position = input<"top" | "bottom">("top");
+  /** Accessible label announced by screen readers for the trigger button. */
+  readonly ariaLabel = input('Más información');
+  /** Preferred vertical placement relative to the trigger button. */
+  readonly position = input<'top' | 'bottom'>('top');
 
   protected readonly isOpen = signal(false);
   protected readonly tooltipId = `synap-tooltip-${++nextTooltipId}`;

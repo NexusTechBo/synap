@@ -8,6 +8,7 @@ import { GUEST_BOOKING_PATH } from '../../../../core/navigation/navigation';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { labelledByFrame } from '../../../../shared/ui/dialog-frame/dialog-frame.component';
+import { HelpTooltipComponent } from '../../../../shared/ui/help-tooltip/help-tooltip.component';
 import { UiIconComponent } from '../../../../shared/ui/ui-icon/ui-icon.component';
 import {
   GuestLinkData,
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-guest-link-button',
-  imports: [UiIconComponent, TranslatePipe],
+  imports: [HelpTooltipComponent, UiIconComponent, TranslatePipe],
   templateUrl: './guest-link-button.component.html',
   host: { class: 'contents' },
   changeDetection: ChangeDetectionStrategy.OnPush,

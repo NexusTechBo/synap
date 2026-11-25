@@ -118,6 +118,10 @@ export const PT_BR_TRANSLATIONS: typeof ES_TRANSLATIONS = {
     successSentToSuffix: 'para ativar sua conta. O link expira em 48 horas.',
     successSpamHelp: 'Não recebeu? Verifique sua caixa de spam ou solicite um novo link.',
     goToLogin: 'Ir para o login',
+    clinicSlugTooltip:
+      'Código único do seu espaço. Usado no link público de agendamento e nos usuários de acesso da equipe (@identificador.com). Aceita apenas letras minúsculas e números (3 a 50 caracteres) e não pode ser alterado depois.',
+    adminUsernameTooltip:
+      'Nome curto para entrar no sistema. Será combinado automaticamente com o identificador do seu espaço (usuario@identificador.com).',
   },
 
   activation: {
@@ -604,6 +608,10 @@ export const PT_BR_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       saving: 'Salvando…',
       saveChanges: 'Salvar alterações',
       createMember: 'Criar membro',
+      roleTooltip:
+        'Médicos gerenciam sua própria disponibilidade e agenda. Assistentes administram todos os agendamentos e pacientes do espaço sem agenda própria.',
+      usernameTooltip:
+        'Identificador único para login. Será combinado automaticamente com o domínio do espaço (usuario@identificador.com) e não pode ser alterado depois.',
     },
   },
 
@@ -959,6 +967,10 @@ export const PT_BR_TRANSLATIONS: typeof ES_TRANSLATIONS = {
       nameLabel: 'Nome completo',
       phoneLabel: 'Telefone',
       emailLabel: 'E-mail (opcional)',
+      legendTooltip:
+        'Se você já esteve aqui antes, pediremos apenas seu telefone para localizar seu cadastro. Se for sua primeira vez, registraremos seus dados de contato.',
+      phoneTooltip:
+        'Usaremos este número para enviar confirmações e lembretes do seu agendamento pelo WhatsApp.',
     },
     summary: {
       doctorLabel: 'Médico',
