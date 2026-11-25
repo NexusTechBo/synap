@@ -1,38 +1,126 @@
+import { ConnectedPosition, OverlayModule } from '@angular/cdk/overlay';
 import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
 let nextTooltipId = 0;
 
+const TOP_POSITIONS: ConnectedPosition[] = [
+  {
+    originX: 'center',
+    originY: 'top',
+    overlayX: 'center',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+  {
+    originX: 'start',
+    originY: 'top',
+    overlayX: 'start',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+  {
+    originX: 'end',
+    originY: 'top',
+    overlayX: 'end',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+  {
+    originX: 'center',
+    originY: 'bottom',
+    overlayX: 'center',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+  {
+    originX: 'start',
+    originY: 'bottom',
+    overlayX: 'start',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+  {
+    originX: 'end',
+    originY: 'bottom',
+    overlayX: 'end',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+];
+
+const BOTTOM_POSITIONS: ConnectedPosition[] = [
+  {
+    originX: 'center',
+    originY: 'bottom',
+    overlayX: 'center',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+  {
+    originX: 'start',
+    originY: 'bottom',
+    overlayX: 'start',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+  {
+    originX: 'end',
+    originY: 'bottom',
+    overlayX: 'end',
+    overlayY: 'top',
+    offsetY: 8,
+  },
+  {
+    originX: 'center',
+    originY: 'top',
+    overlayX: 'center',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+  {
+    originX: 'start',
+    originY: 'top',
+    overlayX: 'start',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+  {
+    originX: 'end',
+    originY: 'top',
+    overlayX: 'end',
+    overlayY: 'bottom',
+    offsetY: -8,
+  },
+];
+
 /**
  * Reusable accessible help tooltip triggered by an info (`ⓘ`) button alongside form labels or controls.
  *
- * Uses viewport-clamped `fixed` positioning so popovers are never clipped by scrolling modals or containers.
- * Supports mouse hover, keyboard focus (`Tab` / `Escape`), and mobile tap with outside-click dismissal.
+ * Uses Angular CDK Overlay so popovers render outside scrolling modals without clipping and
+ * automatically flip/shift to stay within the viewport.
  */
 @Component({
   selector: 'app-help-tooltip',
-  imports: [UiIconComponent],
+  imports: [UiIconComponent, OverlayModule],
   templateUrl: './help-tooltip.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'relative inline-flex items-center align-middle',
+    class: 'inline-flex items-center align-middle',
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'close()',
-    '(window:resize)': 'close()',
-    '(window:scroll)': 'close()',
   },
 })
 export class HelpTooltipComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
-  private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
 
   /** Explanatory message displayed inside the tooltip popover. */
   readonly text = input.required<string>();
@@ -42,19 +130,12 @@ export class HelpTooltipComponent {
   readonly position = input<'top' | 'bottom'>('top');
 
   protected readonly isOpen = signal(false);
-  protected readonly coords = signal<{
-    top: number;
-    left: number;
-    placement: 'top' | 'bottom';
-  }>({
-    top: 0,
-    left: 0,
-    placement: 'top',
-  });
   protected readonly tooltipId = `synap-tooltip-${++nextTooltipId}`;
+  protected readonly positions = computed(() =>
+    this.position() === 'bottom' ? BOTTOM_POSITIONS : TOP_POSITIONS,
+  );
 
   protected open(): void {
-    this.updatePosition();
     this.isOpen.set(true);
   }
 
@@ -64,11 +145,7 @@ export class HelpTooltipComponent {
 
   protected toggle(event: Event): void {
     event.stopPropagation();
-    if (this.isOpen()) {
-      this.close();
-    } else {
-      this.open();
-    }
+    this.isOpen.update((v) => !v);
   }
 
   protected onDocumentClick(event: Event): void {
@@ -80,27 +157,5 @@ export class HelpTooltipComponent {
     if (target && !this.elementRef.nativeElement.contains(target)) {
       this.close();
     }
-  }
-
-  private updatePosition(): void {
-    const button = this.trigger()?.nativeElement;
-    if (!button) return;
-
-    const rect = button.getBoundingClientRect();
-    const viewportWidth = window.innerWidth || 1024;
-    const tooltipWidth = Math.min(256, viewportWidth - 24);
-    const margin = 12;
-
-    const centeredLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
-    const clampedLeft = Math.max(
-      margin,
-      Math.min(centeredLeft, viewportWidth - tooltipWidth - margin),
-    );
-
-    const preferBottom = this.position() === 'bottom' || rect.top < 120;
-    const placement: 'top' | 'bottom' = preferBottom ? 'bottom' : 'top';
-    const top = placement === 'bottom' ? rect.bottom + 8 : rect.top - 8;
-
-    this.coords.set({ top, left: clampedLeft, placement });
   }
 }

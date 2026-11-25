@@ -1,38 +1,40 @@
-import { Component } from '@angular/core';
+import { OverlayContainer } from '@angular/cdk/overlay';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HelpTooltipComponent } from '../../../../../app/shared/ui/help-tooltip/help-tooltip.component';
 
-@Component({
-  imports: [HelpTooltipComponent],
-  template: `<app-help-tooltip [text]="tooltipText" [ariaLabel]="label" />`,
-})
-class TestHostComponent {
-  tooltipText = 'Explicación de prueba para el campo';
-  label = 'Ayuda sobre el campo';
-}
-
 describe('HelpTooltipComponent', () => {
-  let fixture: ComponentFixture<TestHostComponent>;
+  let fixture: ComponentFixture<HelpTooltipComponent>;
+  let overlayContainer: OverlayContainer;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent],
+      imports: [HelpTooltipComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TestHostComponent);
+    fixture = TestBed.createComponent(HelpTooltipComponent);
+    overlayContainer = TestBed.inject(OverlayContainer);
+    fixture.componentRef.setInput('text', 'Explicación de prueba para el campo');
     fixture.detectChanges();
   });
 
-  const getButton = (): HTMLButtonElement =>
-    fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+  afterEach(() => {
+    overlayContainer.ngOnDestroy();
+  });
 
-  const getTooltip = (): HTMLElement | null =>
-    fixture.nativeElement.querySelector('[role="tooltip"]');
+  function getButton(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+  }
 
-  it('should hide the tooltip by default', () => {
+  function getTooltip(): HTMLElement | null {
+    return overlayContainer.getContainerElement().querySelector('[role="tooltip"]');
+  }
+
+  it('should render trigger button with tooltip hidden by default', () => {
+    const button = getButton();
+    expect(button).toBeTruthy();
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.getAttribute('aria-describedby')).toBeNull();
     expect(getTooltip()).toBeNull();
-    expect(getButton().getAttribute('aria-expanded')).toBe('false');
-    expect(getButton().getAttribute('aria-describedby')).toBeNull();
   });
 
   it('should show on mouseenter and hide on mouseleave', () => {
@@ -48,6 +50,7 @@ describe('HelpTooltipComponent', () => {
     fixture.detectChanges();
 
     expect(getTooltip()).toBeNull();
+    expect(getButton().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('should show on focus and hide on blur for keyboard accessibility', () => {
@@ -64,6 +67,7 @@ describe('HelpTooltipComponent', () => {
     fixture.detectChanges();
 
     expect(getTooltip()).toBeNull();
+    expect(button.getAttribute('aria-describedby')).toBeNull();
   });
 
   it('should toggle on click/tap and close on outside click or Escape key', () => {
