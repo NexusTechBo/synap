@@ -1,4 +1,5 @@
 <button
+  #trigger
   type="button"
   class="inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-slate-600 focus:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
   [attr.aria-label]="ariaLabel()"
@@ -17,11 +18,10 @@
   <div
     [id]="tooltipId"
     role="tooltip"
-    class="pointer-events-none absolute left-1/2 z-50 w-64 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg"
-    [class.bottom-full]="position() === 'top'"
-    [class.mb-2]="position() === 'top'"
-    [class.top-full]="position() === 'bottom'"
-    [class.mt-2]="position() === 'bottom'"
+    class="pointer-events-none fixed z-50 w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg"
+    [style.top.px]="coords().top"
+    [style.left.px]="coords().left"
+    [class.-translate-y-full]="coords().placement === 'top'"
   >
     {{ text() }}
   </div>
