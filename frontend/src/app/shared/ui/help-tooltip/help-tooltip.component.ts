@@ -5,6 +5,7 @@ import {
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { UiIconComponent } from '../ui-icon/ui-icon.component';
 
@@ -13,12 +14,8 @@ let nextTooltipId = 0;
 /**
  * Reusable accessible help tooltip triggered by an info (`ⓘ`) button alongside form labels or controls.
  *
+ * Uses viewport-clamped `fixed` positioning so popovers are never clipped by scrolling modals or containers.
  * Supports mouse hover, keyboard focus (`Tab` / `Escape`), and mobile tap with outside-click dismissal.
- *
- * @example
- * ```html
- * <app-help-tooltip [text]="'register.clinicSlugTooltip' | translate" />
- * ```
  */
 @Component({
   selector: 'app-help-tooltip',
@@ -29,10 +26,13 @@ let nextTooltipId = 0;
     class: 'relative inline-flex items-center align-middle',
     '(document:click)': 'onDocumentClick($event)',
     '(document:keydown.escape)': 'close()',
+    '(window:resize)': 'close()',
+    '(window:scroll)': 'close()',
   },
 })
 export class HelpTooltipComponent {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
 
   /** Explanatory message displayed inside the tooltip popover. */
   readonly text = input.required<string>();
@@ -42,9 +42,19 @@ export class HelpTooltipComponent {
   readonly position = input<'top' | 'bottom'>('top');
 
   protected readonly isOpen = signal(false);
+  protected readonly coords = signal<{
+    top: number;
+    left: number;
+    placement: 'top' | 'bottom';
+  }>({
+    top: 0,
+    left: 0,
+    placement: 'top',
+  });
   protected readonly tooltipId = `synap-tooltip-${++nextTooltipId}`;
 
   protected open(): void {
+    this.updatePosition();
     this.isOpen.set(true);
   }
 
@@ -54,7 +64,11 @@ export class HelpTooltipComponent {
 
   protected toggle(event: Event): void {
     event.stopPropagation();
-    this.isOpen.update((current) => !current);
+    if (this.isOpen()) {
+      this.close();
+    } else {
+      this.open();
+    }
   }
 
   protected onDocumentClick(event: Event): void {
@@ -66,5 +80,27 @@ export class HelpTooltipComponent {
     if (target && !this.elementRef.nativeElement.contains(target)) {
       this.close();
     }
+  }
+
+  private updatePosition(): void {
+    const button = this.trigger()?.nativeElement;
+    if (!button) return;
+
+    const rect = button.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || 1024;
+    const tooltipWidth = Math.min(256, viewportWidth - 24);
+    const margin = 12;
+
+    const centeredLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+    const clampedLeft = Math.max(
+      margin,
+      Math.min(centeredLeft, viewportWidth - tooltipWidth - margin),
+    );
+
+    const preferBottom = this.position() === 'bottom' || rect.top < 120;
+    const placement: 'top' | 'bottom' = preferBottom ? 'bottom' : 'top';
+    const top = placement === 'bottom' ? rect.bottom + 8 : rect.top - 8;
+
+    this.coords.set({ top, left: clampedLeft, placement });
   }
 }
