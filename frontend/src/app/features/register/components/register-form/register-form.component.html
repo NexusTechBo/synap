@@ -26,6 +26,7 @@
       </app-form-field>
       <app-form-field
         [label]="'register.clinicSlugLabel' | translate"
+        [tooltip]="'register.clinicSlugTooltip' | translate"
         fieldId="register-slug"
         [hint]="
           ('register.slugHintPrefix' | translate) +
@@ -85,6 +86,7 @@
       </div>
       <app-form-field
         [label]="'register.adminUsernameLabel' | translate"
+        [tooltip]="'register.adminUsernameTooltip' | translate"
         fieldId="register-admin-username"
         [errorMessages]="usernameErrors"
       >

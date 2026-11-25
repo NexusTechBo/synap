@@ -4,7 +4,12 @@
       form.controls.kind.touched && form.controls.kind.invalid ? 'guest-kind-error' : null
     "
   >
-    <legend class="field-label">{{ 'guestBooking.patientForm.legend' | translate }}</legend>
+    <div class="mb-1.5 flex items-center gap-1.5">
+      <legend class="field-label !mb-0">
+        {{ 'guestBooking.patientForm.legend' | translate }}
+      </legend>
+      <app-help-tooltip [text]="'guestBooking.patientForm.legendTooltip' | translate" />
+    </div>
     <div class="grid gap-2 sm:grid-cols-2">
       @for (option of kinds; track option.id) {
         <label
@@ -60,6 +65,7 @@
 
     <app-form-field
       [label]="'guestBooking.patientForm.phoneLabel' | translate"
+      [tooltip]="'guestBooking.patientForm.phoneTooltip' | translate"
       fieldId="guest-phone"
       [errorMessages]="phoneErrors"
     >

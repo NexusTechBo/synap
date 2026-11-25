@@ -13,6 +13,7 @@ import { NgControl } from '@angular/forms';
 import { map, of, startWith, switchMap } from 'rxjs';
 import { I18nService } from '../../../../core/i18n/i18n.service';
 import { getValidationErrorMessage, translateValidationKey } from '../../../utils/validators.util';
+import { HelpTooltipComponent } from '../../help-tooltip/help-tooltip.component';
 
 function toggleAttribute(element: HTMLElement, name: string, value: string | null): void {
   if (value === null) element.removeAttribute(name);
@@ -21,12 +22,14 @@ function toggleAttribute(element: HTMLElement, name: string, value: string | nul
 
 @Component({
   selector: 'app-form-field',
+  imports: [HelpTooltipComponent],
   templateUrl: './form-field.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormFieldComponent {
   readonly label = input<string>();
+  readonly tooltip = input<string>();
   readonly hint = input<string>();
   readonly fieldId = input.required<string>();
   readonly errorMessages = input<Record<string, string>>({});
@@ -34,7 +37,9 @@ export class FormFieldComponent {
 
   private readonly i18n = inject(I18nService);
   private readonly ngControl = contentChild(NgControl);
-  private readonly controlElement = contentChild(NgControl, { read: ElementRef });
+  private readonly controlElement = contentChild(NgControl, {
+    read: ElementRef,
+  });
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly errorId = computed(() => `${this.fieldId()}-error`);

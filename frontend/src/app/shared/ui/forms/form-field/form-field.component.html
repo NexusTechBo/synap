@@ -1,5 +1,12 @@
 @if (label()) {
-  <label class="field-label" [for]="fieldId()">{{ label() }}</label>
+  @if (tooltip(); as tooltipText) {
+    <div class="mb-1.5 flex items-center gap-1.5">
+      <label class="field-label !mb-0" [for]="fieldId()">{{ label() }}</label>
+      <app-help-tooltip [text]="tooltipText" />
+    </div>
+  } @else {
+    <label class="field-label" [for]="fieldId()">{{ label() }}</label>
+  }
 }
 <ng-content />
 @if (error(); as message) {

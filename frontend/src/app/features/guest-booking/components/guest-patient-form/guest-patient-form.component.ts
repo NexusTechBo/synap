@@ -5,6 +5,7 @@ import { ClinicCountryService } from '../../../../core/clinic/clinic-country.ser
 import { GuestBookingPatient } from '../../../../core/models/api.models';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { FormFieldComponent } from '../../../../shared/ui/forms/form-field/form-field.component';
+import { HelpTooltipComponent } from '../../../../shared/ui/help-tooltip/help-tooltip.component';
 import { DOCUMENT_MAX_LENGTH } from '../../../../shared/utils/document.util';
 import {
   PHONE_ERRORS,
@@ -17,7 +18,7 @@ type PatientKind = 'returning' | 'new';
 
 @Component({
   selector: 'app-guest-patient-form',
-  imports: [FormFieldComponent, ReactiveFormsModule, TranslatePipe],
+  imports: [FormFieldComponent, HelpTooltipComponent, ReactiveFormsModule, TranslatePipe],
   templateUrl: './guest-patient-form.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,7 +45,9 @@ export class GuestPatientFormComponent implements OnInit {
     name: [{ value: '', disabled: true }, notBlank],
     email: [{ value: '', disabled: true }, Validators.email],
   });
-  protected readonly kind = toSignal(this.form.controls.kind.valueChanges, { initialValue: null });
+  protected readonly kind = toSignal(this.form.controls.kind.valueChanges, {
+    initialValue: null,
+  });
 
   constructor() {
     this.form.controls.kind.valueChanges.pipe(takeUntilDestroyed()).subscribe((kind) => {

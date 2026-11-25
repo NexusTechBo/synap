@@ -115,6 +115,10 @@ export const ES_TRANSLATIONS = {
     successSentToSuffix: 'para activar tu cuenta. El enlace vence en 48 horas.',
     successSpamHelp: '¿No te llegó? Revisa tu carpeta de spam o solicita uno nuevo.',
     goToLogin: 'Ir a iniciar sesión',
+    clinicSlugTooltip:
+      'Código único de tu espacio. Se usa en el enlace público de reservas y en el usuario de acceso de tu equipo (@identificador.com). Solo admite letras minúsculas y números (3 a 50 caracteres) y no puede cambiarse después.',
+    adminUsernameTooltip:
+      'Nombre corto para iniciar sesión. Se combinará automáticamente con el identificador de tu espacio (usuario@identificador.com).',
   },
 
   activation: {
@@ -600,6 +604,10 @@ export const ES_TRANSLATIONS = {
       saving: 'Guardando…',
       saveChanges: 'Guardar cambios',
       createMember: 'Crear miembro',
+      roleTooltip:
+        'Los médicos gestionan su propia disponibilidad y agenda. Los asistentes administran todas las citas y pacientes del espacio sin agenda propia.',
+      usernameTooltip:
+        'Identificador único para iniciar sesión. Se combinará automáticamente con el dominio del espacio (usuario@identificador.com) y no se puede cambiar después.',
     },
   },
 
@@ -957,6 +965,10 @@ export const ES_TRANSLATIONS = {
       nameLabel: 'Nombre completo',
       phoneLabel: 'Teléfono',
       emailLabel: 'Email (opcional)',
+      legendTooltip:
+        'Si ya te atendiste antes, solo pediremos tu teléfono para ubicarte. Si es tu primera vez, registraremos tus datos de contacto.',
+      phoneTooltip:
+        'Usaremos este número para enviarte por WhatsApp la confirmación y recordatorios de tu cita.',
     },
     summary: {
       doctorLabel: 'Doctor',
