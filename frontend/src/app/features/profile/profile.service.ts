@@ -1,5 +1,5 @@
 import { Dialog } from '@angular/cdk/dialog';
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, filter, map, of, switchMap, tap, throwError } from 'rxjs';
 import { StaffApi } from '../../core/api/staff.api';
 import { AuthService } from '../../core/auth/auth.service';
@@ -33,11 +33,14 @@ export class ProfileService {
   private readonly auth = inject(AuthService);
   private readonly i18n = inject(I18nService);
 
+  private readonly _whatsappRelinkNeeded = signal(false);
+
   readonly me = this.auth.profile;
   readonly isLoading = this.auth.profileLoading;
   readonly specialties = this.specialtiesStore.specialties;
   readonly specialtiesLoading = this.specialtiesStore.isLoading;
   readonly specialtiesErrorMessage = this.specialtiesStore.errorMessage;
+  readonly whatsappRelinkNeeded = this._whatsappRelinkNeeded.asReadonly();
 
   readonly errorMessage = resourceError(
     { error: this.auth.profileError },
@@ -59,10 +62,23 @@ export class ProfileService {
     this.specialtiesStore.reload();
   }
 
+  clearWhatsappRelinkNotice(): void {
+    this._whatsappRelinkNeeded.set(false);
+  }
+
   update(request: ProfileUpdateRequest): Observable<Staff> {
+    const previousPhone = this.me()?.phoneNumber ?? null;
+    const isAdmin = this.auth.hasRole(...ROLES.admin);
+
     return this.staffApi.updateSelf(request).pipe(
       tap((profile) => {
         this.notifications.success(this.i18n.translate('profile.notifications.updated'));
+        if (isAdmin && (profile.phoneNumber ?? null) !== previousPhone) {
+          this._whatsappRelinkNeeded.set(true);
+          this.notifications.success(
+            this.i18n.translate('profile.notifications.whatsappRelinkRequired'),
+          );
+        }
         this.auth.setProfile(profile);
         if (this.doctorMode()) this.doctorsStore.invalidate();
       }),

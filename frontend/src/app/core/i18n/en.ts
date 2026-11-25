@@ -639,6 +639,8 @@ export const EN_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         'You are no longer practicing as a doctor. The appointment was cancelled and the patient was notified',
       doctorModeDisabledMany:
         'You are no longer practicing as a doctor. Appointments were cancelled and patients were notified',
+      whatsappRelinkRequired:
+        'Workspace phone number updated. Please link WhatsApp again using QR or an 8-digit code.',
     },
     doctorMode: {
       title: 'Practice as a doctor',

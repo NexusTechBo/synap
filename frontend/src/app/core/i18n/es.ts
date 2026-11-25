@@ -640,6 +640,8 @@ export const ES_TRANSLATIONS = {
         'Ya no atiendes como doctor. Se canceló la cita y se notificó al paciente',
       doctorModeDisabledMany:
         'Ya no atiendes como doctor. Se cancelaron las citas y se notificó a los pacientes',
+      whatsappRelinkRequired:
+        'El número del espacio de trabajo se actualizó. Vuelve a vincular WhatsApp con QR o código de 8 dígitos.',
     },
     doctorMode: {
       title: 'Atender como doctor',

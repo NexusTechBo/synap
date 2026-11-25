@@ -644,6 +644,8 @@ export const PT_BR_TRANSLATIONS: typeof ES_TRANSLATIONS = {
         'Você deixou de atender como médico. A consulta foi cancelada e o paciente foi notificado',
       doctorModeDisabledMany:
         'Você deixou de atender como médico. As consultas foram canceladas e os pacientes foram notificados',
+      whatsappRelinkRequired:
+        'O número de telefone do espaço foi atualizado. Vincule o WhatsApp novamente usando QR ou código de 8 dígitos.',
     },
     doctorMode: {
       title: 'Atender como médico',

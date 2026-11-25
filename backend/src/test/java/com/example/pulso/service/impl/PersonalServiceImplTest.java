@@ -27,8 +27,10 @@ import com.example.pulso.exception.BusinessException;
 import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.mapper.PersonalMapper;
+import com.example.pulso.notification.event.AdminPhoneChangedEvent;
 import com.example.pulso.notification.event.StaffCreatedEvent;
 import com.example.pulso.repository.AppointmentRepository;
+import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
@@ -76,6 +78,9 @@ class PersonalServiceImplTest {
     private SpecialtyRepository specialtyRepository;
 
     @Mock
+    private ClinicRepository clinicRepository;
+
+    @Mock
     private CurrentClinicProvider currentClinicProvider;
 
     @Mock
@@ -107,6 +112,7 @@ class PersonalServiceImplTest {
         service = new PersonalServiceImpl(
                 personalRepository,
                 specialtyRepository,
+                clinicRepository,
                 currentClinicProvider,
                 personalMapper,
                 passwordEncoder,
@@ -136,9 +142,9 @@ class PersonalServiceImplTest {
                 .specialty(
                         alsoDoctor
                                 ? Specialty.builder()
-                                        .id(SPECIALTY_ID)
-                                        .name("Cardio")
-                                        .build()
+                                .id(SPECIALTY_ID)
+                                .name("Cardio")
+                                .build()
                                 : null
                 )
                 .build();
@@ -522,6 +528,8 @@ class PersonalServiceImplTest {
         @Test
         void shouldNotRevokeWhenTargetIsAdministratorAndOnlyRequestedRoleDiffers() {
             target(ERole.ADMINISTRATOR);
+            when(currentClinicProvider.getCurrentClinic())
+                    .thenReturn(Clinic.builder().id(CLINIC_ID).country(SupportedCountry.BO).build());
 
             service.updatePersonalByAdmin(
                     TARGET_ID, new PersonalUpdateRequest("Target", "target@mail.test", null, null, ERole.ASSISTANT, null));
@@ -580,6 +588,99 @@ class PersonalServiceImplTest {
             service.updateDoctorMode(ADMIN_ID, new DoctorModeRequest(true, SPECIALTY_ID, null, null));
 
             verifyNoInteractions(refreshTokenService);
+        }
+    }
+
+    @Nested
+    class AdminPhoneSync {
+        private static final Long CLINIC_ID = 1L;
+        private static final Long TARGET_ID = 9L;
+
+        private Clinic clinic(SupportedCountry country, String phone) {
+            var c = Clinic.builder()
+                    .id(CLINIC_ID)
+                    .country(country)
+                    .phoneNumber(phone)
+                    .build();
+            when(currentClinicProvider.getCurrentClinic()).thenReturn(c);
+            return c;
+        }
+
+        private Personal person(Long id, ERole role, String phone) {
+            var p = Personal.builder()
+                    .id(id)
+                    .name("User")
+                    .email("user@mail.test")
+                    .phoneNumber(phone)
+                    .role(role)
+                    .active(true)
+                    .build();
+            givenPersonal(p);
+            return p;
+        }
+
+        @Test
+        void shouldSyncClinicPhoneNormalizedToE164AndPublishEventWhenAdminUpdatesOwnPhone() {
+            var c = clinic(SupportedCountry.BO, "+59170000001");
+            person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+
+            service.updateOwnProfile(
+                    ADMIN_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Admin", "user@mail.test", "71234567", null, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+59171234567");
+            verify(clinicRepository).save(c);
+
+            var captor = ArgumentCaptor.forClass(AdminPhoneChangedEvent.class);
+            verify(eventPublisher).publishEvent(captor.capture());
+            assertThat(captor.getValue())
+                    .isEqualTo(new AdminPhoneChangedEvent(CLINIC_ID, "+59170000001", "+59171234567"));
+        }
+
+        @Test
+        void shouldSyncClinicPhoneAndPublishEventWhenAdminUpdatedByAdminEndpoint() {
+            var c = clinic(SupportedCountry.BR, "+5511900000001");
+            person(TARGET_ID, ERole.ADMINISTRATOR, "+5511900000001");
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID,
+                    new PersonalUpdateRequest("Admin", "user@mail.test", "11 98888-7777", null, ERole.ADMINISTRATOR, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+5511988887777");
+            verify(clinicRepository).save(c);
+            verify(eventPublisher).publishEvent(
+                    new AdminPhoneChangedEvent(CLINIC_ID, "+5511900000001", "+5511988887777")
+            );
+        }
+
+        @Test
+        void shouldNotTouchClinicOrPublishEventWhenAdminPhoneDoesNotChange() {
+            var c = clinic(SupportedCountry.BO, "+59170000001");
+            person(ADMIN_ID, ERole.ADMINISTRATOR, "+59170000001");
+
+            service.updateOwnProfile(
+                    ADMIN_ID,
+                    UUID.randomUUID(),
+                    new PersonalProfileUpdateRequest("Admin", "user@mail.test", "70000001", null, null)
+            );
+
+            assertThat(c.getPhoneNumber()).isEqualTo("+59170000001");
+            verifyNoInteractions(clinicRepository, eventPublisher);
+        }
+
+        @Test
+        void shouldNotTouchClinicOrPublishEventWhenNonAdminPhoneChanges() {
+            person(TARGET_ID, ERole.DOCTOR, "+59170000001");
+
+            service.updatePersonalByAdmin(
+                    TARGET_ID,
+                    new PersonalUpdateRequest("Doctor", "user@mail.test", "79999999", null, ERole.DOCTOR, null)
+            );
+
+            verifyNoInteractions(currentClinicProvider, clinicRepository, eventPublisher);
         }
     }
 }

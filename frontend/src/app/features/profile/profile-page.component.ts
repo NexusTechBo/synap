@@ -69,7 +69,9 @@ export class ProfilePageComponent {
 
   protected readonly currentPasswordErrors = computed(() => {
     this.i18n.currentLang();
-    return { required: this.i18n.translate('profile.form.currentPasswordRequired') };
+    return {
+      required: this.i18n.translate('profile.form.currentPasswordRequired'),
+    };
   });
 
   protected readonly saving = signal(false);
@@ -134,6 +136,7 @@ export class ProfilePageComponent {
   }
 
   protected openWhatsapp(): void {
+    this.profile.clearWhatsappRelinkNotice();
     this.dialog.open(WhatsappQrComponent, labelledByFrame());
   }
 }

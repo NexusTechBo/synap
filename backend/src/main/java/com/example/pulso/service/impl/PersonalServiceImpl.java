@@ -16,8 +16,10 @@ import com.example.pulso.exception.ForbiddenException;
 import com.example.pulso.exception.MessageKeys;
 import com.example.pulso.exception.ResourceNotFoundException;
 import com.example.pulso.mapper.PersonalMapper;
+import com.example.pulso.notification.event.AdminPhoneChangedEvent;
 import com.example.pulso.notification.event.StaffCreatedEvent;
 import com.example.pulso.repository.AppointmentRepository;
+import com.example.pulso.repository.ClinicRepository;
 import com.example.pulso.repository.DoctorAvailabilityRepository;
 import com.example.pulso.repository.PersonalRepository;
 import com.example.pulso.repository.SpecialtyRepository;
@@ -52,6 +54,7 @@ public class PersonalServiceImpl implements PersonalService {
 
     private final PersonalRepository personalRepository;
     private final SpecialtyRepository specialtyRepository;
+    private final ClinicRepository clinicRepository;
     private final CurrentClinicProvider currentClinicProvider;
     private final PersonalMapper personalMapper;
     private final PasswordEncoder passwordEncoder;
@@ -204,12 +207,29 @@ public class PersonalServiceImpl implements PersonalService {
         var email = Utils.normalizeEmail(rawEmail);
         if (!Objects.equals(personal.getEmail(), email) && personalRepository.existsByEmailIgnoreCase(email))
             throw new BusinessException(MessageKeys.PERSONAL_EMAIL_ALREADY_EXISTS, email);
-        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, TenantContext.getCurrentCountry());
-        if (phoneNumber != null && !Objects.equals(personal.getPhoneNumber(), phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
+
+        var isAdmin = personal.getRole() == ERole.ADMINISTRATOR;
+        var clinic = isAdmin ? currentClinicProvider.getCurrentClinic() : null;
+        var country = clinic != null ? clinic.getCountry() : TenantContext.getCurrentCountry();
+
+        var previousPhoneNumber = personal.getPhoneNumber();
+        var phoneNumber = Utils.normalizePhoneNumber(rawPhoneNumber, country);
+        if (phoneNumber != null && !Objects.equals(previousPhoneNumber, phoneNumber) && personalRepository.existsByPhoneNumber(phoneNumber))
             throw new BusinessException(MessageKeys.PERSONAL_PHONE_ALREADY_EXISTS, phoneNumber);
+
         personal.setName(name);
         personal.setEmail(email);
         personal.setPhoneNumber(phoneNumber);
+
+        if (isAdmin && !Objects.equals(previousPhoneNumber, phoneNumber)) {
+            clinic.setPhoneNumber(phoneNumber);
+            clinicRepository.save(clinic);
+            eventPublisher.publishEvent(new AdminPhoneChangedEvent(
+                    clinic.getId(),
+                    previousPhoneNumber,
+                    phoneNumber
+            ));
+        }
     }
 
     private Personal getPersonalOrThrowById(Long personalId) {

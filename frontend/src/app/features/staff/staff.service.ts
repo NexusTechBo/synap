@@ -87,8 +87,23 @@ export class StaffService {
   }
 
   update(id: number, request: StaffUpdateRequest): Observable<Staff> {
+    const previous = this.staff().find((member) => member.id === id);
+    const previousPhone = previous?.phoneNumber ?? null;
+
     return this.afterSave(
-      this.staffApi.update(id, request),
+      this.staffApi.update(id, request).pipe(
+        tap((updated) => {
+          if (
+            updated.role === 'ADMINISTRATOR' &&
+            previous !== undefined &&
+            (updated.phoneNumber ?? null) !== previousPhone
+          ) {
+            this.notifications.success(
+              this.i18n.translate('profile.notifications.whatsappRelinkRequired'),
+            );
+          }
+        }),
+      ),
       this.i18n.translate('staff.notifications.updated'),
     );
   }

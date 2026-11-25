@@ -20,9 +20,14 @@ class DoctorModeCardStub {}
 describe('ProfilePageComponent regional settings card', () => {
   let fixture: ComponentFixture<ProfilePageComponent>;
   let element: HTMLElement;
+  let whatsappRelinkNeeded: ReturnType<typeof signal<boolean>>;
+  let clearWhatsappRelinkNotice: ReturnType<typeof vi.fn>;
 
   async function setup(role: Role): Promise<void> {
     const isAdmin = role === 'ADMINISTRATOR';
+    whatsappRelinkNeeded = signal(false);
+    clearWhatsappRelinkNotice = vi.fn();
+
     TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
       providers: [
@@ -42,7 +47,9 @@ describe('ProfilePageComponent regional settings card', () => {
       ],
     });
     TestBed.overrideComponent(ProfilePageComponent, {
-      remove: { imports: [RegionalSettingsCardComponent, DoctorModeCardComponent] },
+      remove: {
+        imports: [RegionalSettingsCardComponent, DoctorModeCardComponent],
+      },
       add: { imports: [RegionalSettingsCardStub, DoctorModeCardStub] },
     });
     TestBed.overrideComponent(ProfilePageComponent, {
@@ -62,6 +69,8 @@ describe('ProfilePageComponent regional settings card', () => {
               }),
               isLoading: signal(false),
               errorMessage: signal(null),
+              whatsappRelinkNeeded,
+              clearWhatsappRelinkNotice,
               canToggleDoctorMode: () => isAdmin,
               reload: vi.fn(),
               update: vi.fn(),
@@ -93,6 +102,25 @@ describe('ProfilePageComponent regional settings card', () => {
       expect(element.querySelector('app-regional-settings-card')).toBeNull();
     },
   );
+
+  it('shows a relink alert for administrator when whatsappRelinkNeeded is true and clears it on open', async () => {
+    await setup('ADMINISTRATOR');
+    expect(element.querySelector('[role="alert"]')).toBeNull();
+
+    whatsappRelinkNeeded.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const alert = element.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Vuelve a vincular WhatsApp con QR o código de 8 dígitos');
+
+    const whatsappBtn = [...element.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('WhatsApp del espacio de trabajo'),
+    );
+    whatsappBtn?.click();
+
+    expect(clearWhatsappRelinkNotice).toHaveBeenCalledOnce();
+  });
 });
 
 describe('ProfilePageComponent password change validation', () => {
@@ -137,6 +165,8 @@ describe('ProfilePageComponent password change validation', () => {
               }),
               isLoading: signal(false),
               errorMessage: signal(null),
+              whatsappRelinkNeeded: signal(false),
+              clearWhatsappRelinkNotice: vi.fn(),
               canToggleDoctorMode: () => false,
               reload: vi.fn(),
               update,
@@ -181,7 +211,10 @@ describe('ProfilePageComponent password change validation', () => {
     await submit();
 
     expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({ currentPassword: 'claveactual', newPassword: 'nuevaclave1' }),
+      expect.objectContaining({
+        currentPassword: 'claveactual',
+        newPassword: 'nuevaclave1',
+      }),
     );
   });
 
@@ -235,6 +268,8 @@ describe('ProfilePageComponent document by country', () => {
               }),
               isLoading: signal(false),
               errorMessage: signal(null),
+              whatsappRelinkNeeded: signal(false),
+              clearWhatsappRelinkNotice: vi.fn(),
               canToggleDoctorMode: () => false,
               reload: vi.fn(),
               update: vi.fn(),

@@ -42,7 +42,10 @@ describe('ProfileService', () => {
   let confirm: { ask: ReturnType<typeof vi.fn> };
   let dialog: { open: ReturnType<typeof vi.fn> };
   let dialogClosed: Subject<unknown>;
-  let notifications: { success: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+  let notifications: {
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
   let doctorsStore: { invalidate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -198,7 +201,13 @@ describe('ProfileService', () => {
       staffApi.updateDoctorMode
         .mockReturnValueOnce(throwError(() => conflict(2)))
         .mockReturnValueOnce(
-          throwError(() => new HttpErrorResponse({ status: 500, error: { message: 'Falló' } })),
+          throwError(
+            () =>
+              new HttpErrorResponse({
+                status: 500,
+                error: { message: 'Falló' },
+              }),
+          ),
         );
       run();
       dialogClosed.next({ reason: '' });
@@ -219,7 +228,10 @@ describe('ProfileService', () => {
         error: () => (failed = true),
       });
 
-      expect(staffApi.updateDoctorMode).toHaveBeenCalledWith({ enabled: true, specialtyId: 3 });
+      expect(staffApi.updateDoctorMode).toHaveBeenCalledWith({
+        enabled: true,
+        specialtyId: 3,
+      });
       expect(failed).toBe(false);
       expect(completed).toBe(true);
       expect(auth.reloadProfile).toHaveBeenCalledOnce();
@@ -246,6 +258,40 @@ describe('ProfileService', () => {
       service.update({} as never).subscribe((value) => (result = value));
 
       expect(result).toBe(profile);
+    });
+
+    it('notifies and flags WhatsApp relink when administrator changes own phone number', () => {
+      auth.hasRole.mockReturnValue(true);
+      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
+      const updated = { id: 1, name: 'Admin', phoneNumber: '+59171234567' };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
+
+      service.update({} as never).subscribe();
+
+      expect(service.whatsappRelinkNeeded()).toBe(true);
+      expect(notifications.success).toHaveBeenCalledWith('Perfil actualizado');
+      expect(notifications.success).toHaveBeenCalledWith(
+        'El número del espacio de trabajo se actualizó. Vuelve a vincular WhatsApp con QR o código de 8 dígitos.',
+      );
+
+      service.clearWhatsappRelinkNotice();
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+    });
+
+    it('does not flag WhatsApp relink when administrator phone number does not change', () => {
+      auth.hasRole.mockReturnValue(true);
+      auth.profile.set({ id: 1, name: 'Admin', phoneNumber: '+59170000001' });
+      const updated = {
+        id: 1,
+        name: 'Admin Renamed',
+        phoneNumber: '+59170000001',
+      };
+      (staffApi as Record<string, unknown>)['updateSelf'] = vi.fn(() => of(updated));
+
+      service.update({} as never).subscribe();
+
+      expect(service.whatsappRelinkNeeded()).toBe(false);
+      expect(notifications.success).toHaveBeenCalledTimes(1);
     });
   });
 });
