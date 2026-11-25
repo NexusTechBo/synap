@@ -1,5 +1,6 @@
 <button
-  #trigger
+  #trigger="cdkOverlayOrigin"
+  cdkOverlayOrigin
   type="button"
   class="inline-flex h-4 w-4 items-center justify-center rounded-full text-slate-400 transition-colors hover:text-slate-600 focus:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
   [attr.aria-label]="ariaLabel()"
@@ -14,15 +15,19 @@
   <app-ui-icon name="info" class="h-4 w-4" />
 </button>
 
-@if (isOpen()) {
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="trigger"
+  [cdkConnectedOverlayOpen]="isOpen()"
+  [cdkConnectedOverlayPositions]="positions()"
+  [cdkConnectedOverlayViewportMargin]="12"
+  [cdkConnectedOverlayPush]="true"
+>
   <div
     [id]="tooltipId"
     role="tooltip"
-    class="pointer-events-none fixed z-50 w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg"
-    [style.top.px]="coords().top"
-    [style.left.px]="coords().left"
-    [class.-translate-y-full]="coords().placement === 'top'"
+    class="pointer-events-none w-64 max-w-[calc(100vw-1.5rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-normal leading-relaxed text-white shadow-lg"
   >
     {{ text() }}
   </div>
-}
+</ng-template>
